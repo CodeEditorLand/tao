@@ -7,7 +7,7 @@ authors = ["Tauri Programme within The Commons Conservancy"]
 rust-version = "1.56"
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
-repository = "https://github.com/tauri-apps/tao"
+repository = "HTTPS://GitHub.Com/tauri-apps/tao"
 documentation = "https://docs.rs/tao-macros"
 
 [lib]
