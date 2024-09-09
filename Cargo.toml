@@ -3,49 +3,45 @@ name = "tao"
 version = "0.30.0"
 description = "Cross-platform window manager library."
 authors = [
-	"Tauri Programme within The Commons Conservancy",
-	"The winit contributors",
+  "Tauri Programme within The Commons Conservancy",
+  "The winit contributors"
 ]
 edition = "2021"
 rust-version = "1.70"
-keywords = ["windowing"]
+keywords = [ "windowing" ]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "HTTPS://GitHub.Com/tauri-apps/tao"
+repository = "https://github.com/tauri-apps/tao"
 documentation = "https://docs.rs/tao"
-categories = ["gui"]
+categories = [ "gui" ]
 
 [package.metadata.docs.rs]
-features = ["rwh_04", "rwh_05", "rwh_06", "serde"]
+features = [ "rwh_04", "rwh_05", "rwh_06", "serde" ]
 default-target = "x86_64-unknown-linux-gnu"
 targets = [
-	"i686-pc-windows-msvc",
-	"x86_64-pc-windows-msvc",
-	"i686-unknown-linux-gnu",
-	"x86_64-unknown-linux-gnu",
-	"x86_64-apple-darwin",
+  "i686-pc-windows-msvc",
+  "x86_64-pc-windows-msvc",
+  "i686-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin"
 ]
 
 [features]
-default = ["rwh_06"]
-serde = ["dep:serde", "dpi/serde"]
+default = [ "rwh_06" ]
+serde = [ "dep:serde", "dpi/serde" ]
 
 [workspace]
-members = ["tao-macros"]
+members = [ "tao-macros" ]
 
 [dependencies]
 instant = "0.1"
 lazy_static = "1"
 libc = "0.2"
 log = "0.4"
-serde = { version = "1", optional = true, features = ["serde_derive"] }
+serde = { version = "1", optional = true, features = [ "serde_derive" ] }
 rwh_04 = { package = "raw-window-handle", version = "0.4", optional = true }
-rwh_05 = { package = "raw-window-handle", version = "0.5", features = [
-	"std",
-], optional = true }
-rwh_06 = { package = "raw-window-handle", version = "0.6", features = [
-	"std",
-], optional = true }
+rwh_05 = { package = "raw-window-handle", version = "0.5", features = [ "std" ], optional = true }
+rwh_06 = { package = "raw-window-handle", version = "0.6", features = [ "std" ], optional = true }
 bitflags = "2"
 crossbeam-channel = "0.5"
 url = "2"
