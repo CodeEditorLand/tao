@@ -4,94 +4,89 @@
 
 // TODO: Upstream these
 
-#![allow(
-  dead_code,
-  non_snake_case,
-  non_upper_case_globals,
-  clippy::enum_variant_names
-)]
+#![allow(dead_code, non_snake_case, non_upper_case_globals, clippy::enum_variant_names)]
 
 use std::ffi::c_void;
 
 use cocoa::{
-  appkit::CGPoint,
-  base::id,
-  foundation::{NSInteger, NSUInteger},
+	appkit::CGPoint,
+	base::id,
+	foundation::{NSInteger, NSUInteger},
 };
 use core_foundation::{
-  array::CFArrayRef, data::CFDataRef, dictionary::CFDictionaryRef, string::CFStringRef,
-  uuid::CFUUIDRef,
+	array::CFArrayRef, data::CFDataRef, dictionary::CFDictionaryRef, string::CFStringRef,
+	uuid::CFUUIDRef,
 };
 use core_graphics::{
-  base::CGError,
-  display::{boolean_t, CGDirectDisplayID, CGDisplayConfigRef},
-  geometry::CGRect,
+	base::CGError,
+	display::{boolean_t, CGDirectDisplayID, CGDisplayConfigRef},
+	geometry::CGRect,
 };
 pub const NSNotFound: NSInteger = NSInteger::max_value();
 
 #[repr(C)]
 pub struct NSRange {
-  pub location: NSUInteger,
-  pub length: NSUInteger,
+	pub location: NSUInteger,
+	pub length: NSUInteger,
 }
 
 impl NSRange {
-  #[inline]
-  pub fn new(location: NSUInteger, length: NSUInteger) -> NSRange {
-    NSRange { location, length }
-  }
+	#[inline]
+	pub fn new(location: NSUInteger, length: NSUInteger) -> NSRange {
+		NSRange { location, length }
+	}
 }
 
 unsafe impl objc::Encode for NSRange {
-  fn encode() -> objc::Encoding {
-    let encoding = format!(
-      // TODO: Verify that this is correct
-      "{{NSRange={}{}}}",
-      NSUInteger::encode().as_str(),
-      NSUInteger::encode().as_str(),
-    );
-    unsafe { objc::Encoding::from_str(&encoding) }
-  }
+	fn encode() -> objc::Encoding {
+		let encoding = format!(
+			// TODO: Verify that this is correct
+			"{{NSRange={}{}}}",
+			NSUInteger::encode().as_str(),
+			NSUInteger::encode().as_str(),
+		);
+		unsafe { objc::Encoding::from_str(&encoding) }
+	}
 }
 
 pub trait NSMutableAttributedString: Sized {
-  unsafe fn alloc(_: Self) -> id {
-    msg_send![class!(NSMutableAttributedString), alloc]
-  }
+	unsafe fn alloc(_: Self) -> id {
+		msg_send![class!(NSMutableAttributedString), alloc]
+	}
 
-  unsafe fn init(self) -> id; // *mut NSMutableAttributedString
-  unsafe fn initWithString(self, string: id) -> id;
-  unsafe fn initWithAttributedString(self, string: id) -> id;
+	unsafe fn init(self) -> id; // *mut NSMutableAttributedString
+	unsafe fn initWithString(self, string: id) -> id;
+	unsafe fn initWithAttributedString(self, string: id) -> id;
 
-  unsafe fn string(self) -> id; // *mut NSString
-  unsafe fn mutableString(self) -> id; // *mut NSMutableString
-  unsafe fn length(self) -> NSUInteger;
+	unsafe fn string(self) -> id; // *mut NSString
+	unsafe fn mutableString(self) -> id; // *mut NSMutableString
+	unsafe fn length(self) -> NSUInteger;
 }
 
 impl NSMutableAttributedString for id {
-  unsafe fn init(self) -> id {
-    msg_send![self, init]
-  }
+	unsafe fn init(self) -> id {
+		msg_send![self, init]
+	}
 
-  unsafe fn initWithString(self, string: id) -> id {
-    msg_send![self, initWithString: string]
-  }
+	unsafe fn initWithString(self, string: id) -> id {
+		msg_send![self, initWithString: string]
+	}
 
-  unsafe fn initWithAttributedString(self, string: id) -> id {
-    msg_send![self, initWithAttributedString: string]
-  }
+	unsafe fn initWithAttributedString(self, string: id) -> id {
+		msg_send![self, initWithAttributedString: string]
+	}
 
-  unsafe fn string(self) -> id {
-    msg_send![self, string]
-  }
+	unsafe fn string(self) -> id {
+		msg_send![self, string]
+	}
 
-  unsafe fn mutableString(self) -> id {
-    msg_send![self, mutableString]
-  }
+	unsafe fn mutableString(self) -> id {
+		msg_send![self, mutableString]
+	}
 
-  unsafe fn length(self) -> NSUInteger {
-    msg_send![self, length]
-  }
+	unsafe fn length(self) -> NSUInteger {
+		msg_send![self, length]
+	}
 }
 
 pub const kCGBaseWindowLevelKey: NSInteger = 0;
@@ -119,15 +114,15 @@ pub const kCGNumberOfWindowLevelKeys: NSInteger = 20;
 #[derive(Debug, Clone, Copy)]
 #[repr(isize)]
 pub enum NSWindowLevel {
-  BelowNormalWindowLevel = (kCGBaseWindowLevelKey - 1) as _,
-  NSNormalWindowLevel = kCGBaseWindowLevelKey as _,
-  NSFloatingWindowLevel = kCGFloatingWindowLevelKey as _,
-  NSTornOffMenuWindowLevel = kCGTornOffMenuWindowLevelKey as _,
-  NSModalPanelWindowLevel = kCGModalPanelWindowLevelKey as _,
-  NSMainMenuWindowLevel = kCGMainMenuWindowLevelKey as _,
-  NSStatusWindowLevel = kCGStatusWindowLevelKey as _,
-  NSPopUpMenuWindowLevel = kCGPopUpMenuWindowLevelKey as _,
-  NSScreenSaverWindowLevel = kCGScreenSaverWindowLevelKey as _,
+	BelowNormalWindowLevel = (kCGBaseWindowLevelKey - 1) as _,
+	NSNormalWindowLevel = kCGBaseWindowLevelKey as _,
+	NSFloatingWindowLevel = kCGFloatingWindowLevelKey as _,
+	NSTornOffMenuWindowLevel = kCGTornOffMenuWindowLevelKey as _,
+	NSModalPanelWindowLevel = kCGModalPanelWindowLevelKey as _,
+	NSMainMenuWindowLevel = kCGMainMenuWindowLevelKey as _,
+	NSStatusWindowLevel = kCGStatusWindowLevelKey as _,
+	NSPopUpMenuWindowLevel = kCGPopUpMenuWindowLevelKey as _,
+	NSScreenSaverWindowLevel = kCGScreenSaverWindowLevelKey as _,
 }
 
 pub type CGDisplayFadeInterval = f32;
@@ -183,55 +178,55 @@ pub type CGDisplayModeRef = *mut libc::c_void;
 // `ApplicationServices`, see:
 // https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/OSX_Technology_Overview/SystemFrameworks/SystemFrameworks.html#//apple_ref/doc/uid/TP40001067-CH210-BBCFFIEG
 #[link(name = "ApplicationServices", kind = "framework")]
-extern "C" {
-  pub fn CGDisplayCreateUUIDFromDisplayID(display: CGDirectDisplayID) -> CFUUIDRef;
+extern {
+	pub fn CGDisplayCreateUUIDFromDisplayID(display: CGDirectDisplayID) -> CFUUIDRef;
 }
 
 #[link(name = "CoreGraphics", kind = "framework")]
-extern "C" {
-  pub fn CGRestorePermanentDisplayConfiguration();
-  pub fn CGDisplayCapture(display: CGDirectDisplayID) -> CGError;
-  pub fn CGDisplayRelease(display: CGDirectDisplayID) -> CGError;
-  pub fn CGConfigureDisplayFadeEffect(
-    config: CGDisplayConfigRef,
-    fadeOutSeconds: CGDisplayFadeInterval,
-    fadeInSeconds: CGDisplayFadeInterval,
-    fadeRed: f32,
-    fadeGreen: f32,
-    fadeBlue: f32,
-  ) -> CGError;
-  pub fn CGAcquireDisplayFadeReservation(
-    seconds: CGDisplayReservationInterval,
-    token: *mut CGDisplayFadeReservationToken,
-  ) -> CGError;
-  pub fn CGDisplayFade(
-    token: CGDisplayFadeReservationToken,
-    duration: CGDisplayFadeInterval,
-    startBlend: CGDisplayBlendFraction,
-    endBlend: CGDisplayBlendFraction,
-    redBlend: f32,
-    greenBlend: f32,
-    blueBlend: f32,
-    synchronous: Boolean,
-  ) -> CGError;
-  pub fn CGRectContainsPoint(rect: CGRect, point: CGPoint) -> boolean_t;
-  pub fn CGReleaseDisplayFadeReservation(token: CGDisplayFadeReservationToken) -> CGError;
-  pub fn CGShieldingWindowLevel() -> CGWindowLevel;
-  pub fn CGDisplaySetDisplayMode(
-    display: CGDirectDisplayID,
-    mode: CGDisplayModeRef,
-    options: CFDictionaryRef,
-  ) -> CGError;
-  pub fn CGDisplayCopyAllDisplayModes(
-    display: CGDirectDisplayID,
-    options: CFDictionaryRef,
-  ) -> CFArrayRef;
-  pub fn CGDisplayModeGetPixelWidth(mode: CGDisplayModeRef) -> usize;
-  pub fn CGDisplayModeGetPixelHeight(mode: CGDisplayModeRef) -> usize;
-  pub fn CGDisplayModeGetRefreshRate(mode: CGDisplayModeRef) -> f64;
-  pub fn CGDisplayModeCopyPixelEncoding(mode: CGDisplayModeRef) -> CFStringRef;
-  pub fn CGDisplayModeRetain(mode: CGDisplayModeRef);
-  pub fn CGDisplayModeRelease(mode: CGDisplayModeRef);
+extern {
+	pub fn CGRestorePermanentDisplayConfiguration();
+	pub fn CGDisplayCapture(display: CGDirectDisplayID) -> CGError;
+	pub fn CGDisplayRelease(display: CGDirectDisplayID) -> CGError;
+	pub fn CGConfigureDisplayFadeEffect(
+		config: CGDisplayConfigRef,
+		fadeOutSeconds: CGDisplayFadeInterval,
+		fadeInSeconds: CGDisplayFadeInterval,
+		fadeRed: f32,
+		fadeGreen: f32,
+		fadeBlue: f32,
+	) -> CGError;
+	pub fn CGAcquireDisplayFadeReservation(
+		seconds: CGDisplayReservationInterval,
+		token: *mut CGDisplayFadeReservationToken,
+	) -> CGError;
+	pub fn CGDisplayFade(
+		token: CGDisplayFadeReservationToken,
+		duration: CGDisplayFadeInterval,
+		startBlend: CGDisplayBlendFraction,
+		endBlend: CGDisplayBlendFraction,
+		redBlend: f32,
+		greenBlend: f32,
+		blueBlend: f32,
+		synchronous: Boolean,
+	) -> CGError;
+	pub fn CGRectContainsPoint(rect: CGRect, point: CGPoint) -> boolean_t;
+	pub fn CGReleaseDisplayFadeReservation(token: CGDisplayFadeReservationToken) -> CGError;
+	pub fn CGShieldingWindowLevel() -> CGWindowLevel;
+	pub fn CGDisplaySetDisplayMode(
+		display: CGDirectDisplayID,
+		mode: CGDisplayModeRef,
+		options: CFDictionaryRef,
+	) -> CGError;
+	pub fn CGDisplayCopyAllDisplayModes(
+		display: CGDirectDisplayID,
+		options: CFDictionaryRef,
+	) -> CFArrayRef;
+	pub fn CGDisplayModeGetPixelWidth(mode: CGDisplayModeRef) -> usize;
+	pub fn CGDisplayModeGetPixelHeight(mode: CGDisplayModeRef) -> usize;
+	pub fn CGDisplayModeGetRefreshRate(mode: CGDisplayModeRef) -> f64;
+	pub fn CGDisplayModeCopyPixelEncoding(mode: CGDisplayModeRef) -> CFStringRef;
+	pub fn CGDisplayModeRetain(mode: CGDisplayModeRef);
+	pub fn CGDisplayModeRelease(mode: CGDisplayModeRef);
 }
 
 #[repr(transparent)]
@@ -252,71 +247,72 @@ pub const kUCKeyActionDisplay: u16 = 3;
 pub const kUCKeyTranslateNoDeadKeysMask: OptionBits = 1;
 
 #[link(name = "Carbon", kind = "framework")]
-extern "C" {
-  pub static kTISPropertyUnicodeKeyLayoutData: CFStringRef;
+extern {
+	pub static kTISPropertyUnicodeKeyLayoutData: CFStringRef;
 
-  #[allow(non_snake_case)]
-  pub fn TISGetInputSourceProperty(
-    inputSource: TISInputSourceRef,
-    propertyKey: CFStringRef,
-  ) -> CFDataRef;
+	#[allow(non_snake_case)]
+	pub fn TISGetInputSourceProperty(
+		inputSource: TISInputSourceRef,
+		propertyKey: CFStringRef,
+	) -> CFDataRef;
 
-  pub fn TISCopyCurrentKeyboardLayoutInputSource() -> TISInputSourceRef;
+	pub fn TISCopyCurrentKeyboardLayoutInputSource() -> TISInputSourceRef;
 
-  pub fn LMGetKbdType() -> u8;
+	pub fn LMGetKbdType() -> u8;
 
-  #[allow(non_snake_case)]
-  pub fn UCKeyTranslate(
-    keyLayoutPtr: *const UCKeyboardLayout,
-    virtualKeyCode: u16,
-    keyAction: u16,
-    modifierKeyState: u32,
-    keyboardType: u32,
-    keyTranslateOptions: OptionBits,
-    deadKeyState: *mut u32,
-    maxStringLength: UniCharCount,
-    actualStringLength: *mut UniCharCount,
-    unicodeString: *mut UniChar,
-  ) -> OSStatus;
+	#[allow(non_snake_case)]
+	pub fn UCKeyTranslate(
+		keyLayoutPtr: *const UCKeyboardLayout,
+		virtualKeyCode: u16,
+		keyAction: u16,
+		modifierKeyState: u32,
+		keyboardType: u32,
+		keyTranslateOptions: OptionBits,
+		deadKeyState: *mut u32,
+		maxStringLength: UniCharCount,
+		actualStringLength: *mut UniCharCount,
+		unicodeString: *mut UniChar,
+	) -> OSStatus;
 }
 
 mod core_video {
-  use super::*;
+	use super::*;
 
-  #[link(name = "CoreVideo", kind = "framework")]
-  extern "C" {}
+	#[link(name = "CoreVideo", kind = "framework")]
+	extern {}
 
-  // CVBase.h
+	// CVBase.h
 
-  pub type CVTimeFlags = i32; // int32_t
-  pub const kCVTimeIsIndefinite: CVTimeFlags = 1 << 0;
+	pub type CVTimeFlags = i32; // int32_t
+	pub const kCVTimeIsIndefinite: CVTimeFlags = 1 << 0;
 
-  #[repr(C)]
-  #[derive(Debug, Clone)]
-  pub struct CVTime {
-    pub time_value: i64, // int64_t
-    pub time_scale: i32, // int32_t
-    pub flags: i32,      // int32_t
-  }
+	#[repr(C)]
+	#[derive(Debug, Clone)]
+	pub struct CVTime {
+		pub time_value: i64, // int64_t
+		pub time_scale: i32, // int32_t
+		pub flags: i32,      // int32_t
+	}
 
-  // CVReturn.h
+	// CVReturn.h
 
-  pub type CVReturn = i32; // int32_t
-  pub const kCVReturnSuccess: CVReturn = 0;
+	pub type CVReturn = i32; // int32_t
+	pub const kCVReturnSuccess: CVReturn = 0;
 
-  // CVDisplayLink.h
+	// CVDisplayLink.h
 
-  pub type CVDisplayLinkRef = *mut c_void;
+	pub type CVDisplayLinkRef = *mut c_void;
 
-  extern "C" {
-    pub fn CVDisplayLinkCreateWithCGDisplay(
-      displayID: CGDirectDisplayID,
-      displayLinkOut: *mut CVDisplayLinkRef,
-    ) -> CVReturn;
-    pub fn CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLink: CVDisplayLinkRef)
-      -> CVTime;
-    pub fn CVDisplayLinkRelease(displayLink: CVDisplayLinkRef);
-  }
+	extern {
+		pub fn CVDisplayLinkCreateWithCGDisplay(
+			displayID: CGDirectDisplayID,
+			displayLinkOut: *mut CVDisplayLinkRef,
+		) -> CVReturn;
+		pub fn CVDisplayLinkGetNominalOutputVideoRefreshPeriod(
+			displayLink: CVDisplayLinkRef,
+		) -> CVTime;
+		pub fn CVDisplayLinkRelease(displayLink: CVDisplayLinkRef);
+	}
 }
 
 pub use core_video::*;
