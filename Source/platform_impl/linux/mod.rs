@@ -3,11 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![cfg(any(
-	target_os = "linux",
-	target_os = "dragonfly",
-	target_os = "freebsd",
-	target_os = "netbsd",
-	target_os = "openbsd"
+  target_os = "linux",
+  target_os = "dragonfly",
+  target_os = "freebsd",
+  target_os = "netbsd",
+  target_os = "openbsd"
 ))]
 
 mod device;
@@ -33,48 +33,48 @@ use crate::{event::DeviceId as RootDeviceId, keyboard::Key};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct KeyEventExtra {
-	pub text_with_all_modifiers: Option<&'static str>,
-	pub key_without_modifiers: Key<'static>,
+  pub text_with_all_modifiers: Option<&'static str>,
+  pub key_without_modifiers: Key<'static>,
 }
 
 #[non_exhaustive]
 #[derive(Clone)]
 pub enum Parent {
-	None,
-	ChildOf(gtk::Window),
+  None,
+  ChildOf(gtk::Window),
 }
 
 impl Default for Parent {
-	fn default() -> Self {
-		Parent::None
-	}
+  fn default() -> Self {
+    Parent::None
+  }
 }
 
 #[derive(Clone)]
 pub struct PlatformSpecificWindowBuilderAttributes {
-	pub parent: Parent,
-	pub skip_taskbar: bool,
-	pub auto_transparent: bool,
-	pub double_buffered: bool,
-	pub app_paintable: bool,
-	pub rgba_visual: bool,
-	pub cursor_moved: bool,
-	pub default_vbox: bool,
+  pub parent: Parent,
+  pub skip_taskbar: bool,
+  pub auto_transparent: bool,
+  pub double_buffered: bool,
+  pub app_paintable: bool,
+  pub rgba_visual: bool,
+  pub cursor_moved: bool,
+  pub default_vbox: bool,
 }
 
 impl Default for PlatformSpecificWindowBuilderAttributes {
-	fn default() -> Self {
-		Self {
-			parent: Default::default(),
-			skip_taskbar: Default::default(),
-			auto_transparent: true,
-			double_buffered: true,
-			app_paintable: false,
-			rgba_visual: false,
-			cursor_moved: true,
-			default_vbox: true,
-		}
-	}
+  fn default() -> Self {
+    Self {
+      parent: Default::default(),
+      skip_taskbar: Default::default(),
+      auto_transparent: true,
+      double_buffered: true,
+      app_paintable: false,
+      rgba_visual: false,
+      cursor_moved: true,
+      default_vbox: true,
+    }
+  }
 }
 
 unsafe impl Send for PlatformSpecificWindowBuilderAttributes {}
@@ -84,18 +84,18 @@ unsafe impl Sync for PlatformSpecificWindowBuilderAttributes {}
 pub struct OsError;
 
 impl std::fmt::Display for OsError {
-	fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-		Ok(())
-	}
+  fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+    Ok(())
+  }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DeviceId(usize);
 
 impl DeviceId {
-	pub unsafe fn dummy() -> Self {
-		Self(0)
-	}
+  pub unsafe fn dummy() -> Self {
+    Self(0)
+  }
 }
 
 // FIXME: currently we use a dummy device id, find if we can get device id from gtk
