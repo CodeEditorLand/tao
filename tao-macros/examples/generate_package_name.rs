@@ -6,5 +6,5 @@ fn main() {}
 
 #[test]
 fn it_works() {
-	assert_eq!(PACKAGE, "com/example/tao_app")
+  assert_eq!(PACKAGE, "com/example/tao_app")
 }

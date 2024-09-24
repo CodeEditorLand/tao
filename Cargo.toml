@@ -1,51 +1,47 @@
 [package]
 name = "tao"
-version = "0.30.1"
+version = "0.30.2"
 description = "Cross-platform window manager library."
 authors = [
-	"Tauri Programme within The Commons Conservancy",
-	"The winit contributors",
+  "Tauri Programme within The Commons Conservancy",
+  "The winit contributors"
 ]
 edition = "2021"
 rust-version = "1.70"
-keywords = ["windowing"]
+keywords = [ "windowing" ]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/tauri-apps/tao"
 documentation = "https://docs.rs/tao"
-categories = ["gui"]
+categories = [ "gui" ]
 
 [package.metadata.docs.rs]
-features = ["rwh_04", "rwh_05", "rwh_06", "serde"]
+features = [ "rwh_04", "rwh_05", "rwh_06", "serde" ]
 default-target = "x86_64-unknown-linux-gnu"
 targets = [
-	"i686-pc-windows-msvc",
-	"x86_64-pc-windows-msvc",
-	"i686-unknown-linux-gnu",
-	"x86_64-unknown-linux-gnu",
-	"x86_64-apple-darwin",
+  "i686-pc-windows-msvc",
+  "x86_64-pc-windows-msvc",
+  "i686-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin"
 ]
 
 [features]
-default = ["rwh_06"]
-serde = ["dep:serde", "dpi/serde"]
+default = [ "rwh_06" ]
+serde = [ "dep:serde", "dpi/serde" ]
 
 [workspace]
-members = ["tao-macros"]
+members = [ "tao-macros" ]
 
 [dependencies]
 instant = "0.1"
 lazy_static = "1"
 libc = "0.2"
 log = "0.4"
-serde = { version = "1", optional = true, features = ["serde_derive"] }
+serde = { version = "1", optional = true, features = [ "serde_derive" ] }
 rwh_04 = { package = "raw-window-handle", version = "0.4", optional = true }
-rwh_05 = { package = "raw-window-handle", version = "0.5", features = [
-	"std",
-], optional = true }
-rwh_06 = { package = "raw-window-handle", version = "0.6", features = [
-	"std",
-], optional = true }
+rwh_05 = { package = "raw-window-handle", version = "0.5", features = [ "std" ], optional = true }
+rwh_06 = { package = "raw-window-handle", version = "0.6", features = [ "std" ], optional = true }
 bitflags = "2"
 crossbeam-channel = "0.5"
 url = "2"
@@ -64,36 +60,36 @@ unicode-segmentation = "1.11"
 windows-version = "0.1"
 windows-core = "0.58"
 
-[target."cfg(target_os = \"windows\")".dependencies.windows]
-version = "0.58"
-features = [
-	"implement",
-	"Win32_Devices_HumanInterfaceDevice",
-	"Win32_Foundation",
-	"Win32_Globalization",
-	"Win32_Graphics_Dwm",
-	"Win32_Graphics_Gdi",
-	"Win32_System_Com",
-	"Win32_System_Com_StructuredStorage",
-	"Win32_System_DataExchange",
-	"Win32_System_Diagnostics_Debug",
-	"Win32_System_LibraryLoader",
-	"Win32_System_Memory",
-	"Win32_System_Ole",
-	"Win32_System_SystemServices",
-	"Win32_System_Threading",
-	"Win32_System_WindowsProgramming",
-	"Win32_System_SystemInformation",
-	"Win32_UI_Accessibility",
-	"Win32_UI_Controls",
-	"Win32_UI_HiDpi",
-	"Win32_UI_Input_Ime",
-	"Win32_UI_Input_KeyboardAndMouse",
-	"Win32_UI_Input_Pointer",
-	"Win32_UI_Input_Touch",
-	"Win32_UI_Shell",
-	"Win32_UI_TextServices",
-	"Win32_UI_WindowsAndMessaging",
+  [target."cfg(target_os = \"windows\")".dependencies.windows]
+  version = "0.58"
+  features = [
+  "implement",
+  "Win32_Devices_HumanInterfaceDevice",
+  "Win32_Foundation",
+  "Win32_Globalization",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_DataExchange",
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
+  "Win32_System_SystemServices",
+  "Win32_System_Threading",
+  "Win32_System_WindowsProgramming",
+  "Win32_System_SystemInformation",
+  "Win32_UI_Accessibility",
+  "Win32_UI_Controls",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_Ime",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Input_Pointer",
+  "Win32_UI_Input_Touch",
+  "Win32_UI_Shell",
+  "Win32_UI_TextServices",
+  "Win32_UI_WindowsAndMessaging"
 ]
 
 [target."cfg(any(target_os = \"android\", target_os = \"windows\"))".dependencies]
