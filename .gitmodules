@@ -4,4 +4,4 @@
 
 [submodule "deps/apk-builder"]
 	path = deps/apk-builder
-	url = ssh://git@github.com/rust-windowing/android-rs-glue
+	url = https://github.com/rust-windowing/android-rs-glue
