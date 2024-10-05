@@ -3,269 +3,309 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::{
-  cell::RefCell,
-  collections::{HashSet, VecDeque},
-  error::Error,
-  process,
-  rc::Rc,
-  sync::atomic::{AtomicBool, Ordering},
-  time::Instant,
+	cell::RefCell,
+	collections::{HashSet, VecDeque},
+	error::Error,
+	process,
+	rc::Rc,
+	sync::atomic::{AtomicBool, Ordering},
+	time::Instant,
 };
 
 use cairo::{RectangleInt, Region};
 use crossbeam_channel::SendError;
-use gdk::{Cursor, CursorType, EventKey, EventMask, ScrollDirection, WindowEdge, WindowState};
+use gdk::{
+	Cursor,
+	CursorType,
+	EventKey,
+	EventMask,
+	ScrollDirection,
+	WindowEdge,
+	WindowState,
+};
 use gio::Cancellable;
 use glib::{source::Priority, MainContext};
 use gtk::{
-  cairo, gdk, gio,
-  glib::{self},
-  prelude::*,
-  Settings,
+	cairo,
+	gdk,
+	gio,
+	glib::{self},
+	prelude::*,
+	Settings,
 };
-
-use crate::{
-  dpi::{LogicalPosition, LogicalSize, PhysicalPosition},
-  error::ExternalError,
-  event::{
-    ElementState, Event, MouseButton, MouseScrollDelta, StartCause, TouchPhase, WindowEvent,
-  },
-  event_loop::{ControlFlow, EventLoopClosed, EventLoopWindowTarget as RootELW},
-  keyboard::ModifiersState,
-  monitor::MonitorHandle as RootMonitorHandle,
-  platform_impl::platform::{device, DEVICE_ID},
-  window::{
-    CursorIcon, Fullscreen, ProgressBarState, ResizeDirection, Theme, WindowId as RootWindowId,
-  },
-};
+use taskbar::TaskbarIndicator;
 
 use super::{
-  keyboard,
-  monitor::{self, MonitorHandle},
-  taskbar, util,
-  window::{WindowId, WindowRequest},
+	keyboard,
+	monitor::{self, MonitorHandle},
+	taskbar,
+	util,
+	window::{WindowId, WindowRequest},
 };
-
-use taskbar::TaskbarIndicator;
+use crate::{
+	dpi::{LogicalPosition, LogicalSize, PhysicalPosition},
+	error::ExternalError,
+	event::{
+		ElementState,
+		Event,
+		MouseButton,
+		MouseScrollDelta,
+		StartCause,
+		TouchPhase,
+		WindowEvent,
+	},
+	event_loop::{
+		ControlFlow,
+		EventLoopClosed,
+		EventLoopWindowTarget as RootELW,
+	},
+	keyboard::ModifiersState,
+	monitor::MonitorHandle as RootMonitorHandle,
+	platform_impl::platform::{device, DEVICE_ID},
+	window::{
+		CursorIcon,
+		Fullscreen,
+		ProgressBarState,
+		ResizeDirection,
+		Theme,
+		WindowId as RootWindowId,
+	},
+};
 
 #[derive(Clone)]
 pub struct EventLoopWindowTarget<T> {
-  /// Gdk display
-  pub(crate) display: gdk::Display,
-  /// Gtk application
-  pub(crate) app: gtk::Application,
-  /// Window Ids of the application
-  pub(crate) windows: Rc<RefCell<HashSet<WindowId>>>,
-  /// Window requests sender
-  pub(crate) window_requests_tx: glib::Sender<(WindowId, WindowRequest)>,
-  /// Draw event sender
-  pub(crate) draw_tx: crossbeam_channel::Sender<WindowId>,
-  _marker: std::marker::PhantomData<T>,
+	/// Gdk display
+	pub(crate) display:gdk::Display,
+	/// Gtk application
+	pub(crate) app:gtk::Application,
+	/// Window Ids of the application
+	pub(crate) windows:Rc<RefCell<HashSet<WindowId>>>,
+	/// Window requests sender
+	pub(crate) window_requests_tx:glib::Sender<(WindowId, WindowRequest)>,
+	/// Draw event sender
+	pub(crate) draw_tx:crossbeam_channel::Sender<WindowId>,
+	_marker:std::marker::PhantomData<T>,
 }
 
 impl<T> EventLoopWindowTarget<T> {
-  #[inline]
-  pub fn monitor_from_point(&self, x: f64, y: f64) -> Option<MonitorHandle> {
-    monitor::from_point(&self.display, x, y)
-  }
-  #[inline]
-  pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
-    let mut handles = VecDeque::new();
-    let display = &self.display;
-    let numbers = display.n_monitors();
+	#[inline]
+	pub fn monitor_from_point(&self, x:f64, y:f64) -> Option<MonitorHandle> {
+		monitor::from_point(&self.display, x, y)
+	}
 
-    for i in 0..numbers {
-      let monitor = MonitorHandle::new(display, i);
-      handles.push_back(monitor);
-    }
+	#[inline]
+	pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
+		let mut handles = VecDeque::new();
+		let display = &self.display;
+		let numbers = display.n_monitors();
 
-    handles
-  }
+		for i in 0..numbers {
+			let monitor = MonitorHandle::new(display, i);
+			handles.push_back(monitor);
+		}
 
-  #[inline]
-  pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
-    let monitor = self.display.primary_monitor();
-    monitor.and_then(|monitor| {
-      let handle = MonitorHandle { monitor };
-      Some(RootMonitorHandle { inner: handle })
-    })
-  }
+		handles
+	}
 
-  #[cfg(feature = "rwh_05")]
-  pub fn raw_display_handle_rwh_05(&self) -> rwh_05::RawDisplayHandle {
-    if self.is_wayland() {
-      let mut display_handle = rwh_05::WaylandDisplayHandle::empty();
-      display_handle.display = unsafe {
-        gdk_wayland_sys::gdk_wayland_display_get_wl_display(self.display.as_ptr() as *mut _)
-      };
-      rwh_05::RawDisplayHandle::Wayland(display_handle)
-    } else {
-      let mut display_handle = rwh_05::XlibDisplayHandle::empty();
-      unsafe {
-        if let Ok(xlib) = x11_dl::xlib::Xlib::open() {
-          let display = (xlib.XOpenDisplay)(std::ptr::null());
-          display_handle.display = display as _;
-          display_handle.screen = (xlib.XDefaultScreen)(display) as _;
-        }
-      }
+	#[inline]
+	pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
+		let monitor = self.display.primary_monitor();
+		monitor.and_then(|monitor| {
+			let handle = MonitorHandle { monitor };
+			Some(RootMonitorHandle { inner:handle })
+		})
+	}
 
-      rwh_05::RawDisplayHandle::Xlib(display_handle)
-    }
-  }
+	#[cfg(feature = "rwh_05")]
+	pub fn raw_display_handle_rwh_05(&self) -> rwh_05::RawDisplayHandle {
+		if self.is_wayland() {
+			let mut display_handle = rwh_05::WaylandDisplayHandle::empty();
+			display_handle.display = unsafe {
+				gdk_wayland_sys::gdk_wayland_display_get_wl_display(
+					self.display.as_ptr() as *mut _,
+				)
+			};
+			rwh_05::RawDisplayHandle::Wayland(display_handle)
+		} else {
+			let mut display_handle = rwh_05::XlibDisplayHandle::empty();
+			unsafe {
+				if let Ok(xlib) = x11_dl::xlib::Xlib::open() {
+					let display = (xlib.XOpenDisplay)(std::ptr::null());
+					display_handle.display = display as _;
+					display_handle.screen = (xlib.XDefaultScreen)(display) as _;
+				}
+			}
 
-  #[cfg(feature = "rwh_06")]
-  pub fn raw_display_handle_rwh_06(&self) -> Result<rwh_06::RawDisplayHandle, rwh_06::HandleError> {
-    if self.is_wayland() {
-      let display = unsafe {
-        gdk_wayland_sys::gdk_wayland_display_get_wl_display(self.display.as_ptr() as *mut _)
-      };
-      let display = unsafe { std::ptr::NonNull::new_unchecked(display) };
-      let display_handle = rwh_06::WaylandDisplayHandle::new(display);
-      Ok(rwh_06::RawDisplayHandle::Wayland(display_handle))
-    } else {
-      unsafe {
-        if let Ok(xlib) = x11_dl::xlib::Xlib::open() {
-          let display = (xlib.XOpenDisplay)(std::ptr::null());
-          let screen = (xlib.XDefaultScreen)(display) as _;
-          let display = std::ptr::NonNull::new_unchecked(display as _);
-          let display_handle = rwh_06::XlibDisplayHandle::new(Some(display), screen);
-          Ok(rwh_06::RawDisplayHandle::Xlib(display_handle))
-        } else {
-          Err(rwh_06::HandleError::Unavailable)
-        }
-      }
-    }
-  }
+			rwh_05::RawDisplayHandle::Xlib(display_handle)
+		}
+	}
 
-  pub fn is_wayland(&self) -> bool {
-    self.display.backend().is_wayland()
-  }
+	#[cfg(feature = "rwh_06")]
+	pub fn raw_display_handle_rwh_06(
+		&self,
+	) -> Result<rwh_06::RawDisplayHandle, rwh_06::HandleError> {
+		if self.is_wayland() {
+			let display = unsafe {
+				gdk_wayland_sys::gdk_wayland_display_get_wl_display(
+					self.display.as_ptr() as *mut _,
+				)
+			};
+			let display = unsafe { std::ptr::NonNull::new_unchecked(display) };
+			let display_handle = rwh_06::WaylandDisplayHandle::new(display);
+			Ok(rwh_06::RawDisplayHandle::Wayland(display_handle))
+		} else {
+			unsafe {
+				if let Ok(xlib) = x11_dl::xlib::Xlib::open() {
+					let display = (xlib.XOpenDisplay)(std::ptr::null());
+					let screen = (xlib.XDefaultScreen)(display) as _;
+					let display =
+						std::ptr::NonNull::new_unchecked(display as _);
+					let display_handle =
+						rwh_06::XlibDisplayHandle::new(Some(display), screen);
+					Ok(rwh_06::RawDisplayHandle::Xlib(display_handle))
+				} else {
+					Err(rwh_06::HandleError::Unavailable)
+				}
+			}
+		}
+	}
 
-  pub fn is_x11(&self) -> bool {
-    self.display.backend().is_x11()
-  }
+	pub fn is_wayland(&self) -> bool { self.display.backend().is_wayland() }
 
-  #[inline]
-  pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, ExternalError> {
-    util::cursor_position(self.is_wayland())
-  }
+	pub fn is_x11(&self) -> bool { self.display.backend().is_x11() }
 
-  #[inline]
-  pub fn set_progress_bar(&self, progress: ProgressBarState) {
-    if let Err(e) = self
-      .window_requests_tx
-      .send((WindowId::dummy(), WindowRequest::ProgressBarState(progress)))
-    {
-      log::warn!("Fail to send update progress bar request: {e}");
-    }
-  }
+	#[inline]
+	pub fn cursor_position(
+		&self,
+	) -> Result<PhysicalPosition<f64>, ExternalError> {
+		util::cursor_position(self.is_wayland())
+	}
 
-  #[inline]
-  pub fn set_theme(&self, theme: Option<Theme>) {
-    if let Err(e) = self
-      .window_requests_tx
-      .send((WindowId::dummy(), WindowRequest::SetTheme(theme)))
-    {
-      log::warn!("Fail to send update theme request: {e}");
-    }
-  }
+	#[inline]
+	pub fn set_progress_bar(&self, progress:ProgressBarState) {
+		if let Err(e) = self.window_requests_tx.send((
+			WindowId::dummy(),
+			WindowRequest::ProgressBarState(progress),
+		)) {
+			log::warn!("Fail to send update progress bar request: {e}");
+		}
+	}
+
+	#[inline]
+	pub fn set_theme(&self, theme:Option<Theme>) {
+		if let Err(e) = self
+			.window_requests_tx
+			.send((WindowId::dummy(), WindowRequest::SetTheme(theme)))
+		{
+			log::warn!("Fail to send update theme request: {e}");
+		}
+	}
 }
 
-pub struct EventLoop<T: 'static> {
-  /// Window target.
-  window_target: RootELW<T>,
-  /// User event sender for EventLoopProxy
-  pub(crate) user_event_tx: crossbeam_channel::Sender<Event<'static, T>>,
-  /// Event queue of EventLoop
-  events: crossbeam_channel::Receiver<Event<'static, T>>,
-  /// Draw queue of EventLoop
-  draws: crossbeam_channel::Receiver<WindowId>,
-  /// Boolean to control device event thread
-  run_device_thread: Option<Rc<AtomicBool>>,
+pub struct EventLoop<T:'static> {
+	/// Window target.
+	window_target:RootELW<T>,
+	/// User event sender for EventLoopProxy
+	pub(crate) user_event_tx:crossbeam_channel::Sender<Event<'static, T>>,
+	/// Event queue of EventLoop
+	events:crossbeam_channel::Receiver<Event<'static, T>>,
+	/// Draw queue of EventLoop
+	draws:crossbeam_channel::Receiver<WindowId>,
+	/// Boolean to control device event thread
+	run_device_thread:Option<Rc<AtomicBool>>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct PlatformSpecificEventLoopAttributes {
-  pub(crate) any_thread: bool,
-  pub(crate) app_id: Option<String>,
+	pub(crate) any_thread:bool,
+	pub(crate) app_id:Option<String>,
 }
 
-impl<T: 'static> EventLoop<T> {
-  pub(crate) fn new(attrs: &PlatformSpecificEventLoopAttributes) -> EventLoop<T> {
-    if !attrs.any_thread {
-      assert_is_main_thread("new_any_thread");
-    }
+impl<T:'static> EventLoop<T> {
+	pub(crate) fn new(
+		attrs:&PlatformSpecificEventLoopAttributes,
+	) -> EventLoop<T> {
+		if !attrs.any_thread {
+			assert_is_main_thread("new_any_thread");
+		}
 
-    let context = MainContext::default();
-    context
-      .with_thread_default(|| {
-        EventLoop::new_gtk(attrs.app_id.as_deref()).expect("Failed to initialize gtk backend!")
-      })
-      .expect("Failed to initialize gtk backend!")
-  }
+		let context = MainContext::default();
+		context
+			.with_thread_default(|| {
+				EventLoop::new_gtk(attrs.app_id.as_deref())
+					.expect("Failed to initialize gtk backend!")
+			})
+			.expect("Failed to initialize gtk backend!")
+	}
 
-  fn new_gtk(app_id: Option<&str>) -> Result<EventLoop<T>, Box<dyn Error>> {
-    let context = MainContext::default();
-    let app = gtk::Application::new(app_id, gio::ApplicationFlags::empty());
-    let app_ = app.clone();
-    let cancellable: Option<&Cancellable> = None;
-    app.register(cancellable)?;
+	fn new_gtk(app_id:Option<&str>) -> Result<EventLoop<T>, Box<dyn Error>> {
+		let context = MainContext::default();
+		let app = gtk::Application::new(app_id, gio::ApplicationFlags::empty());
+		let app_ = app.clone();
+		let cancellable:Option<&Cancellable> = None;
+		app.register(cancellable)?;
 
-    // Send StartCause::Init event
-    let (event_tx, event_rx) = crossbeam_channel::unbounded();
-    let (draw_tx, draw_rx) = crossbeam_channel::unbounded();
-    let event_tx_ = event_tx.clone();
-    app.connect_activate(move |_| {
-      if let Err(e) = event_tx_.send(Event::NewEvents(StartCause::Init)) {
-        log::warn!("Failed to send init event to event channel: {}", e);
-      }
-    });
-    let draw_tx_ = draw_tx.clone();
-    let user_event_tx = event_tx.clone();
+		// Send StartCause::Init event
+		let (event_tx, event_rx) = crossbeam_channel::unbounded();
+		let (draw_tx, draw_rx) = crossbeam_channel::unbounded();
+		let event_tx_ = event_tx.clone();
+		app.connect_activate(move |_| {
+			if let Err(e) = event_tx_.send(Event::NewEvents(StartCause::Init)) {
+				log::warn!("Failed to send init event to event channel: {}", e);
+			}
+		});
+		let draw_tx_ = draw_tx.clone();
+		let user_event_tx = event_tx.clone();
 
-    // Create event loop window target.
-    let (window_requests_tx, window_requests_rx) = glib::MainContext::channel(Priority::default());
-    let display = gdk::Display::default()
-      .expect("GdkDisplay not found. This usually means `gkt_init` hasn't called yet.");
-    let window_target = EventLoopWindowTarget {
-      display,
-      app,
-      windows: Rc::new(RefCell::new(HashSet::new())),
-      window_requests_tx,
-      draw_tx: draw_tx_,
-      _marker: std::marker::PhantomData,
-    };
+		// Create event loop window target.
+		let (window_requests_tx, window_requests_rx) =
+			glib::MainContext::channel(Priority::default());
+		let display = gdk::Display::default().expect(
+			"GdkDisplay not found. This usually means `gkt_init` hasn't \
+			 called yet.",
+		);
+		let window_target = EventLoopWindowTarget {
+			display,
+			app,
+			windows:Rc::new(RefCell::new(HashSet::new())),
+			window_requests_tx,
+			draw_tx:draw_tx_,
+			_marker:std::marker::PhantomData,
+		};
 
-    // Spawn x11 thread to receive Device events.
-    let run_device_thread = if window_target.is_x11() {
-      let (device_tx, device_rx) = glib::MainContext::channel(glib::Priority::default());
-      let user_event_tx = user_event_tx.clone();
-      let run_device_thread = Rc::new(AtomicBool::new(true));
-      let run = run_device_thread.clone();
-      device::spawn(device_tx);
-      device_rx.attach(Some(&context), move |event| {
-        if let Err(e) = user_event_tx.send(Event::DeviceEvent {
-          device_id: DEVICE_ID,
-          event,
-        }) {
-          log::warn!("Fail to send device event to event channel: {}", e);
-        }
-        if run.load(Ordering::Relaxed) {
-          glib::ControlFlow::Continue
-        } else {
-          glib::ControlFlow::Break
-        }
-      });
-      Some(run_device_thread)
-    } else {
-      None
-    };
+		// Spawn x11 thread to receive Device events.
+		let run_device_thread = if window_target.is_x11() {
+			let (device_tx, device_rx) =
+				glib::MainContext::channel(glib::Priority::default());
+			let user_event_tx = user_event_tx.clone();
+			let run_device_thread = Rc::new(AtomicBool::new(true));
+			let run = run_device_thread.clone();
+			device::spawn(device_tx);
+			device_rx.attach(Some(&context), move |event| {
+				if let Err(e) = user_event_tx
+					.send(Event::DeviceEvent { device_id:DEVICE_ID, event })
+				{
+					log::warn!(
+						"Fail to send device event to event channel: {}",
+						e
+					);
+				}
+				if run.load(Ordering::Relaxed) {
+					glib::ControlFlow::Continue
+				} else {
+					glib::ControlFlow::Break
+				}
+			});
+			Some(run_device_thread)
+		} else {
+			None
+		};
 
-    let mut taskbar = TaskbarIndicator::new();
-    let is_wayland = window_target.is_wayland();
+		let mut taskbar = TaskbarIndicator::new();
+		let is_wayland = window_target.is_wayland();
 
-    // Window Request
-    window_requests_rx.attach(Some(&context), move |(id, request)| {
+		// Window Request
+		window_requests_rx.attach(Some(&context), move |(id, request)| {
       if let Some(window) = app_.window_by_id(id.0) {
         match request {
           WindowRequest::Title(title) => window.set_title(&title),
@@ -889,109 +929,122 @@ impl<T: 'static> EventLoop<T> {
       glib::ControlFlow::Continue
     });
 
-    // Create event loop itself.
-    let event_loop = Self {
-      window_target: RootELW {
-        p: window_target,
-        _marker: std::marker::PhantomData,
-      },
-      user_event_tx,
-      events: event_rx,
-      draws: draw_rx,
-      run_device_thread,
-    };
+		// Create event loop itself.
+		let event_loop = Self {
+			window_target:RootELW {
+				p:window_target,
+				_marker:std::marker::PhantomData,
+			},
+			user_event_tx,
+			events:event_rx,
+			draws:draw_rx,
+			run_device_thread,
+		};
 
-    Ok(event_loop)
-  }
+		Ok(event_loop)
+	}
 
-  #[inline]
-  pub fn run<F>(mut self, callback: F) -> !
-  where
-    F: FnMut(Event<'_, T>, &RootELW<T>, &mut ControlFlow) + 'static,
-  {
-    let exit_code = self.run_return(callback);
-    process::exit(exit_code)
-  }
+	#[inline]
+	pub fn run<F>(mut self, callback:F) -> !
+	where
+		F: FnMut(Event<'_, T>, &RootELW<T>, &mut ControlFlow) + 'static, {
+		let exit_code = self.run_return(callback);
+		process::exit(exit_code)
+	}
 
-  /// This is the core event loop logic. It basically loops on `gtk_main_iteration` and processes one
-  /// event along with that iteration. Depends on current control flow and what it should do, an
-  /// event state is defined. The whole state flow chart runs like following:
-  ///
-  /// ```ignore
-  ///                                   Poll/Wait/WaitUntil
-  ///       +-------------------------------------------------------------------------+
-  ///       |                                                                         |
-  ///       |                   Receiving event from event channel                    |   Receiving event from draw channel
-  ///       |                               +-------+                                 |   +---+
-  ///       v                               v       |                                 |   v   |
-  /// +----------+  Poll/Wait/WaitUntil   +------------+  Poll/Wait/WaitUntil   +-----------+ |
-  /// | NewStart | ---------------------> | EventQueue | ---------------------> | DrawQueue | |
-  /// +----------+                        +------------+                        +-----------+ |
-  ///       |ExitWithCode                        |ExitWithCode            ExitWithCode|   |   |
-  ///       +------------------------------------+------------------------------------+   +---+
-  ///                                            |
-  ///                                            v
-  ///                                    +---------------+
-  ///                                    | LoopDestroyed |
-  ///                                    +---------------+
-  /// ```
-  ///
-  /// There are a dew notibale event will sent to callback when state is transisted:
-  /// - On any state moves to `LoopDestroyed`, a `LoopDestroyed` event is sent.
-  /// - On `NewStart` to `EventQueue`, a `NewEvents` with corresponding `StartCause` depends on
-  /// current control flow is sent.
-  /// - On `EventQueue` to `DrawQueue`, a `MainEventsCleared` event is sent.
-  /// - On `DrawQueue` back to `NewStart`, a `RedrawEventsCleared` event is sent.
-  pub(crate) fn run_return<F>(&mut self, mut callback: F) -> i32
-  where
-    F: FnMut(Event<'_, T>, &RootELW<T>, &mut ControlFlow),
-  {
-    enum EventState {
-      NewStart,
-      EventQueue,
-      DrawQueue,
-    }
+	/// This is the core event loop logic. It basically loops on
+	/// `gtk_main_iteration` and processes one event along with that iteration.
+	/// Depends on current control flow and what it should do, an event state
+	/// is defined. The whole state flow chart runs like following:
+	///
+	/// ```ignore
+	///                                   Poll/Wait/WaitUntil
+	///       +-------------------------------------------------------------------------+
+	///       |                                                                         |
+	///       |                   Receiving event from event channel                    |   Receiving event from draw channel
+	///       |                               +-------+                                 |   +---+
+	///       v                               v       |                                 |   v   |
+	/// +----------+  Poll/Wait/WaitUntil   +------------+  Poll/Wait/WaitUntil   +-----------+ |
+	/// | NewStart | ---------------------> | EventQueue | ---------------------> | DrawQueue | |
+	/// +----------+                        +------------+                        +-----------+ |
+	///       |ExitWithCode                        |ExitWithCode            ExitWithCode|   |   |
+	///       +------------------------------------+------------------------------------+   +---+
+	///                                            |
+	///                                            v
+	///                                    +---------------+
+	///                                    | LoopDestroyed |
+	///                                    +---------------+
+	/// ```
+	///
+	/// There are a dew notibale event will sent to callback when state is
+	/// transisted:
+	/// - On any state moves to `LoopDestroyed`, a `LoopDestroyed` event is
+	///   sent.
+	/// - On `NewStart` to `EventQueue`, a `NewEvents` with corresponding
+	///   `StartCause` depends on
+	/// current control flow is sent.
+	/// - On `EventQueue` to `DrawQueue`, a `MainEventsCleared` event is sent.
+	/// - On `DrawQueue` back to `NewStart`, a `RedrawEventsCleared` event is
+	///   sent.
+	pub(crate) fn run_return<F>(&mut self, mut callback:F) -> i32
+	where
+		F: FnMut(Event<'_, T>, &RootELW<T>, &mut ControlFlow), {
+		enum EventState {
+			NewStart,
+			EventQueue,
+			DrawQueue,
+		}
 
-    let context = MainContext::default();
-    let run_device_thread = self.run_device_thread.clone();
+		let context = MainContext::default();
+		let run_device_thread = self.run_device_thread.clone();
 
-    context
-      .with_thread_default(|| {
-        let mut control_flow = ControlFlow::default();
-        let window_target = &self.window_target;
-        let events = &self.events;
-        let draws = &self.draws;
+		context
+			.with_thread_default(|| {
+				let mut control_flow = ControlFlow::default();
+				let window_target = &self.window_target;
+				let events = &self.events;
+				let draws = &self.draws;
 
-        window_target.p.app.activate();
+				window_target.p.app.activate();
 
-        let mut state = EventState::NewStart;
-        let exit_code = loop {
-          let mut blocking = false;
-          match state {
-            EventState::NewStart => match control_flow {
-              ControlFlow::ExitWithCode(code) => {
-                callback(Event::LoopDestroyed, window_target, &mut control_flow);
-                break code;
-              }
-              ControlFlow::Wait => {
-                if !events.is_empty() {
-                  callback(
-                    Event::NewEvents(StartCause::WaitCancelled {
-                      start: Instant::now(),
-                      requested_resume: None,
-                    }),
-                    window_target,
-                    &mut control_flow,
-                  );
-                  state = EventState::EventQueue;
-                } else {
-                  blocking = true;
-                }
-              }
-              ControlFlow::WaitUntil(requested_resume) => {
-                let start = Instant::now();
-                if start >= requested_resume {
-                  callback(
+				let mut state = EventState::NewStart;
+				let exit_code =
+					loop {
+						let mut blocking = false;
+						match state {
+							EventState::NewStart => {
+								match control_flow {
+									ControlFlow::ExitWithCode(code) => {
+										callback(
+											Event::LoopDestroyed,
+											window_target,
+											&mut control_flow,
+										);
+										break code;
+									},
+									ControlFlow::Wait => {
+										if !events.is_empty() {
+											callback(
+												Event::NewEvents(
+													StartCause::WaitCancelled {
+														start:Instant::now(),
+														requested_resume:None,
+													},
+												),
+												window_target,
+												&mut control_flow,
+											);
+											state = EventState::EventQueue;
+										} else {
+											blocking = true;
+										}
+									},
+									ControlFlow::WaitUntil(
+										requested_resume,
+									) => {
+										let start = Instant::now();
+										if start >= requested_resume {
+											callback(
                     Event::NewEvents(StartCause::ResumeTimeReached {
                       start,
                       requested_resume,
@@ -999,221 +1052,254 @@ impl<T: 'static> EventLoop<T> {
                     window_target,
                     &mut control_flow,
                   );
-                  state = EventState::EventQueue;
-                } else if !events.is_empty() {
-                  callback(
-                    Event::NewEvents(StartCause::WaitCancelled {
-                      start,
-                      requested_resume: Some(requested_resume),
-                    }),
-                    window_target,
-                    &mut control_flow,
-                  );
-                  state = EventState::EventQueue;
-                } else {
-                  blocking = true;
-                }
-              }
-              _ => {
-                callback(
-                  Event::NewEvents(StartCause::Poll),
-                  window_target,
-                  &mut control_flow,
-                );
-                state = EventState::EventQueue;
-              }
-            },
-            EventState::EventQueue => match control_flow {
-              ControlFlow::ExitWithCode(code) => {
-                callback(Event::LoopDestroyed, window_target, &mut control_flow);
-                break (code);
-              }
-              _ => match events.try_recv() {
-                Ok(event) => match event {
-                  Event::LoopDestroyed => control_flow = ControlFlow::ExitWithCode(1),
-                  _ => callback(event, window_target, &mut control_flow),
-                },
-                Err(_) => {
-                  callback(Event::MainEventsCleared, window_target, &mut control_flow);
-                  state = EventState::DrawQueue;
-                }
-              },
-            },
-            EventState::DrawQueue => match control_flow {
-              ControlFlow::ExitWithCode(code) => {
-                callback(Event::LoopDestroyed, window_target, &mut control_flow);
-                break code;
-              }
-              _ => {
-                if let Ok(id) = draws.try_recv() {
-                  callback(
-                    Event::RedrawRequested(RootWindowId(id)),
-                    window_target,
-                    &mut control_flow,
-                  );
-                }
-                callback(Event::RedrawEventsCleared, window_target, &mut control_flow);
-                state = EventState::NewStart;
-              }
-            },
-          }
-          gtk::main_iteration_do(blocking);
-        };
-        if let Some(run_device_thread) = run_device_thread {
-          run_device_thread.store(false, Ordering::Relaxed);
-        }
-        exit_code
-      })
-      .unwrap_or(1)
-  }
+											state = EventState::EventQueue;
+										} else if !events.is_empty() {
+											callback(
+												Event::NewEvents(
+													StartCause::WaitCancelled {
+														start,
+														requested_resume:Some(
+															requested_resume,
+														),
+													},
+												),
+												window_target,
+												&mut control_flow,
+											);
+											state = EventState::EventQueue;
+										} else {
+											blocking = true;
+										}
+									},
+									_ => {
+										callback(
+											Event::NewEvents(StartCause::Poll),
+											window_target,
+											&mut control_flow,
+										);
+										state = EventState::EventQueue;
+									},
+								}
+							},
+							EventState::EventQueue => {
+								match control_flow {
+									ControlFlow::ExitWithCode(code) => {
+										callback(
+											Event::LoopDestroyed,
+											window_target,
+											&mut control_flow,
+										);
+										break (code);
+									},
+									_ => match events.try_recv() {
+										Ok(event) => match event {
+											Event::LoopDestroyed => {
+												control_flow =
+													ControlFlow::ExitWithCode(1)
+											},
+											_ => {
+												callback(
+													event,
+													window_target,
+													&mut control_flow,
+												)
+											},
+										},
+										Err(_) => {
+											callback(
+												Event::MainEventsCleared,
+												window_target,
+												&mut control_flow,
+											);
+											state = EventState::DrawQueue;
+										},
+									},
+								}
+							},
+							EventState::DrawQueue => {
+								match control_flow {
+									ControlFlow::ExitWithCode(code) => {
+										callback(
+											Event::LoopDestroyed,
+											window_target,
+											&mut control_flow,
+										);
+										break code;
+									},
+									_ => {
+										if let Ok(id) = draws.try_recv() {
+											callback(
+												Event::RedrawRequested(
+													RootWindowId(id),
+												),
+												window_target,
+												&mut control_flow,
+											);
+										}
+										callback(
+											Event::RedrawEventsCleared,
+											window_target,
+											&mut control_flow,
+										);
+										state = EventState::NewStart;
+									},
+								}
+							},
+						}
+						gtk::main_iteration_do(blocking);
+					};
+				if let Some(run_device_thread) = run_device_thread {
+					run_device_thread.store(false, Ordering::Relaxed);
+				}
+				exit_code
+			})
+			.unwrap_or(1)
+	}
 
-  #[inline]
-  pub fn window_target(&self) -> &RootELW<T> {
-    &self.window_target
-  }
+	#[inline]
+	pub fn window_target(&self) -> &RootELW<T> { &self.window_target }
 
-  /// Creates an `EventLoopProxy` that can be used to dispatch user events to the main event loop.
-  pub fn create_proxy(&self) -> EventLoopProxy<T> {
-    EventLoopProxy {
-      user_event_tx: self.user_event_tx.clone(),
-    }
-  }
+	/// Creates an `EventLoopProxy` that can be used to dispatch user events to
+	/// the main event loop.
+	pub fn create_proxy(&self) -> EventLoopProxy<T> {
+		EventLoopProxy { user_event_tx:self.user_event_tx.clone() }
+	}
 }
 
 /// Used to send custom events to `EventLoop`.
 #[derive(Debug)]
-pub struct EventLoopProxy<T: 'static> {
-  user_event_tx: crossbeam_channel::Sender<Event<'static, T>>,
+pub struct EventLoopProxy<T:'static> {
+	user_event_tx:crossbeam_channel::Sender<Event<'static, T>>,
 }
 
-impl<T: 'static> Clone for EventLoopProxy<T> {
-  fn clone(&self) -> Self {
-    Self {
-      user_event_tx: self.user_event_tx.clone(),
-    }
-  }
+impl<T:'static> Clone for EventLoopProxy<T> {
+	fn clone(&self) -> Self {
+		Self { user_event_tx:self.user_event_tx.clone() }
+	}
 }
 
-impl<T: 'static> EventLoopProxy<T> {
-  /// Send an event to the `EventLoop` from which this proxy was created. This emits a
-  /// `UserEvent(event)` event in the event loop, where `event` is the value passed to this
-  /// function.
-  ///
-  /// Returns an `Err` if the associated `EventLoop` no longer exists.
-  pub fn send_event(&self, event: T) -> Result<(), EventLoopClosed<T>> {
-    self
-      .user_event_tx
-      .send(Event::UserEvent(event))
-      .map_err(|SendError(event)| {
-        if let Event::UserEvent(error) = event {
-          EventLoopClosed(error)
-        } else {
-          unreachable!();
-        }
-      })?;
+impl<T:'static> EventLoopProxy<T> {
+	/// Send an event to the `EventLoop` from which this proxy was created. This
+	/// emits a `UserEvent(event)` event in the event loop, where `event` is
+	/// the value passed to this function.
+	///
+	/// Returns an `Err` if the associated `EventLoop` no longer exists.
+	pub fn send_event(&self, event:T) -> Result<(), EventLoopClosed<T>> {
+		self.user_event_tx.send(Event::UserEvent(event)).map_err(
+			|SendError(event)| {
+				if let Event::UserEvent(error) = event {
+					EventLoopClosed(error)
+				} else {
+					unreachable!();
+				}
+			},
+		)?;
 
-    let context = MainContext::default();
-    context.wakeup();
+		let context = MainContext::default();
+		context.wakeup();
 
-    Ok(())
-  }
+		Ok(())
+	}
 }
 
-fn assert_is_main_thread(suggested_method: &str) {
-  assert!(
-    is_main_thread(),
-    "Initializing the event loop outside of the main thread is a significant \
-             cross-platform compatibility hazard. If you really, absolutely need to create an \
-             EventLoop on a different thread, please use the `EventLoopExtUnix::{}` function.",
-    suggested_method
-  );
+fn assert_is_main_thread(suggested_method:&str) {
+	assert!(
+		is_main_thread(),
+		"Initializing the event loop outside of the main thread is a \
+		 significant cross-platform compatibility hazard. If you really, \
+		 absolutely need to create an EventLoop on a different thread, please \
+		 use the `EventLoopExtUnix::{}` function.",
+		suggested_method
+	);
 }
 
 #[cfg(target_os = "linux")]
 fn is_main_thread() -> bool {
-  use libc::{c_long, getpid, syscall, SYS_gettid};
+	use libc::{c_long, getpid, syscall, SYS_gettid};
 
-  unsafe { syscall(SYS_gettid) == getpid() as c_long }
+	unsafe { syscall(SYS_gettid) == getpid() as c_long }
 }
 
-#[cfg(any(target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd"))]
+#[cfg(any(
+	target_os = "dragonfly",
+	target_os = "freebsd",
+	target_os = "openbsd"
+))]
 fn is_main_thread() -> bool {
-  use libc::pthread_main_np;
+	use libc::pthread_main_np;
 
-  unsafe { pthread_main_np() == 1 }
+	unsafe { pthread_main_np() == 1 }
 }
 
 #[cfg(target_os = "netbsd")]
-fn is_main_thread() -> bool {
-  std::thread::current().name() == Some("main")
-}
+fn is_main_thread() -> bool { std::thread::current().name() == Some("main") }
 
 impl CursorIcon {
-  fn to_str(&self) -> &str {
-    match self {
-      CursorIcon::Crosshair => "crosshair",
-      CursorIcon::Hand => "pointer",
-      CursorIcon::Arrow => "arrow",
-      CursorIcon::Move => "move",
-      CursorIcon::Text => "text",
-      CursorIcon::Wait => "wait",
-      CursorIcon::Help => "help",
-      CursorIcon::Progress => "progress",
-      CursorIcon::NotAllowed => "not-allowed",
-      CursorIcon::ContextMenu => "context-menu",
-      CursorIcon::Cell => "cell",
-      CursorIcon::VerticalText => "vertical-text",
-      CursorIcon::Alias => "alias",
-      CursorIcon::Copy => "copy",
-      CursorIcon::NoDrop => "no-drop",
-      CursorIcon::Grab => "grab",
-      CursorIcon::Grabbing => "grabbing",
-      CursorIcon::AllScroll => "all-scroll",
-      CursorIcon::ZoomIn => "zoom-in",
-      CursorIcon::ZoomOut => "zoom-out",
-      CursorIcon::EResize => "e-resize",
-      CursorIcon::NResize => "n-resize",
-      CursorIcon::NeResize => "ne-resize",
-      CursorIcon::NwResize => "nw-resize",
-      CursorIcon::SResize => "s-resize",
-      CursorIcon::SeResize => "se-resize",
-      CursorIcon::SwResize => "sw-resize",
-      CursorIcon::WResize => "w-resize",
-      CursorIcon::EwResize => "ew-resize",
-      CursorIcon::NsResize => "ns-resize",
-      CursorIcon::NeswResize => "nesw-resize",
-      CursorIcon::NwseResize => "nwse-resize",
-      CursorIcon::ColResize => "col-resize",
-      CursorIcon::RowResize => "row-resize",
-      CursorIcon::Default => "default",
-    }
-  }
+	fn to_str(&self) -> &str {
+		match self {
+			CursorIcon::Crosshair => "crosshair",
+			CursorIcon::Hand => "pointer",
+			CursorIcon::Arrow => "arrow",
+			CursorIcon::Move => "move",
+			CursorIcon::Text => "text",
+			CursorIcon::Wait => "wait",
+			CursorIcon::Help => "help",
+			CursorIcon::Progress => "progress",
+			CursorIcon::NotAllowed => "not-allowed",
+			CursorIcon::ContextMenu => "context-menu",
+			CursorIcon::Cell => "cell",
+			CursorIcon::VerticalText => "vertical-text",
+			CursorIcon::Alias => "alias",
+			CursorIcon::Copy => "copy",
+			CursorIcon::NoDrop => "no-drop",
+			CursorIcon::Grab => "grab",
+			CursorIcon::Grabbing => "grabbing",
+			CursorIcon::AllScroll => "all-scroll",
+			CursorIcon::ZoomIn => "zoom-in",
+			CursorIcon::ZoomOut => "zoom-out",
+			CursorIcon::EResize => "e-resize",
+			CursorIcon::NResize => "n-resize",
+			CursorIcon::NeResize => "ne-resize",
+			CursorIcon::NwResize => "nw-resize",
+			CursorIcon::SResize => "s-resize",
+			CursorIcon::SeResize => "se-resize",
+			CursorIcon::SwResize => "sw-resize",
+			CursorIcon::WResize => "w-resize",
+			CursorIcon::EwResize => "ew-resize",
+			CursorIcon::NsResize => "ns-resize",
+			CursorIcon::NeswResize => "nesw-resize",
+			CursorIcon::NwseResize => "nwse-resize",
+			CursorIcon::ColResize => "col-resize",
+			CursorIcon::RowResize => "row-resize",
+			CursorIcon::Default => "default",
+		}
+	}
 }
 
 impl ResizeDirection {
-  fn to_cursor_str(&self) -> &str {
-    match self {
-      ResizeDirection::East => "e-resize",
-      ResizeDirection::North => "n-resize",
-      ResizeDirection::NorthEast => "ne-resize",
-      ResizeDirection::NorthWest => "nw-resize",
-      ResizeDirection::South => "s-resize",
-      ResizeDirection::SouthEast => "se-resize",
-      ResizeDirection::SouthWest => "sw-resize",
-      ResizeDirection::West => "w-resize",
-    }
-  }
+	fn to_cursor_str(&self) -> &str {
+		match self {
+			ResizeDirection::East => "e-resize",
+			ResizeDirection::North => "n-resize",
+			ResizeDirection::NorthEast => "ne-resize",
+			ResizeDirection::NorthWest => "nw-resize",
+			ResizeDirection::South => "s-resize",
+			ResizeDirection::SouthEast => "se-resize",
+			ResizeDirection::SouthWest => "sw-resize",
+			ResizeDirection::West => "w-resize",
+		}
+	}
 
-  fn to_gtk_edge(&self) -> WindowEdge {
-    match self {
-      ResizeDirection::East => WindowEdge::East,
-      ResizeDirection::North => WindowEdge::North,
-      ResizeDirection::NorthEast => WindowEdge::NorthEast,
-      ResizeDirection::NorthWest => WindowEdge::NorthWest,
-      ResizeDirection::South => WindowEdge::South,
-      ResizeDirection::SouthEast => WindowEdge::SouthEast,
-      ResizeDirection::SouthWest => WindowEdge::SouthWest,
-      ResizeDirection::West => WindowEdge::West,
-    }
-  }
+	fn to_gtk_edge(&self) -> WindowEdge {
+		match self {
+			ResizeDirection::East => WindowEdge::East,
+			ResizeDirection::North => WindowEdge::North,
+			ResizeDirection::NorthEast => WindowEdge::NorthEast,
+			ResizeDirection::NorthWest => WindowEdge::NorthWest,
+			ResizeDirection::South => WindowEdge::South,
+			ResizeDirection::SouthEast => WindowEdge::SouthEast,
+			ResizeDirection::SouthWest => WindowEdge::SouthWest,
+			ResizeDirection::West => WindowEdge::West,
+		}
+	}
 }

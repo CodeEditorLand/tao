@@ -4,65 +4,78 @@
 
 #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 fn main() {
-  use std::collections::HashMap;
-  #[cfg(target_os = "macos")]
-  use tao::platform::macos::{WindowBuilderExtMacOS, WindowExtMacOS};
-  #[cfg(target_os = "linux")]
-  use tao::platform::unix::{WindowBuilderExtUnix, WindowExtUnix};
-  #[cfg(target_os = "windows")]
-  use tao::platform::windows::{WindowBuilderExtWindows, WindowExtWindows};
-  use tao::{
-    dpi::LogicalSize,
-    event::{Event, StartCause, WindowEvent},
-    event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
-  };
-  env_logger::init();
-  let event_loop = EventLoop::new();
-  let mut windows = HashMap::new();
-  let main_window = WindowBuilder::new().build(&event_loop).unwrap();
+	use std::collections::HashMap;
 
-  #[cfg(target_os = "macos")]
-  let parent_window = main_window.ns_window();
-  #[cfg(target_os = "windows")]
-  let parent_window = main_window.hwnd();
-  #[cfg(target_os = "linux")]
-  let parent_window = main_window.gtk_window();
+	#[cfg(target_os = "macos")]
+	use tao::platform::macos::{WindowBuilderExtMacOS, WindowExtMacOS};
+	#[cfg(target_os = "linux")]
+	use tao::platform::unix::{WindowBuilderExtUnix, WindowExtUnix};
+	#[cfg(target_os = "windows")]
+	use tao::platform::windows::{WindowBuilderExtWindows, WindowExtWindows};
+	use tao::{
+		dpi::LogicalSize,
+		event::{Event, StartCause, WindowEvent},
+		event_loop::{ControlFlow, EventLoop},
+		window::WindowBuilder,
+	};
+	env_logger::init();
+	let event_loop = EventLoop::new();
+	let mut windows = HashMap::new();
+	let main_window = WindowBuilder::new().build(&event_loop).unwrap();
 
-  let child_window_builder = WindowBuilder::new().with_inner_size(LogicalSize::new(200, 200));
+	#[cfg(target_os = "macos")]
+	let parent_window = main_window.ns_window();
+	#[cfg(target_os = "windows")]
+	let parent_window = main_window.hwnd();
+	#[cfg(target_os = "linux")]
+	let parent_window = main_window.gtk_window();
 
-  #[cfg(any(target_os = "windows", target_os = "macos"))]
-  let child_window_builder = child_window_builder.with_parent_window(parent_window.clone());
+	let child_window_builder =
+		WindowBuilder::new().with_inner_size(LogicalSize::new(200, 200));
 
-  #[cfg(target_os = "linux")]
-  let child_window_builder = child_window_builder.with_transient_for(parent_window);
+	#[cfg(any(target_os = "windows", target_os = "macos"))]
+	let child_window_builder =
+		child_window_builder.with_parent_window(parent_window.clone());
 
-  let child_window = child_window_builder.build(&event_loop).unwrap();
+	#[cfg(target_os = "linux")]
+	let child_window_builder =
+		child_window_builder.with_transient_for(parent_window);
 
-  windows.insert(child_window.id(), child_window);
-  windows.insert(main_window.id(), main_window);
+	let child_window = child_window_builder.build(&event_loop).unwrap();
 
-  event_loop.run(move |event, _, control_flow| {
-    *control_flow = ControlFlow::Wait;
+	windows.insert(child_window.id(), child_window);
+	windows.insert(main_window.id(), main_window);
 
-    match event {
-      Event::NewEvents(StartCause::Init) => println!("TAO application started!"),
-      Event::WindowEvent {
-        event, window_id, ..
-      } if event == WindowEvent::CloseRequested => {
-        println!("Window {:?} has received the signal to close", window_id);
-        // This drop the window, causing it to close.
-        windows.remove(&window_id);
-        if windows.is_empty() {
-          *control_flow = ControlFlow::Exit;
-        }
-      }
-      _ => (),
-    };
-  })
+	event_loop.run(move |event, _, control_flow| {
+		*control_flow = ControlFlow::Wait;
+
+		match event {
+			Event::NewEvents(StartCause::Init) => {
+				println!("TAO application started!")
+			},
+			Event::WindowEvent { event, window_id, .. }
+				if event == WindowEvent::CloseRequested =>
+			{
+				println!(
+					"Window {:?} has received the signal to close",
+					window_id
+				);
+				// This drop the window, causing it to close.
+				windows.remove(&window_id);
+				if windows.is_empty() {
+					*control_flow = ControlFlow::Exit;
+				}
+			},
+			_ => (),
+		};
+	})
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+#[cfg(not(any(
+	target_os = "windows",
+	target_os = "macos",
+	target_os = "linux"
+)))]
 fn main() {
-  println!("This platform doesn't have the parent window support.");
+	println!("This platform doesn't have the parent window support.");
 }

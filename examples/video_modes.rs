@@ -6,19 +6,19 @@ use tao::event_loop::EventLoop;
 
 #[allow(clippy::single_match)]
 fn main() {
-  env_logger::init();
-  let event_loop = EventLoop::new();
-  let monitor = match event_loop.primary_monitor() {
-    Some(monitor) => monitor,
-    None => {
-      println!("No primary monitor detected.");
-      return;
-    }
-  };
+	env_logger::init();
+	let event_loop = EventLoop::new();
+	let monitor = match event_loop.primary_monitor() {
+		Some(monitor) => monitor,
+		None => {
+			println!("No primary monitor detected.");
+			return;
+		},
+	};
 
-  println!("Listing available video modes:");
+	println!("Listing available video modes:");
 
-  for mode in monitor.video_modes() {
-    println!("{}", mode);
-  }
+	for mode in monitor.video_modes() {
+		println!("{}", mode);
+	}
 }

@@ -5,15 +5,17 @@
 #![cfg(target_os = "android")]
 
 pub mod prelude {
-  pub use crate::platform_impl::ndk_glue::*;
-  pub use tao_macros::{android_fn, generate_package_name};
+	pub use tao_macros::{android_fn, generate_package_name};
+
+	pub use crate::platform_impl::ndk_glue::*;
 }
-use crate::platform_impl::ndk_glue::Rect;
-use crate::{
-  event_loop::{EventLoop, EventLoopWindowTarget},
-  window::{Window, WindowBuilder},
-};
 use ndk::configuration::Configuration;
+
+use crate::{
+	event_loop::{EventLoop, EventLoopWindowTarget},
+	platform_impl::ndk_glue::Rect,
+	window::{Window, WindowBuilder},
+};
 
 /// Additional methods on `EventLoop` that are specific to Android.
 pub trait EventLoopExtAndroid {}
@@ -25,19 +27,15 @@ pub trait EventLoopWindowTargetExtAndroid {}
 
 /// Additional methods on `Window` that are specific to Android.
 pub trait WindowExtAndroid {
-  fn content_rect(&self) -> Rect;
+	fn content_rect(&self) -> Rect;
 
-  fn config(&self) -> Configuration;
+	fn config(&self) -> Configuration;
 }
 
 impl WindowExtAndroid for Window {
-  fn content_rect(&self) -> Rect {
-    self.window.content_rect()
-  }
+	fn content_rect(&self) -> Rect { self.window.content_rect() }
 
-  fn config(&self) -> Configuration {
-    self.window.config()
-  }
+	fn config(&self) -> Configuration { self.window.config() }
 }
 
 impl<T> EventLoopWindowTargetExtAndroid for EventLoopWindowTarget<T> {}
