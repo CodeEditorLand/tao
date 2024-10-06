@@ -37,9 +37,9 @@ fn main() {
 					cursor_idx = 0;
 				}
 			},
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested, ..
-			} => *control_flow = ControlFlow::Exit,
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+				*control_flow = ControlFlow::Exit
+			},
 			_ => (),
 		}
 	});

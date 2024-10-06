@@ -85,9 +85,7 @@ pub trait WindowExtUnix {
 impl WindowExtUnix for Window {
 	fn gtk_window(&self) -> &gtk::ApplicationWindow { &self.window.window }
 
-	fn default_vbox(&self) -> Option<&gtk::Box> {
-		self.window.default_vbox.as_ref()
-	}
+	fn default_vbox(&self) -> Option<&gtk::Box> { self.window.default_vbox.as_ref() }
 
 	fn set_skip_taskbar(&self, skip:bool) -> Result<(), ExternalError> {
 		self.window.set_skip_taskbar(skip)
@@ -97,10 +95,7 @@ impl WindowExtUnix for Window {
 		event_loop_window_target:&EventLoopWindowTarget<T>,
 		window:gtk::ApplicationWindow,
 	) -> Result<Window, OsError> {
-		let window = UnixWindow::new_from_gtk_window(
-			&event_loop_window_target.p,
-			window,
-		)?;
+		let window = UnixWindow::new_from_gtk_window(&event_loop_window_target.p, window)?;
 		Ok(Window { window })
 	}
 }
@@ -110,10 +105,7 @@ pub trait WindowBuilderExtUnix {
 	fn with_skip_taskbar(self, skip:bool) -> WindowBuilder;
 	/// Set this window as a transient dialog for `parent`
 	/// <https://gtk-rs.org/gtk3-rs/stable/latest/docs/gdk/struct.Window.html#method.set_transient_for>
-	fn with_transient_for(
-		self,
-		parent:&impl gtk::glib::IsA<gtk::Window>,
-	) -> WindowBuilder;
+	fn with_transient_for(self, parent:&impl gtk::glib::IsA<gtk::Window>) -> WindowBuilder;
 
 	/// Whether to enable or disable the internal draw for transparent window.
 	///
@@ -162,13 +154,9 @@ impl WindowBuilderExtUnix for WindowBuilder {
 		self
 	}
 
-	fn with_transient_for(
-		mut self,
-		parent:&impl gtk::glib::IsA<gtk::Window>,
-	) -> WindowBuilder {
+	fn with_transient_for(mut self, parent:&impl gtk::glib::IsA<gtk::Window>) -> WindowBuilder {
 		use gtk::glib::Cast;
-		self.platform_specific.parent =
-			Parent::ChildOf(parent.clone().upcast());
+		self.platform_specific.parent = Parent::ChildOf(parent.clone().upcast());
 		self
 	}
 

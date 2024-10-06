@@ -21,9 +21,7 @@ impl MonitorHandle {
 	}
 
 	#[inline]
-	pub fn name(&self) -> Option<String> {
-		self.monitor.model().map(|s| s.as_str().to_string())
-	}
+	pub fn name(&self) -> Option<String> { self.monitor.model().map(|s| s.as_str().to_string()) }
 
 	#[inline]
 	pub fn size(&self) -> PhysicalSize<u32> {
@@ -35,8 +33,7 @@ impl MonitorHandle {
 	#[inline]
 	pub fn position(&self) -> PhysicalPosition<i32> {
 		let rect = self.monitor.geometry();
-		LogicalPosition { x:rect.x(), y:rect.y() }
-			.to_physical(self.scale_factor())
+		LogicalPosition { x:rect.x(), y:rect.y() }.to_physical(self.scale_factor())
 	}
 
 	#[inline]
@@ -56,24 +53,16 @@ pub struct VideoMode;
 
 impl VideoMode {
 	#[inline]
-	pub fn size(&self) -> PhysicalSize<u32> {
-		panic!("VideoMode is unsupported on Linux.")
-	}
+	pub fn size(&self) -> PhysicalSize<u32> { panic!("VideoMode is unsupported on Linux.") }
 
 	#[inline]
-	pub fn bit_depth(&self) -> u16 {
-		panic!("VideoMode is unsupported on Linux.")
-	}
+	pub fn bit_depth(&self) -> u16 { panic!("VideoMode is unsupported on Linux.") }
 
 	#[inline]
-	pub fn refresh_rate(&self) -> u16 {
-		panic!("VideoMode is unsupported on Linux.")
-	}
+	pub fn refresh_rate(&self) -> u16 { panic!("VideoMode is unsupported on Linux.") }
 
 	#[inline]
-	pub fn monitor(&self) -> RootMonitorHandle {
-		panic!("VideoMode is unsupported on Linux.")
-	}
+	pub fn monitor(&self) -> RootMonitorHandle { panic!("VideoMode is unsupported on Linux.") }
 }
 
 pub fn from_point(display:&Display, x:f64, y:f64) -> Option<MonitorHandle> {

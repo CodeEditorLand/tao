@@ -228,9 +228,7 @@ impl WindowExtWindows for Window {
 	}
 
 	#[inline]
-	fn set_undecorated_shadow(&self, shadow:bool) {
-		self.window.set_undecorated_shadow(shadow)
-	}
+	fn set_undecorated_shadow(&self, shadow:bool) { self.window.set_undecorated_shadow(shadow) }
 
 	#[inline]
 	fn set_rtl(&self, rtl:bool) { self.window.set_rtl(rtl) }
@@ -294,10 +292,7 @@ pub trait WindowBuilderExtWindows {
 	fn with_skip_taskbar(self, skip:bool) -> WindowBuilder;
 
 	/// Customize the window class name.
-	fn with_window_classname<S:Into<String>>(
-		self,
-		classname:S,
-	) -> WindowBuilder;
+	fn with_window_classname<S:Into<String>>(self, classname:S) -> WindowBuilder;
 
 	/// Shows or hides the background drop shadow for undecorated windows.
 	///
@@ -357,10 +352,7 @@ impl WindowBuilderExtWindows for WindowBuilder {
 	}
 
 	#[inline]
-	fn with_window_classname<S:Into<String>>(
-		mut self,
-		classname:S,
-	) -> WindowBuilder {
+	fn with_window_classname<S:Into<String>>(mut self, classname:S) -> WindowBuilder {
 		self.platform_specific.window_classname = classname.into();
 		self
 	}
@@ -405,9 +397,7 @@ pub trait DeviceIdExtWindows {
 
 impl DeviceIdExtWindows for DeviceId {
 	#[inline]
-	fn persistent_identifier(&self) -> Option<String> {
-		self.0.persistent_identifier()
-	}
+	fn persistent_identifier(&self) -> Option<String> { self.0.persistent_identifier() }
 }
 
 /// Additional methods on `Icon` that are specific to Windows.
@@ -419,10 +409,7 @@ pub trait IconExtWindows: Sized {
 	///
 	/// In cases where the specified size does not exist in the file, Windows
 	/// may perform scaling to get an icon of the desired size.
-	fn from_path<P:AsRef<Path>>(
-		path:P,
-		size:Option<PhysicalSize<u32>>,
-	) -> Result<Self, BadIcon>;
+	fn from_path<P:AsRef<Path>>(path:P, size:Option<PhysicalSize<u32>>) -> Result<Self, BadIcon>;
 
 	/// Create an icon from a resource embedded in this executable or library.
 	///
@@ -431,25 +418,16 @@ pub trait IconExtWindows: Sized {
 	///
 	/// In cases where the specified size does not exist in the file, Windows
 	/// may perform scaling to get an icon of the desired size.
-	fn from_resource(
-		ordinal:u16,
-		size:Option<PhysicalSize<u32>>,
-	) -> Result<Self, BadIcon>;
+	fn from_resource(ordinal:u16, size:Option<PhysicalSize<u32>>) -> Result<Self, BadIcon>;
 }
 
 impl IconExtWindows for Icon {
-	fn from_path<P:AsRef<Path>>(
-		path:P,
-		size:Option<PhysicalSize<u32>>,
-	) -> Result<Self, BadIcon> {
+	fn from_path<P:AsRef<Path>>(path:P, size:Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
 		let win_icon = WinIcon::from_path(path, size)?;
 		Ok(Icon { inner:win_icon })
 	}
 
-	fn from_resource(
-		ordinal:u16,
-		size:Option<PhysicalSize<u32>>,
-	) -> Result<Self, BadIcon> {
+	fn from_resource(ordinal:u16, size:Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
 		let win_icon = WinIcon::from_resource(ordinal, size)?;
 		Ok(Icon { inner:win_icon })
 	}

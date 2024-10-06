@@ -6,13 +6,10 @@ use crate::window::{ProgressBarState, ProgressState};
 
 #[derive(WrapperApi)]
 struct UnityLib {
-	unity_launcher_entry_get_for_desktop_id:
-		unsafe extern fn(id:*const c_char) -> *const isize,
+	unity_launcher_entry_get_for_desktop_id:unsafe extern fn(id:*const c_char) -> *const isize,
 	unity_inspector_get_default:unsafe extern fn() -> *const isize,
-	unity_inspector_get_unity_running:
-		unsafe extern fn(inspector:*const isize) -> i32,
-	unity_launcher_entry_set_progress:
-		unsafe extern fn(entry:*const isize, value:f64) -> i32,
+	unity_inspector_get_unity_running:unsafe extern fn(inspector:*const isize) -> i32,
+	unity_launcher_entry_set_progress:unsafe extern fn(entry:*const isize, value:f64) -> i32,
 	unity_launcher_entry_set_progress_visible:
 		unsafe extern fn(entry:*const isize, value:i32) -> i32,
 }
@@ -67,10 +64,8 @@ impl TaskbarIndicator {
 	fn ensure_entry_load(&mut self) {
 		if let Some(unity_lib) = &self.unity_lib {
 			if let Some(id) = &self.desktop_filename_c_str {
-				let handle = unsafe {
-					unity_lib
-						.unity_launcher_entry_get_for_desktop_id(id.as_ptr())
-				};
+				let handle =
+					unsafe { unity_lib.unity_launcher_entry_get_for_desktop_id(id.as_ptr()) };
 				if !handle.is_null() {
 					self.unity_entry = Some(handle);
 				}
@@ -81,9 +76,7 @@ impl TaskbarIndicator {
 	fn is_unity_running(&self) -> bool {
 		if let Some(inspector) = self.unity_inspector {
 			if let Some(unity_lib) = &self.unity_lib {
-				return unsafe {
-					unity_lib.unity_inspector_get_unity_running(inspector)
-				} == 1;
+				return unsafe { unity_lib.unity_inspector_get_unity_running(inspector) } == 1;
 			}
 		}
 
@@ -102,8 +95,7 @@ impl TaskbarIndicator {
 		}
 
 		if let Some(uri) = &self.desktop_filename {
-			self.desktop_filename_c_str =
-				Some(CString::new(uri.as_str()).unwrap_or_default());
+			self.desktop_filename_c_str = Some(CString::new(uri.as_str()).unwrap_or_default());
 		}
 
 		if self.unity_entry.is_none() {
@@ -115,10 +107,7 @@ impl TaskbarIndicator {
 					let progress = if progress > 100 { 100 } else { progress };
 					let progress = progress as f64 / 100.0;
 					unsafe {
-						(unity_lib.unity_launcher_entry_set_progress)(
-							*unity_entry,
-							progress,
-						)
+						(unity_lib.unity_launcher_entry_set_progress)(*unity_entry, progress)
 					};
 				}
 

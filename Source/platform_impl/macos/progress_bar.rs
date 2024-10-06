@@ -54,14 +54,10 @@ fn create_progress_indicator(ns_app:id, dock_tile:id) -> id {
 
 		// create custom progress indicator
 		let dock_tile_size:NSSize = msg_send![dock_tile, size];
-		let frame = NSRect::new(
-			NSPoint::new(0.0, 0.0),
-			NSSize::new(dock_tile_size.width, 15.0),
-		);
+		let frame = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(dock_tile_size.width, 15.0));
 		let progress_class = create_progress_indicator_class();
 		let progress_indicator:id = msg_send![progress_class, alloc];
-		let progress_indicator:id =
-			msg_send![progress_indicator, initWithFrame: frame];
+		let progress_indicator:id = msg_send![progress_indicator, initWithFrame: frame];
 		let _:() = msg_send![progress_indicator, autorelease];
 
 		// set progress indicator to the dock tile
@@ -101,13 +97,9 @@ fn create_progress_indicator_class() -> *const Class {
 
 	INIT.call_once(|| unsafe {
 		let superclass = class!(NSProgressIndicator);
-		let mut decl =
-			ClassDecl::new("TaoProgressIndicator", superclass).unwrap();
+		let mut decl = ClassDecl::new("TaoProgressIndicator", superclass).unwrap();
 
-		decl.add_method(
-			sel!(drawRect:),
-			draw_progress_bar as extern fn(&Object, _, NSRect),
-		);
+		decl.add_method(sel!(drawRect:), draw_progress_bar as extern fn(&Object, _, NSRect));
 
 		// progress bar states, follows ProgressState
 		decl.add_ivar::<u8>("state");
@@ -120,22 +112,18 @@ fn create_progress_indicator_class() -> *const Class {
 
 extern fn draw_progress_bar(this:&Object, _:Sel, rect:NSRect) {
 	unsafe {
-		let bar = NSRect::new(
-			NSPoint { x:0.0, y:4.0 },
-			NSSize { width:rect.size.width, height:8.0 },
-		);
+		let bar =
+			NSRect::new(NSPoint { x:0.0, y:4.0 }, NSSize { width:rect.size.width, height:8.0 });
 		let bar_inner = bar.inset(0.5, 0.5);
 		let mut bar_progress = bar.inset(1.0, 1.0);
 
 		// set progress width
 		let current_progress:f64 = msg_send![this, doubleValue];
-		let normalized_progress:f64 =
-			(current_progress / 100.0).clamp(0.0, 1.0);
+		let normalized_progress:f64 = (current_progress / 100.0).clamp(0.0, 1.0);
 		bar_progress.size.width *= normalized_progress;
 
 		// draw outer bar
-		let bg_color:id =
-			msg_send![class!(NSColor), colorWithWhite:1.0 alpha:0.05];
+		let bg_color:id = msg_send![class!(NSColor), colorWithWhite:1.0 alpha:0.05];
 		let _:() = msg_send![bg_color, set];
 		draw_rounded_rect(bar);
 		// draw inner bar

@@ -16,12 +16,7 @@ use std::{
 };
 
 use cocoa::{
-	appkit::{
-		NSApp,
-		NSEventModifierFlags,
-		NSEventSubtype,
-		NSEventType::NSApplicationDefined,
-	},
+	appkit::{NSApp, NSEventModifierFlags, NSEventSubtype, NSEventType::NSApplicationDefined},
 	base::{id, nil, YES},
 	foundation::{NSAutoreleasePool, NSInteger, NSPoint, NSTimeInterval},
 };
@@ -33,11 +28,7 @@ use crate::{
 	dpi::PhysicalPosition,
 	error::ExternalError,
 	event::Event,
-	event_loop::{
-		ControlFlow,
-		EventLoopClosed,
-		EventLoopWindowTarget as RootWindowTarget,
-	},
+	event_loop::{ControlFlow, EventLoopClosed, EventLoopWindowTarget as RootWindowTarget},
 	monitor::MonitorHandle as RootMonitorHandle,
 	platform_impl::{
 		platform::{
@@ -78,9 +69,7 @@ impl PanicInfo {
 		}
 	}
 
-	pub fn take(&self) -> Option<Box<dyn Any + Send + 'static>> {
-		self.inner.take()
-	}
+	pub fn take(&self) -> Option<Box<dyn Any + Send + 'static>> { self.inner.take() }
 }
 
 #[derive(Clone)]
@@ -98,9 +87,7 @@ impl<T> Default for EventLoopWindowTarget<T> {
 
 impl<T:'static> EventLoopWindowTarget<T> {
 	#[inline]
-	pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
-		monitor::available_monitors()
-	}
+	pub fn available_monitors(&self) -> VecDeque<MonitorHandle> { monitor::available_monitors() }
 
 	#[inline]
 	pub fn monitor_from_point(&self, x:f64, y:f64) -> Option<MonitorHandle> {
@@ -128,16 +115,12 @@ impl<T:'static> EventLoopWindowTarget<T> {
 	}
 
 	#[inline]
-	pub fn cursor_position(
-		&self,
-	) -> Result<PhysicalPosition<f64>, ExternalError> {
+	pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, ExternalError> {
 		util::cursor_position()
 	}
 
 	#[inline]
-	pub fn set_progress_bar(&self, progress:ProgressBarState) {
-		set_progress_indicator(progress);
-	}
+	pub fn set_progress_bar(&self, progress:ProgressBarState) { set_progress_indicator(progress); }
 
 	#[inline]
 	pub fn set_theme(&self, theme:Option<Theme>) { set_ns_theme(theme) }
@@ -155,13 +138,7 @@ pub struct EventLoop<T:'static> {
 	/// Every other reference should be a Weak reference which is only upgraded
 	/// into a strong reference in order to call the callback but then the
 	/// strong reference should be dropped as soon as possible.
-	_callback: Option<
-		Rc<
-			RefCell<
-				dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow),
-			>,
-		>,
-	>,
+	_callback:Option<Rc<RefCell<dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>>>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Default)]
@@ -174,9 +151,7 @@ impl<T> EventLoop<T> {
 
 		let delegate = unsafe {
 			if !util::is_main_thread() {
-				panic!(
-					"On macOS, `EventLoop` must be created on the main thread!"
-				);
+				panic!("On macOS, `EventLoop` must be created on the main thread!");
 			}
 
 			// This must be done before `NSApp()` (equivalent to sending
@@ -194,10 +169,7 @@ impl<T> EventLoop<T> {
 
 		EventLoop {
 			delegate,
-			window_target:Rc::new(RootWindowTarget {
-				p:Default::default(),
-				_marker:PhantomData,
-			}),
+			window_target:Rc::new(RootWindowTarget { p:Default::default(), _marker:PhantomData }),
 			panic_info,
 			_callback:None,
 		}
@@ -207,8 +179,7 @@ impl<T> EventLoop<T> {
 
 	pub fn run<F>(mut self, callback:F) -> !
 	where
-		F: 'static
-			+ FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow), {
+		F: 'static + FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow), {
 		let exit_code = self.run_return(callback);
 		process::exit(exit_code);
 	}
@@ -223,24 +194,8 @@ impl<T> EventLoop<T> {
 		// this is something that they should care about.
 		let callback = unsafe {
 			mem::transmute::<
-				Rc<
-					RefCell<
-						dyn FnMut(
-							Event<'_, T>,
-							&RootWindowTarget<T>,
-							&mut ControlFlow,
-						),
-					>,
-				>,
-				Rc<
-					RefCell<
-						dyn FnMut(
-							Event<'_, T>,
-							&RootWindowTarget<T>,
-							&mut ControlFlow,
-						),
-					>,
-				>,
+				Rc<RefCell<dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>>,
+				Rc<RefCell<dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>>,
 			>(Rc::new(RefCell::new(callback)))
 		};
 
@@ -271,9 +226,7 @@ impl<T> EventLoop<T> {
 		exit_code
 	}
 
-	pub fn create_proxy(&self) -> Proxy<T> {
-		Proxy::new(self.window_target.p.sender.clone())
-	}
+	pub fn create_proxy(&self) -> Proxy<T> { Proxy::new(self.window_target.p.sender.clone()) }
 }
 
 #[inline]
@@ -357,11 +310,8 @@ impl<T> Proxy<T> {
 			let rl = CFRunLoopGetMain();
 			let mut context:CFRunLoopSourceContext = mem::zeroed();
 			context.perform = Some(event_loop_proxy_handler);
-			let source = CFRunLoopSourceCreate(
-				ptr::null_mut(),
-				CFIndex::max_value() - 1,
-				&mut context,
-			);
+			let source =
+				CFRunLoopSourceCreate(ptr::null_mut(), CFIndex::max_value() - 1, &mut context);
 			CFRunLoopAddSource(rl, source, kCFRunLoopCommonModes);
 			CFRunLoopWakeUp(rl);
 
@@ -370,9 +320,7 @@ impl<T> Proxy<T> {
 	}
 
 	pub fn send_event(&self, event:T) -> Result<(), EventLoopClosed<T>> {
-		self.sender
-			.send(event)
-			.map_err(|channel::SendError(x)| EventLoopClosed(x))?;
+		self.sender.send(event).map_err(|channel::SendError(x)| EventLoopClosed(x))?;
 		unsafe {
 			// let the main thread know there's a new event
 			CFRunLoopSourceSignal(self.source);

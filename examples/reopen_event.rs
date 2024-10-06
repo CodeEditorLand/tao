@@ -18,16 +18,12 @@ fn main() {
 		*control_flow = ControlFlow::Wait;
 
 		match event {
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested, ..
-			} => {
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
 				// drop the window
 				window = None;
 			},
 			Event::Reopen { has_visible_windows, .. } => {
-				println!(
-					"on reopen, has visible windows: {has_visible_windows}"
-				);
+				println!("on reopen, has visible windows: {has_visible_windows}");
 				if !has_visible_windows {
 					window = Some(Window::new(&event_loop).unwrap())
 				}

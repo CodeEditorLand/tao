@@ -69,11 +69,7 @@ pub enum EventWrapper {
 #[non_exhaustive]
 #[derive(Debug, PartialEq)]
 pub enum EventProxy {
-	DpiChangedProxy {
-		window_id:id,
-		suggested_size:LogicalSize<f64>,
-		scale_factor:f64,
-	},
+	DpiChangedProxy { window_id:id, suggested_size:LogicalSize<f64>, scale_factor:f64 },
 }
 
 #[derive(Clone)]
@@ -115,9 +111,7 @@ impl<T:'static> EventLoopWindowTarget<T> {
 		Ok(rwh_06::RawDisplayHandle::UiKit(rwh_06::UiKitDisplayHandle::new()))
 	}
 
-	pub fn cursor_position(
-		&self,
-	) -> Result<PhysicalPosition<f64>, ExternalError> {
+	pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, ExternalError> {
 		debug!("`EventLoopWindowTarget::cursor_position` is ignored on iOS");
 		Ok((0, 0).into())
 	}
@@ -134,13 +128,10 @@ impl<T:'static> EventLoop<T> {
 	pub(crate) fn new(_:&PlatformSpecificEventLoopAttributes) -> EventLoop<T> {
 		static mut SINGLETON_INIT:bool = false;
 		unsafe {
-			assert_main_thread!(
-				"`EventLoop` can only be created on the main thread on iOS"
-			);
+			assert_main_thread!("`EventLoop` can only be created on the main thread on iOS");
 			assert!(
 				!SINGLETON_INIT,
-				"Only one `EventLoop` is supported on iOS. `EventLoopProxy` \
-				 might be helpful"
+				"Only one `EventLoop` is supported on iOS. `EventLoopProxy` might be helpful"
 			);
 			SINGLETON_INIT = true;
 			view::create_delegate_class();
@@ -161,18 +152,15 @@ impl<T:'static> EventLoop<T> {
 
 	pub fn run<F>(self, event_handler:F) -> !
 	where
-		F: 'static
-			+ FnMut(Event<'_, T>, &RootEventLoopWindowTarget<T>, &mut ControlFlow), {
+		F: 'static + FnMut(Event<'_, T>, &RootEventLoopWindowTarget<T>, &mut ControlFlow), {
 		unsafe {
-			let application:*mut c_void =
-				msg_send![class!(UIApplication), sharedApplication];
+			let application:*mut c_void = msg_send![class!(UIApplication), sharedApplication];
 			assert_eq!(
 				application,
 				ptr::null_mut(),
 				"\
-                 `EventLoop` cannot be `run` after a call to \
-				 `UIApplicationMain` on iOS\nNote: `EventLoop::run` calls \
-				 `UIApplicationMain` on iOS"
+                 `EventLoop` cannot be `run` after a call to `UIApplicationMain` on iOS\nNote: \
+				 `EventLoop::run` calls `UIApplicationMain` on iOS"
 			);
 			app_state::will_launch(Box::new(EventLoopHandler {
 				f:event_handler,
@@ -193,9 +181,7 @@ impl<T:'static> EventLoop<T> {
 		EventLoopProxy::new(self.window_target.p.sender_to_clone.clone())
 	}
 
-	pub fn window_target(&self) -> &RootEventLoopWindowTarget<T> {
-		&self.window_target
-	}
+	pub fn window_target(&self) -> &RootEventLoopWindowTarget<T> { &self.window_target }
 }
 
 // EventLoopExtIOS
@@ -215,9 +201,7 @@ unsafe impl<T:Send> Send for EventLoopProxy<T> {}
 unsafe impl<T:Send> Sync for EventLoopProxy<T> {}
 
 impl<T> Clone for EventLoopProxy<T> {
-	fn clone(&self) -> EventLoopProxy<T> {
-		EventLoopProxy::new(self.sender.clone())
-	}
+	fn clone(&self) -> EventLoopProxy<T> { EventLoopProxy::new(self.sender.clone()) }
 }
 
 impl<T> Drop for EventLoopProxy<T> {
@@ -241,11 +225,8 @@ impl<T> EventLoopProxy<T> {
 			// we want all the members of context to be zero/null, except one
 			let mut context:CFRunLoopSourceContext = mem::zeroed();
 			context.perform = Some(event_loop_proxy_handler);
-			let source = CFRunLoopSourceCreate(
-				ptr::null_mut(),
-				CFIndex::max_value() - 1,
-				&mut context,
-			);
+			let source =
+				CFRunLoopSourceCreate(ptr::null_mut(), CFIndex::max_value() - 1, &mut context);
 			CFRunLoopAddSource(rl, source, kCFRunLoopCommonModes);
 			CFRunLoopWakeUp(rl);
 
@@ -254,9 +235,7 @@ impl<T> EventLoopProxy<T> {
 	}
 
 	pub fn send_event(&self, event:T) -> Result<(), EventLoopClosed<T>> {
-		self.sender
-			.send(event)
-			.map_err(|channel::SendError(x)| EventLoopClosed(x))?;
+		self.sender.send(event).map_err(|channel::SendError(x)| EventLoopClosed(x))?;
 		unsafe {
 			// let the main thread know there's a new event
 			CFRunLoopSourceSignal(self.source);
@@ -279,11 +258,9 @@ fn setup_control_flow_observers() {
 			unsafe {
 				#[allow(non_upper_case_globals)]
 				match activity {
-					kCFRunLoopAfterWaiting => {
-						app_state::handle_wakeup_transition()
-					},
-					kCFRunLoopEntry => unimplemented!(), /* not expected to
-					                                       * ever happen */
+					kCFRunLoopAfterWaiting => app_state::handle_wakeup_transition(),
+					kCFRunLoopEntry => unimplemented!(), // not expected to
+					// ever happen
 					_ => unreachable!(),
 				}
 			}
@@ -312,11 +289,9 @@ fn setup_control_flow_observers() {
 			unsafe {
 				#[allow(non_upper_case_globals)]
 				match activity {
-					kCFRunLoopBeforeWaiting => {
-						app_state::handle_main_events_cleared()
-					},
-					kCFRunLoopExit => (), /* Mode is changed to others like
-					                        * `UITrackingRunLoopMode` */
+					kCFRunLoopBeforeWaiting => app_state::handle_main_events_cleared(),
+					kCFRunLoopExit => (), // Mode is changed to others like
+					// `UITrackingRunLoopMode`
 					_ => unreachable!(),
 				}
 			}
@@ -332,11 +307,9 @@ fn setup_control_flow_observers() {
 			unsafe {
 				#[allow(non_upper_case_globals)]
 				match activity {
-					kCFRunLoopBeforeWaiting => {
-						app_state::handle_events_cleared()
-					},
-					kCFRunLoopExit => (), /* Mode is changed to others like
-					                        * `UITrackingRunLoopMode` */
+					kCFRunLoopBeforeWaiting => app_state::handle_events_cleared(),
+					kCFRunLoopExit => (), // Mode is changed to others like
+					// `UITrackingRunLoopMode`
 					_ => unreachable!(),
 				}
 			}
@@ -362,11 +335,7 @@ fn setup_control_flow_observers() {
 			control_flow_main_end_handler,
 			ptr::null_mut(),
 		);
-		CFRunLoopAddObserver(
-			main_loop,
-			main_end_observer,
-			kCFRunLoopDefaultMode,
-		);
+		CFRunLoopAddObserver(main_loop, main_end_observer, kCFRunLoopDefaultMode);
 
 		let end_observer = CFRunLoopObserverCreate(
 			ptr::null_mut(),
@@ -385,11 +354,7 @@ fn setup_control_flow_observers() {
 pub enum Never {}
 
 pub trait EventHandler: Debug {
-	fn handle_nonuser_event(
-		&mut self,
-		event:Event<'_, Never>,
-		control_flow:&mut ControlFlow,
-	);
+	fn handle_nonuser_event(&mut self, event:Event<'_, Never>, control_flow:&mut ControlFlow);
 	fn handle_user_events(&mut self, control_flow:&mut ControlFlow);
 }
 
@@ -408,20 +373,11 @@ impl<F, T:'static> Debug for EventLoopHandler<F, T> {
 
 impl<F, T> EventHandler for EventLoopHandler<F, T>
 where
-	F: 'static
-		+ FnMut(Event<'_, T>, &RootEventLoopWindowTarget<T>, &mut ControlFlow),
+	F: 'static + FnMut(Event<'_, T>, &RootEventLoopWindowTarget<T>, &mut ControlFlow),
 	T: 'static,
 {
-	fn handle_nonuser_event(
-		&mut self,
-		event:Event<'_, Never>,
-		control_flow:&mut ControlFlow,
-	) {
-		(self.f)(
-			event.map_nonuser_event().unwrap(),
-			&self.event_loop,
-			control_flow,
-		);
+	fn handle_nonuser_event(&mut self, event:Event<'_, Never>, control_flow:&mut ControlFlow) {
+		(self.f)(event.map_nonuser_event().unwrap(), &self.event_loop, control_flow);
 	}
 
 	fn handle_user_events(&mut self, control_flow:&mut ControlFlow) {

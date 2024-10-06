@@ -21,8 +21,7 @@ use crate::{
 };
 
 lazy_static! {
-	static ref KEY_STRINGS: Mutex<HashSet<&'static str>> =
-		Mutex::new(HashSet::new());
+	static ref KEY_STRINGS: Mutex<HashSet<&'static str>> = Mutex::new(HashSet::new());
 }
 
 fn insert_or_get_key_str(string:String) -> &'static str {
@@ -46,11 +45,7 @@ pub enum EventWrapper {
 #[derive(Debug, PartialEq)]
 pub enum EventProxy {
 	#[non_exhaustive]
-	DpiChangedProxy {
-		ns_window:IdRef,
-		suggested_size:LogicalSize<f64>,
-		scale_factor:f64,
-	},
+	DpiChangedProxy { ns_window:IdRef, suggested_size:LogicalSize<f64>, scale_factor:f64 },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -66,15 +61,11 @@ pub fn get_modifierless_char(scancode:u16) -> Key<'static> {
 	unsafe {
 		input_source = ffi::TISCopyCurrentKeyboardLayoutInputSource();
 		if input_source.is_null() {
-			log::error!(
-				"`TISCopyCurrentKeyboardLayoutInputSource` returned null ptr"
-			);
+			log::error!("`TISCopyCurrentKeyboardLayoutInputSource` returned null ptr");
 			return Key::Unidentified(NativeKeyCode::MacOS(scancode));
 		}
-		let layout_data = ffi::TISGetInputSourceProperty(
-			input_source,
-			ffi::kTISPropertyUnicodeKeyLayoutData,
-		);
+		let layout_data =
+			ffi::TISGetInputSourceProperty(input_source, ffi::kTISPropertyUnicodeKeyLayoutData);
 		if layout_data.is_null() {
 			CFRelease(input_source as *mut c_void);
 			log::error!("`TISGetInputSourceProperty` returned null ptr");
@@ -105,16 +96,11 @@ pub fn get_modifierless_char(scancode:u16) -> Key<'static> {
 		CFRelease(input_source as *mut c_void);
 	}
 	if translate_result != 0 {
-		log::error!(
-			"`UCKeyTranslate` returned with the non-zero value: {}",
-			translate_result
-		);
+		log::error!("`UCKeyTranslate` returned with the non-zero value: {}", translate_result);
 		return Key::Unidentified(NativeKeyCode::MacOS(scancode));
 	}
 	if result_len == 0 {
-		log::error!(
-			"`UCKeyTranslate` was succesful but gave a string of 0 length."
-		);
+		log::error!("`UCKeyTranslate` was succesful but gave a string of 0 length.");
 		return Key::Unidentified(NativeKeyCode::MacOS(scancode));
 	}
 	let chars = String::from_utf16_lossy(&string[0..result_len as usize]);
@@ -122,8 +108,7 @@ pub fn get_modifierless_char(scancode:u16) -> Key<'static> {
 }
 
 fn get_logical_key_char(ns_event:id, modifierless_chars:&str) -> Key<'static> {
-	let characters:id =
-		unsafe { msg_send![ns_event, charactersIgnoringModifiers] };
+	let characters:id = unsafe { msg_send![ns_event, charactersIgnoringModifiers] };
 	let string = unsafe { ns_string_to_rust(characters) };
 	if string.is_empty() {
 		// Probably a dead key
@@ -145,8 +130,7 @@ pub fn create_key_event(
 	let state = if is_press { Pressed } else { Released };
 
 	let scancode = get_scancode(ns_event);
-	let mut physical_key =
-		key_override.unwrap_or_else(|| KeyCode::from_scancode(scancode as u32));
+	let mut physical_key = key_override.unwrap_or_else(|| KeyCode::from_scancode(scancode as u32));
 
 	let text_with_all_modifiers:Option<&'static str> = {
 		if key_override.is_some() {
@@ -159,8 +143,7 @@ pub fn create_key_event(
 			} else {
 				if matches!(physical_key, KeyCode::Unidentified(_)) {
 					// The key may be one of the funky function keys
-					physical_key =
-						extra_function_key_to_code(scancode, &characters);
+					physical_key = extra_function_key_to_code(scancode, &characters);
 				}
 				Some(insert_or_get_key_str(characters))
 			}
@@ -197,10 +180,7 @@ pub fn create_key_event(
 		repeat:is_repeat,
 		state,
 		text,
-		platform_specific:KeyEventExtra {
-			text_with_all_modifiers,
-			key_without_modifiers,
-		},
+		platform_specific:KeyEventExtra { text_with_all_modifiers, key_without_modifiers },
 	}
 }
 
@@ -317,22 +297,10 @@ pub fn extra_function_key_to_code(scancode:u16, string:&str) -> KeyCode {
 pub fn event_mods(event:id) -> ModifiersState {
 	let flags = unsafe { NSEvent::modifierFlags(event) };
 	let mut m = ModifiersState::empty();
-	m.set(
-		ModifiersState::SHIFT,
-		flags.contains(NSEventModifierFlags::NSShiftKeyMask),
-	);
-	m.set(
-		ModifiersState::CONTROL,
-		flags.contains(NSEventModifierFlags::NSControlKeyMask),
-	);
-	m.set(
-		ModifiersState::ALT,
-		flags.contains(NSEventModifierFlags::NSAlternateKeyMask),
-	);
-	m.set(
-		ModifiersState::SUPER,
-		flags.contains(NSEventModifierFlags::NSCommandKeyMask),
-	);
+	m.set(ModifiersState::SHIFT, flags.contains(NSEventModifierFlags::NSShiftKeyMask));
+	m.set(ModifiersState::CONTROL, flags.contains(NSEventModifierFlags::NSControlKeyMask));
+	m.set(ModifiersState::ALT, flags.contains(NSEventModifierFlags::NSAlternateKeyMask));
+	m.set(ModifiersState::SUPER, flags.contains(NSEventModifierFlags::NSCommandKeyMask));
 	m
 }
 

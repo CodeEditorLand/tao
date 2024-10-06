@@ -30,9 +30,9 @@ fn main() {
 		*control_flow = ControlFlow::Wait;
 
 		match event {
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested, ..
-			} => *control_flow = ControlFlow::Exit,
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+				*control_flow = ControlFlow::Exit
+			},
 			Event::WindowEvent { event, .. } => {
 				match event {
 					WindowEvent::ModifiersChanged(new_state) => {

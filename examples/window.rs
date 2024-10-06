@@ -26,19 +26,11 @@ fn main() {
 		println!("{:?}", event);
 
 		match event {
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested,
-				window_id: _,
-				..
-			} => {
+			Event::WindowEvent { event: WindowEvent::CloseRequested, window_id: _, .. } => {
 				// drop the window to fire the `Destroyed` event
 				window = None;
 			},
-			Event::WindowEvent {
-				event: WindowEvent::Destroyed,
-				window_id: _,
-				..
-			} => {
+			Event::WindowEvent { event: WindowEvent::Destroyed, window_id: _, .. } => {
 				*control_flow = ControlFlow::Exit;
 			},
 			Event::MainEventsCleared => {

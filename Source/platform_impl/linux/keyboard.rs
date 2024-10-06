@@ -25,8 +25,7 @@ use crate::{
 pub type RawKey = gdk::keys::Key;
 
 lazy_static! {
-	static ref KEY_STRINGS: Mutex<HashSet<&'static str>> =
-		Mutex::new(HashSet::new());
+	static ref KEY_STRINGS: Mutex<HashSet<&'static str>> = Mutex::new(HashSet::new());
 }
 
 fn insert_or_get_key_str(string:String) -> &'static str {
@@ -118,12 +117,12 @@ pub(crate) fn raw_key_to_location(raw:RawKey) -> KeyLocation {
 	match raw {
 		Control_L | Shift_L | Alt_L | Super_L | Meta_L => KeyLocation::Left,
 		Control_R | Shift_R | Alt_R | Super_R | Meta_R => KeyLocation::Right,
-		KP_0 | KP_1 | KP_2 | KP_3 | KP_4 | KP_5 | KP_6 | KP_7 | KP_8 | KP_9
-		| KP_Add | KP_Begin | KP_Decimal | KP_Delete | KP_Divide | KP_Down
-		| KP_End | KP_Enter | KP_Equal | KP_F1 | KP_F2 | KP_F3 | KP_F4
-		| KP_Home | KP_Insert | KP_Left | KP_Multiply | KP_Page_Down
-		| KP_Page_Up | KP_Right | KP_Separator | KP_Space | KP_Subtract
-		| KP_Tab | KP_Up => KeyLocation::Numpad,
+		KP_0 | KP_1 | KP_2 | KP_3 | KP_4 | KP_5 | KP_6 | KP_7 | KP_8 | KP_9 | KP_Add | KP_Begin
+		| KP_Decimal | KP_Delete | KP_Divide | KP_Down | KP_End | KP_Enter | KP_Equal | KP_F1
+		| KP_F2 | KP_F3 | KP_F4 | KP_Home | KP_Insert | KP_Left | KP_Multiply | KP_Page_Down
+		| KP_Page_Up | KP_Right | KP_Separator | KP_Space | KP_Subtract | KP_Tab | KP_Up => {
+			KeyLocation::Numpad
+		},
 		_ => KeyLocation::Standard,
 	}
 }
@@ -183,18 +182,17 @@ pub(crate) fn make_key_event(
 	// a keyval (keysym in X) is a "logical" key name, such as GDK_Enter, GDK_a,
 	// GDK_space, etc.
 	let keyval_without_modifiers = key.keyval();
-	let keyval_with_modifiers = hardware_keycode_to_keyval(scancode)
-		.unwrap_or_else(|| keyval_without_modifiers.clone());
+	let keyval_with_modifiers =
+		hardware_keycode_to_keyval(scancode).unwrap_or_else(|| keyval_without_modifiers.clone());
 	// get unicode value, with and without modifiers
 	let text_without_modifiers = keyval_with_modifiers.to_unicode();
 	let text_with_modifiers = keyval_without_modifiers.to_unicode();
 	// get physical key from the scancode (keycode)
-	let physical_key =
-		key_override.unwrap_or_else(|| KeyCode::from_scancode(scancode as u32));
+	let physical_key = key_override.unwrap_or_else(|| KeyCode::from_scancode(scancode as u32));
 
 	// extract key without modifier
-	let key_without_modifiers = raw_key_to_key(keyval_with_modifiers.clone())
-		.unwrap_or_else(|| {
+	let key_without_modifiers =
+		raw_key_to_key(keyval_with_modifiers.clone()).unwrap_or_else(|| {
 			if let Some(key) = text_without_modifiers {
 				if key >= ' ' && key != '\x7f' {
 					Key::Character(insert_or_get_key_str(key.to_string()))
@@ -207,24 +205,23 @@ pub(crate) fn make_key_event(
 		});
 
 	// extract the logical key
-	let logical_key =
-		raw_key_to_key(keyval_without_modifiers).unwrap_or_else(|| {
-			if let Some(key) = text_with_modifiers {
-				if key >= ' ' && key != '\x7f' {
-					Key::Character(insert_or_get_key_str(key.to_string()))
-				} else {
-					Key::Unidentified(NativeKeyCode::Gtk(scancode))
-				}
+	let logical_key = raw_key_to_key(keyval_without_modifiers).unwrap_or_else(|| {
+		if let Some(key) = text_with_modifiers {
+			if key >= ' ' && key != '\x7f' {
+				Key::Character(insert_or_get_key_str(key.to_string()))
 			} else {
 				Key::Unidentified(NativeKeyCode::Gtk(scancode))
 			}
-		});
+		} else {
+			Key::Unidentified(NativeKeyCode::Gtk(scancode))
+		}
+	});
 
 	// make sure we have a valid key
 	if !matches!(key_without_modifiers, Key::Unidentified(_)) {
 		let location = raw_key_to_location(keyval_with_modifiers);
-		let text_with_all_modifiers = text_without_modifiers
-			.map(|text| insert_or_get_key_str(text.to_string()));
+		let text_with_all_modifiers =
+			text_without_modifiers.map(|text| insert_or_get_key_str(text.to_string()));
 		return Some(KeyEvent {
 			location,
 			logical_key,
@@ -232,10 +229,7 @@ pub(crate) fn make_key_event(
 			repeat:is_repeat,
 			state,
 			text:text_with_all_modifiers,
-			platform_specific:KeyEventExtra {
-				text_with_all_modifiers,
-				key_without_modifiers,
-			},
+			platform_specific:KeyEventExtra { text_with_all_modifiers, key_without_modifiers },
 		});
 	} else {
 		#[cfg(debug_assertions)]
@@ -268,14 +262,13 @@ fn hardware_keycode_to_keyval(keycode:u16) -> Option<RawKey> {
 			let keyvals_slice = slice::from_raw_parts(keyvals, nkeys as usize);
 			let keys_slice = slice::from_raw_parts(keys, nkeys as usize);
 
-			let resolved_keyval =
-				keys_slice.iter().enumerate().find_map(|(id, gdk_keymap)| {
-					if gdk_keymap.group == 0 && gdk_keymap.level == 0 {
-						Some(RawKey::from_glib(keyvals_slice[id]))
-					} else {
-						None
-					}
-				});
+			let resolved_keyval = keys_slice.iter().enumerate().find_map(|(id, gdk_keymap)| {
+				if gdk_keymap.group == 0 && gdk_keymap.level == 0 {
+					Some(RawKey::from_glib(keyvals_slice[id]))
+				} else {
+					None
+				}
+			});
 
 			// notify glib to free the allocated arrays
 			glib::ffi::g_free(keyvals as *mut c_void);

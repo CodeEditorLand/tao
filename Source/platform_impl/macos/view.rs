@@ -44,13 +44,7 @@ use crate::{
 	keyboard::{KeyCode, ModifiersState},
 	platform_impl::platform::{
 		app_state::AppState,
-		event::{
-			code_to_key,
-			create_key_event,
-			event_mods,
-			get_scancode,
-			EventWrapper,
-		},
+		event::{code_to_key, create_key_event, event_mods, get_scancode, EventWrapper},
 		ffi::*,
 		util::{self, IdRef},
 		window::get_window_id,
@@ -122,10 +116,8 @@ pub fn new_view(ns_window:id) -> (IdRef, Weak<Mutex<CursorState>>) {
 pub unsafe fn set_ime_position(ns_view:id, input_context:id, x:f64, y:f64) {
 	let state_ptr:*mut c_void = *(*ns_view).get_mut_ivar("taoState");
 	let state = &mut *(state_ptr as *mut ViewState);
-	let content_rect = NSWindow::contentRectForFrameRect_(
-		state.ns_window,
-		NSWindow::frame(state.ns_window),
-	);
+	let content_rect =
+		NSWindow::contentRectForFrameRect_(state.ns_window, NSWindow::frame(state.ns_window));
 	let base_x = content_rect.origin.x as f64;
 	let base_y = (content_rect.origin.y + content_rect.size.height) as f64;
 	state.ime_spot = Some((base_x + x, base_y - y));
@@ -135,10 +127,7 @@ pub unsafe fn set_ime_position(ns_view:id, input_context:id, x:f64, y:f64) {
 fn is_arrow_key(keycode:KeyCode) -> bool {
 	matches!(
 		keycode,
-		KeyCode::ArrowUp
-			| KeyCode::ArrowDown
-			| KeyCode::ArrowLeft
-			| KeyCode::ArrowRight
+		KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::ArrowLeft | KeyCode::ArrowRight
 	)
 }
 
@@ -169,43 +158,21 @@ lazy_static! {
 			sel!(viewDidMoveToWindow),
 			view_did_move_to_window as extern fn(&Object, Sel),
 		);
-		decl.add_method(
-			sel!(drawRect:),
-			draw_rect as extern fn(&Object, Sel, NSRect),
-		);
+		decl.add_method(sel!(drawRect:), draw_rect as extern fn(&Object, Sel, NSRect));
 		decl.add_method(
 			sel!(acceptsFirstResponder),
 			accepts_first_responder as extern fn(&Object, Sel) -> BOOL,
 		);
-		decl.add_method(
-			sel!(touchBar),
-			touch_bar as extern fn(&Object, Sel) -> BOOL,
-		);
-		decl.add_method(
-			sel!(resetCursorRects),
-			reset_cursor_rects as extern fn(&Object, Sel),
-		);
-		decl.add_method(
-			sel!(hasMarkedText),
-			has_marked_text as extern fn(&Object, Sel) -> BOOL,
-		);
-		decl.add_method(
-			sel!(markedRange),
-			marked_range as extern fn(&Object, Sel) -> NSRange,
-		);
-		decl.add_method(
-			sel!(selectedRange),
-			selected_range as extern fn(&Object, Sel) -> NSRange,
-		);
+		decl.add_method(sel!(touchBar), touch_bar as extern fn(&Object, Sel) -> BOOL);
+		decl.add_method(sel!(resetCursorRects), reset_cursor_rects as extern fn(&Object, Sel));
+		decl.add_method(sel!(hasMarkedText), has_marked_text as extern fn(&Object, Sel) -> BOOL);
+		decl.add_method(sel!(markedRange), marked_range as extern fn(&Object, Sel) -> NSRange);
+		decl.add_method(sel!(selectedRange), selected_range as extern fn(&Object, Sel) -> NSRange);
 		decl.add_method(
 			sel!(setMarkedText:selectedRange:replacementRange:),
-			set_marked_text
-				as extern fn(&mut Object, Sel, id, NSRange, NSRange),
+			set_marked_text as extern fn(&mut Object, Sel, id, NSRange, NSRange),
 		);
-		decl.add_method(
-			sel!(unmarkText),
-			unmark_text as extern fn(&mut Object, Sel),
-		);
+		decl.add_method(sel!(unmarkText), unmark_text as extern fn(&mut Object, Sel));
 		decl.add_method(
 			sel!(validAttributesForMarkedText),
 			valid_attributes_for_marked_text as extern fn(&Object, Sel) -> id,
@@ -221,8 +188,7 @@ lazy_static! {
 		);
 		decl.add_method(
 			sel!(characterIndexForPoint:),
-			character_index_for_point
-				as extern fn(&Object, Sel, NSPoint) -> NSUInteger,
+			character_index_for_point as extern fn(&Object, Sel, NSPoint) -> NSUInteger,
 		);
 		decl.add_method(
 			sel!(firstRectForCharacterRange:actualRange:),
@@ -233,55 +199,19 @@ lazy_static! {
 			sel!(doCommandBySelector:),
 			do_command_by_selector as extern fn(&Object, Sel, Sel),
 		);
-		decl.add_method(
-			sel!(keyDown:),
-			key_down as extern fn(&mut Object, Sel, id),
-		);
+		decl.add_method(sel!(keyDown:), key_down as extern fn(&mut Object, Sel, id));
 		decl.add_method(sel!(keyUp:), key_up as extern fn(&Object, Sel, id));
-		decl.add_method(
-			sel!(flagsChanged:),
-			flags_changed as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(insertTab:),
-			insert_tab as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(insertBackTab:),
-			insert_back_tab as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(mouseDown:),
-			mouse_down as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(mouseUp:),
-			mouse_up as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(rightMouseDown:),
-			right_mouse_down as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(rightMouseUp:),
-			right_mouse_up as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(otherMouseDown:),
-			other_mouse_down as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(otherMouseUp:),
-			other_mouse_up as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(mouseMoved:),
-			mouse_moved as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(mouseDragged:),
-			mouse_dragged as extern fn(&Object, Sel, id),
-		);
+		decl.add_method(sel!(flagsChanged:), flags_changed as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(insertTab:), insert_tab as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(insertBackTab:), insert_back_tab as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(mouseDown:), mouse_down as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(mouseUp:), mouse_up as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(rightMouseDown:), right_mouse_down as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(rightMouseUp:), right_mouse_up as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(otherMouseDown:), other_mouse_down as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(otherMouseUp:), other_mouse_up as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(mouseMoved:), mouse_moved as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(mouseDragged:), mouse_dragged as extern fn(&Object, Sel, id));
 		decl.add_method(
 			sel!(rightMouseDragged:),
 			right_mouse_dragged as extern fn(&Object, Sel, id),
@@ -290,18 +220,9 @@ lazy_static! {
 			sel!(otherMouseDragged:),
 			other_mouse_dragged as extern fn(&Object, Sel, id),
 		);
-		decl.add_method(
-			sel!(mouseEntered:),
-			mouse_entered as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(mouseExited:),
-			mouse_exited as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(scrollWheel:),
-			scroll_wheel as extern fn(&Object, Sel, id),
-		);
+		decl.add_method(sel!(mouseEntered:), mouse_entered as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(mouseExited:), mouse_exited as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(scrollWheel:), scroll_wheel as extern fn(&Object, Sel, id));
 		decl.add_method(
 			sel!(pressureChangeWithEvent:),
 			pressure_change_with_event as extern fn(&Object, Sel, id),
@@ -310,14 +231,8 @@ lazy_static! {
 			sel!(_wantsKeyDownForEvent:),
 			wants_key_down_for_event as extern fn(&Object, Sel, id) -> BOOL,
 		);
-		decl.add_method(
-			sel!(cancelOperation:),
-			cancel_operation as extern fn(&Object, Sel, id),
-		);
-		decl.add_method(
-			sel!(frameDidChange:),
-			frame_did_change as extern fn(&Object, Sel, id),
-		);
+		decl.add_method(sel!(cancelOperation:), cancel_operation as extern fn(&Object, Sel, id));
+		decl.add_method(sel!(frameDidChange:), frame_did_change as extern fn(&Object, Sel, id));
 		decl.add_method(
 			sel!(acceptsFirstMouse:),
 			accepts_first_mouse as extern fn(&Object, Sel, id) -> BOOL,
@@ -344,16 +259,15 @@ extern fn init_with_tao(this:&Object, _sel:Sel, state:*mut c_void) -> id {
 		let this:id = msg_send![this, init];
 		if this != nil {
 			(*this).set_ivar("taoState", state);
-			let marked_text = <id as NSMutableAttributedString>::init(
-				NSMutableAttributedString::alloc(nil),
-			);
+			let marked_text =
+				<id as NSMutableAttributedString>::init(NSMutableAttributedString::alloc(nil));
 			(*this).set_ivar("markedText", marked_text);
 			let _:() = msg_send![this, setPostsFrameChangedNotifications: YES];
 
 			let notification_center:&Object =
 				msg_send![class!(NSNotificationCenter), defaultCenter];
-			let notification_name = NSString::alloc(nil)
-				.init_str("NSViewFrameDidChangeNotification");
+			let notification_name =
+				NSString::alloc(nil).init_str("NSViewFrameDidChangeNotification");
 			let _:() = msg_send![
 				notification_center,
 				addObserver: this
@@ -499,8 +413,7 @@ extern fn set_marked_text(
 	trace!("Triggered `setMarkedText`");
 	unsafe {
 		let marked_text_ref = clear_marked_text(this);
-		let has_attr:BOOL =
-			msg_send![string, isKindOfClass: class!(NSAttributedString)];
+		let has_attr:BOOL = msg_send![string, isKindOfClass: class!(NSAttributedString)];
 		if has_attr != NO {
 			marked_text_ref.initWithAttributedString(string);
 		} else {
@@ -542,11 +455,7 @@ extern fn attributed_substring_for_proposed_range(
 	nil
 }
 
-extern fn character_index_for_point(
-	_this:&Object,
-	_sel:Sel,
-	_point:NSPoint,
-) -> NSUInteger {
+extern fn character_index_for_point(_this:&Object, _sel:Sel, _point:NSPoint) -> NSUInteger {
 	trace!("Triggered `characterIndexForPoint`");
 	trace!("Completed `characterIndexForPoint`");
 	0
@@ -576,19 +485,13 @@ extern fn first_rect_for_character_range(
 	}
 }
 
-extern fn insert_text(
-	this:&Object,
-	_sel:Sel,
-	string:id,
-	_replacement_range:NSRange,
-) {
+extern fn insert_text(this:&Object, _sel:Sel, string:id, _replacement_range:NSRange) {
 	trace!("Triggered `insertText`");
 	unsafe {
 		let state_ptr:*mut c_void = *this.get_ivar("taoState");
 		let state = &mut *(state_ptr as *mut ViewState);
 
-		let has_attr:BOOL =
-			msg_send![string, isKindOfClass: class!(NSAttributedString)];
+		let has_attr:BOOL = msg_send![string, isKindOfClass: class!(NSAttributedString)];
 		let characters = if has_attr != NO {
 			// This is a *mut NSAttributedString
 			msg_send![string, string]
@@ -597,10 +500,8 @@ extern fn insert_text(
 			string
 		};
 
-		let slice = slice::from_raw_parts(
-			characters.UTF8String() as *const c_uchar,
-			characters.len(),
-		);
+		let slice =
+			slice::from_raw_parts(characters.UTF8String() as *const c_uchar, characters.len());
 		let string:String = str::from_utf8_unchecked(slice)
 			.chars()
 			.filter(|c| !is_corporate_character(*c))
@@ -641,7 +542,7 @@ extern fn do_command_by_selector(_this:&Object, _sel:Sel, _command:Sel) {
 	// keeping this here both...         // 1) as a reminder for how
 	// `doCommandBySelector` works         // 2) to make our use of carriage
 	// return explicit         events.
-	// push_back(EventWrapper::StaticEvent(Event::WindowEvent {             
+	// push_back(EventWrapper::StaticEvent(Event::WindowEvent {
 	// window_id: WindowId(get_window_id(state.ns_window)),             event:
 	// WindowEvent::ReceivedCharacter('\r'),         }));
 	//     } else {
@@ -651,7 +552,7 @@ extern fn do_command_by_selector(_this:&Object, _sel:Sel, _command:Sel) {
 	//                 .chars()
 	//                 .filter(|c| !is_corporate_character(*c))
 	//             {
-	//                 
+	//
 	// events.push_back(EventWrapper::StaticEvent(Event::WindowEvent {
 	//                     window_id: WindowId(get_window_id(state.ns_window)),
 	//                     event: WindowEvent::ReceivedCharacter(character),
@@ -842,19 +743,12 @@ extern fn flags_changed(this:&Object, _sel:Sel, ns_event:id) {
 		let scancode = get_scancode(ns_event);
 
 		// We'll correct the `is_press` and the `key_override` below.
-		let event = create_key_event(
-			ns_event,
-			false,
-			false,
-			false,
-			Some(KeyCode::SuperLeft),
-		);
+		let event = create_key_event(ns_event, false, false, false, Some(KeyCode::SuperLeft));
 		let mut events = VecDeque::with_capacity(4);
 
 		macro_rules! process_event {
 			($tao_flag:expr, $ns_flag:expr, $target_key:expr) => {
-				let ns_event_contains_keymask =
-					NSEvent::modifierFlags(ns_event).contains($ns_flag);
+				let ns_event_contains_keymask = NSEvent::modifierFlags(ns_event).contains($ns_flag);
 				let mut actual_key = KeyCode::from_scancode(scancode as u32);
 				let was_pressed = state.phys_modifiers.contains(&actual_key);
 				let mut is_pressed = ns_event_contains_keymask;
@@ -880,14 +774,10 @@ extern fn flags_changed(this:&Object, _sel:Sel, ns_event:id) {
 				if matching_keys {
 					if is_pressed != was_pressed {
 						let mut event = event.clone();
-						event.state = if is_pressed {
-							ElementState::Pressed
-						} else {
-							ElementState::Released
-						};
+						event.state =
+							if is_pressed { ElementState::Pressed } else { ElementState::Released };
 						event.physical_key = actual_key;
-						event.logical_key =
-							code_to_key(event.physical_key, scancode);
+						event.logical_key = code_to_key(event.physical_key, scancode);
 						events.push_back(WindowEvent::KeyboardInput {
 							device_id:DEVICE_ID,
 							event,
@@ -907,16 +797,8 @@ extern fn flags_changed(this:&Object, _sel:Sel, ns_event:id) {
 				}
 			};
 		}
-		process_event!(
-			ModifiersState::SHIFT,
-			NSEventModifierFlags::NSShiftKeyMask,
-			ShiftLeft
-		);
-		process_event!(
-			ModifiersState::SHIFT,
-			NSEventModifierFlags::NSShiftKeyMask,
-			ShiftRight
-		);
+		process_event!(ModifiersState::SHIFT, NSEventModifierFlags::NSShiftKeyMask, ShiftLeft);
+		process_event!(ModifiersState::SHIFT, NSEventModifierFlags::NSShiftKeyMask, ShiftRight);
 		process_event!(
 			ModifiersState::CONTROL,
 			NSEventModifierFlags::NSControlKeyMask,
@@ -927,33 +809,18 @@ extern fn flags_changed(this:&Object, _sel:Sel, ns_event:id) {
 			NSEventModifierFlags::NSControlKeyMask,
 			ControlRight
 		);
-		process_event!(
-			ModifiersState::ALT,
-			NSEventModifierFlags::NSAlternateKeyMask,
-			AltLeft
-		);
-		process_event!(
-			ModifiersState::ALT,
-			NSEventModifierFlags::NSAlternateKeyMask,
-			AltRight
-		);
-		process_event!(
-			ModifiersState::SUPER,
-			NSEventModifierFlags::NSCommandKeyMask,
-			SuperLeft
-		);
-		process_event!(
-			ModifiersState::SUPER,
-			NSEventModifierFlags::NSCommandKeyMask,
-			SuperRight
-		);
+		process_event!(ModifiersState::ALT, NSEventModifierFlags::NSAlternateKeyMask, AltLeft);
+		process_event!(ModifiersState::ALT, NSEventModifierFlags::NSAlternateKeyMask, AltRight);
+		process_event!(ModifiersState::SUPER, NSEventModifierFlags::NSCommandKeyMask, SuperLeft);
+		process_event!(ModifiersState::SUPER, NSEventModifierFlags::NSCommandKeyMask, SuperRight);
 
 		let window_id = WindowId(get_window_id(state.ns_window));
 
 		for event in events {
-			AppState::queue_event(EventWrapper::StaticEvent(
-				Event::WindowEvent { window_id, event },
-			));
+			AppState::queue_event(EventWrapper::StaticEvent(Event::WindowEvent {
+				window_id,
+				event,
+			}));
 		}
 
 		AppState::queue_event(EventWrapper::StaticEvent(Event::WindowEvent {
@@ -1014,12 +881,7 @@ extern fn cancel_operation(this:&Object, _sel:Sel, _sender:id) {
 	trace!("Completed `cancelOperation`");
 }
 
-fn mouse_click(
-	this:&Object,
-	event:id,
-	button:MouseButton,
-	button_state:ElementState,
-) {
+fn mouse_click(this:&Object, event:id, button:MouseButton, button_state:ElementState) {
 	unsafe {
 		let state_ptr:*mut c_void = *this.get_ivar("taoState");
 		let state = &mut *(state_ptr as *mut ViewState);
@@ -1087,8 +949,7 @@ fn mouse_motion(this:&Object, event:id) {
 			|| view_point.x > view_rect.size.width
 			|| view_point.y > view_rect.size.height
 		{
-			let mouse_buttons_down:NSUInteger =
-				msg_send![class!(NSEvent), pressedMouseButtons];
+			let mouse_buttons_down:NSUInteger = msg_send![class!(NSEvent), pressedMouseButtons];
 			if mouse_buttons_down == 0 {
 				// Point is outside of the client area (view) and no buttons are
 				// pressed
@@ -1115,21 +976,13 @@ fn mouse_motion(this:&Object, event:id) {
 	}
 }
 
-extern fn mouse_moved(this:&Object, _sel:Sel, event:id) {
-	mouse_motion(this, event);
-}
+extern fn mouse_moved(this:&Object, _sel:Sel, event:id) { mouse_motion(this, event); }
 
-extern fn mouse_dragged(this:&Object, _sel:Sel, event:id) {
-	mouse_motion(this, event);
-}
+extern fn mouse_dragged(this:&Object, _sel:Sel, event:id) { mouse_motion(this, event); }
 
-extern fn right_mouse_dragged(this:&Object, _sel:Sel, event:id) {
-	mouse_motion(this, event);
-}
+extern fn right_mouse_dragged(this:&Object, _sel:Sel, event:id) { mouse_motion(this, event); }
 
-extern fn other_mouse_dragged(this:&Object, _sel:Sel, event:id) {
-	mouse_motion(this, event);
-}
+extern fn other_mouse_dragged(this:&Object, _sel:Sel, event:id) { mouse_motion(this, event); }
 
 extern fn mouse_entered(this:&Object, _sel:Sel, _event:id) {
 	trace!("Triggered `mouseEntered`");
@@ -1174,27 +1027,24 @@ extern fn scroll_wheel(this:&Object, _sel:Sel, event:id) {
 
 		let delta = {
 			// macOS horizontal sign convention is the inverse of tao.
-			let (x, y) =
-				(event.scrollingDeltaX() * -1.0, event.scrollingDeltaY());
+			let (x, y) = (event.scrollingDeltaX() * -1.0, event.scrollingDeltaY());
 			if event.hasPreciseScrollingDeltas() == YES {
-				let delta = LogicalPosition::new(x, y)
-					.to_physical(state.get_scale_factor());
+				let delta = LogicalPosition::new(x, y).to_physical(state.get_scale_factor());
 				MouseScrollDelta::PixelDelta(delta)
 			} else {
 				MouseScrollDelta::LineDelta(x as f32, y as f32)
 			}
 		};
 		let phase = match event.phase() {
-			NSEventPhase::NSEventPhaseMayBegin
-			| NSEventPhase::NSEventPhaseBegan => TouchPhase::Started,
+			NSEventPhase::NSEventPhaseMayBegin | NSEventPhase::NSEventPhaseBegan => {
+				TouchPhase::Started
+			},
 			NSEventPhase::NSEventPhaseEnded => TouchPhase::Ended,
 			_ => TouchPhase::Moved,
 		};
 
-		let device_event = Event::DeviceEvent {
-			device_id:DEVICE_ID,
-			event:DeviceEvent::MouseWheel { delta },
-		};
+		let device_event =
+			Event::DeviceEvent { device_id:DEVICE_ID, event:DeviceEvent::MouseWheel { delta } };
 
 		let state_ptr:*mut c_void = *this.get_ivar("taoState");
 		let state = &mut *(state_ptr as *mut ViewState);
@@ -1231,11 +1081,7 @@ extern fn pressure_change_with_event(this:&Object, _sel:Sel, event:id) {
 
 		let window_event = Event::WindowEvent {
 			window_id:WindowId(get_window_id(state.ns_window)),
-			event:WindowEvent::TouchpadPressure {
-				device_id:DEVICE_ID,
-				pressure,
-				stage,
-			},
+			event:WindowEvent::TouchpadPressure { device_id:DEVICE_ID, pressure, stage },
 		};
 
 		AppState::queue_event(EventWrapper::StaticEvent(window_event));
@@ -1246,24 +1092,15 @@ extern fn pressure_change_with_event(this:&Object, _sel:Sel, event:id) {
 // Allows us to receive Ctrl-Tab and Ctrl-Esc.
 // Note that this *doesn't* help with any missing Cmd inputs.
 // https://github.com/chromium/chromium/blob/a86a8a6bcfa438fa3ac2eba6f02b3ad1f8e0756f/ui/views/cocoa/bridged_content_view.mm#L816
-extern fn wants_key_down_for_event(_this:&Object, _sel:Sel, _event:id) -> BOOL {
-	YES
-}
+extern fn wants_key_down_for_event(_this:&Object, _sel:Sel, _event:id) -> BOOL { YES }
 
-extern fn accepts_first_mouse(_this:&Object, _sel:Sel, _event:id) -> BOOL {
-	YES
-}
+extern fn accepts_first_mouse(_this:&Object, _sel:Sel, _event:id) -> BOOL { YES }
 
-pub unsafe fn inset_traffic_lights<W:NSWindow + Copy>(
-	window:W,
-	position:LogicalPosition<f64>,
-) {
+pub unsafe fn inset_traffic_lights<W:NSWindow + Copy>(window:W, position:LogicalPosition<f64>) {
 	let (x, y) = (position.x, position.y);
 
-	let close =
-		window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
-	let miniaturize =
-		window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
+	let close = window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
+	let miniaturize = window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
 	let zoom = window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
 
 	let title_bar_container_view = close.superview().superview();
@@ -1272,13 +1109,11 @@ pub unsafe fn inset_traffic_lights<W:NSWindow + Copy>(
 	let title_bar_frame_height = close_rect.size.height + y;
 	let mut title_bar_rect = NSView::frame(title_bar_container_view);
 	title_bar_rect.size.height = title_bar_frame_height;
-	title_bar_rect.origin.y =
-		window.frame().size.height - title_bar_frame_height;
+	title_bar_rect.origin.y = window.frame().size.height - title_bar_frame_height;
 	let _:() = msg_send![title_bar_container_view, setFrame: title_bar_rect];
 
 	let window_buttons = vec![close, miniaturize, zoom];
-	let space_between =
-		NSView::frame(miniaturize).origin.x - close_rect.origin.x;
+	let space_between = NSView::frame(miniaturize).origin.x - close_rect.origin.x;
 
 	for (i, button) in window_buttons.into_iter().enumerate() {
 		let mut rect = NSView::frame(button);

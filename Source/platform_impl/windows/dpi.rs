@@ -25,24 +25,16 @@ pub fn become_dpi_aware() {
 	static ENABLE_DPI_AWARENESS:Once = Once::new();
 	ENABLE_DPI_AWARENESS.call_once(|| {
 		unsafe {
-			if let Some(SetProcessDpiAwarenessContext) =
-				*SET_PROCESS_DPI_AWARENESS_CONTEXT
-			{
+			if let Some(SetProcessDpiAwarenessContext) = *SET_PROCESS_DPI_AWARENESS_CONTEXT {
 				// We are on Windows 10 Anniversary Update (1607) or later.
-				if !SetProcessDpiAwarenessContext(
-					DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
-				)
-				.as_bool()
+				if !SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+					.as_bool()
 				{
 					// V2 only works with Windows 10 Creators Update (1703). Try
 					// using the older V1 if we can't set V2.
-					let _ = SetProcessDpiAwarenessContext(
-						DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE,
-					);
+					let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
 				}
-			} else if let Some(SetProcessDpiAwareness) =
-				*SET_PROCESS_DPI_AWARENESS
-			{
+			} else if let Some(SetProcessDpiAwareness) = *SET_PROCESS_DPI_AWARENESS {
 				// We are on Windows 8.1 or later.
 				let _ = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 			} else if let Some(SetProcessDPIAware) = *SET_PROCESS_DPI_AWARE {
@@ -55,8 +47,7 @@ pub fn become_dpi_aware() {
 
 pub fn enable_non_client_dpi_scaling(hwnd:HWND) {
 	unsafe {
-		if let Some(EnableNonClientDpiScaling) = *ENABLE_NON_CLIENT_DPI_SCALING
-		{
+		if let Some(EnableNonClientDpiScaling) = *ENABLE_NON_CLIENT_DPI_SCALING {
 			let _ = EnableNonClientDpiScaling(hwnd);
 		}
 	}
@@ -68,14 +59,7 @@ pub fn get_monitor_dpi(hmonitor:HMONITOR) -> Option<u32> {
 			// We are on Windows 8.1 or later.
 			let mut dpi_x = 0;
 			let mut dpi_y = 0;
-			if GetDpiForMonitor(
-				hmonitor,
-				MDT_EFFECTIVE_DPI,
-				&mut dpi_x,
-				&mut dpi_y,
-			)
-			.is_ok()
-			{
+			if GetDpiForMonitor(hmonitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y).is_ok() {
 				// MSDN says that "the values of *dpiX and *dpiY are identical.
 				// You only need to record one of the values to determine
 				// the DPI and respond appropriately". https://msdn.microsoft.com/en-us/library/windows/desktop/dn280510(v=vs.85).aspx
@@ -109,9 +93,7 @@ pub unsafe fn hwnd_dpi(hwnd:HWND) -> u32 {
 
 		let mut dpi_x = 0;
 		let mut dpi_y = 0;
-		if GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y)
-			.is_ok()
-		{
+		if GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y).is_ok() {
 			dpi_x as u32
 		} else {
 			BASE_DPI

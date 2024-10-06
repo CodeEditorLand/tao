@@ -26,8 +26,7 @@ fn main() {
 	let (window, _context, mut surface) = {
 		let window = Rc::new(window);
 		let context = softbuffer::Context::new(window.clone()).unwrap();
-		let surface =
-			softbuffer::Surface::new(&context, window.clone()).unwrap();
+		let surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
 		(window, context, surface)
 	};
 
@@ -38,9 +37,9 @@ fn main() {
 		println!("{:?}", event);
 
 		match event {
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested, ..
-			} => *control_flow = ControlFlow::Exit,
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+				*control_flow = ControlFlow::Exit
+			},
 
 			#[cfg(windows)]
 			Event::RedrawRequested(_) => {
@@ -49,10 +48,7 @@ fn main() {
 					(size.width, size.height)
 				};
 				surface
-					.resize(
-						NonZeroU32::new(width).unwrap(),
-						NonZeroU32::new(height).unwrap(),
-					)
+					.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
 					.unwrap();
 
 				let mut buffer = surface.buffer_mut().unwrap();

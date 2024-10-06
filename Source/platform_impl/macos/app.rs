@@ -25,10 +25,7 @@ lazy_static! {
 		let superclass = class!(NSApplication);
 		let mut decl = ClassDecl::new("TaoApp", superclass).unwrap();
 
-		decl.add_method(
-			sel!(sendEvent:),
-			send_event as extern fn(&Object, Sel, id),
-		);
+		decl.add_method(sel!(sendEvent:), send_event as extern fn(&Object, Sel, id));
 
 		AppClass(decl.register())
 	};
@@ -45,10 +42,8 @@ extern fn send_event(this:&Object, _sel:Sel, event:id) {
 		let event_type = event.eventType();
 		let modifier_flags = event.modifierFlags();
 		if event_type == appkit::NSKeyUp
-			&& util::has_flag(
-				modifier_flags,
-				appkit::NSEventModifierFlags::NSCommandKeyMask,
-			) {
+			&& util::has_flag(modifier_flags, appkit::NSEventModifierFlags::NSCommandKeyMask)
+		{
 			let key_window:id = msg_send![this, keyWindow];
 			let _:() = msg_send![key_window, sendEvent: event];
 		} else {
@@ -72,39 +67,29 @@ unsafe fn maybe_dispatch_device_event(event:id) {
 			let delta_y = event.deltaY() as f64;
 
 			if delta_x != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(
-					Event::DeviceEvent {
-						device_id:DEVICE_ID,
-						event:DeviceEvent::Motion { axis:0, value:delta_x },
-					},
-				));
+				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+					device_id:DEVICE_ID,
+					event:DeviceEvent::Motion { axis:0, value:delta_x },
+				}));
 			}
 
 			if delta_y != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(
-					Event::DeviceEvent {
-						device_id:DEVICE_ID,
-						event:DeviceEvent::Motion { axis:1, value:delta_y },
-					},
-				));
+				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+					device_id:DEVICE_ID,
+					event:DeviceEvent::Motion { axis:1, value:delta_y },
+				}));
 			}
 
 			if delta_x != 0.0 || delta_y != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(
-					Event::DeviceEvent {
-						device_id:DEVICE_ID,
-						event:DeviceEvent::MouseMotion {
-							delta:(delta_x, delta_y),
-						},
-					},
-				));
+				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+					device_id:DEVICE_ID,
+					event:DeviceEvent::MouseMotion { delta:(delta_x, delta_y) },
+				}));
 			}
 
 			AppState::queue_events(events);
 		},
-		appkit::NSLeftMouseDown
-		| appkit::NSRightMouseDown
-		| appkit::NSOtherMouseDown => {
+		appkit::NSLeftMouseDown | appkit::NSRightMouseDown | appkit::NSOtherMouseDown => {
 			let mut events = VecDeque::with_capacity(1);
 
 			events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
@@ -117,9 +102,7 @@ unsafe fn maybe_dispatch_device_event(event:id) {
 
 			AppState::queue_events(events);
 		},
-		appkit::NSLeftMouseUp
-		| appkit::NSRightMouseUp
-		| appkit::NSOtherMouseUp => {
+		appkit::NSLeftMouseUp | appkit::NSRightMouseUp | appkit::NSOtherMouseUp => {
 			let mut events = VecDeque::with_capacity(1);
 
 			events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {

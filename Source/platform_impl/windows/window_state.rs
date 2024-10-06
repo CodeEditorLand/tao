@@ -16,13 +16,7 @@ use crate::{
 	icon::Icon,
 	keyboard::ModifiersState,
 	platform_impl::platform::{event_loop, minimal_ime::MinimalIme, util},
-	window::{
-		CursorIcon,
-		Fullscreen,
-		Theme,
-		WindowAttributes,
-		WindowSizeConstraints,
-	},
+	window::{CursorIcon, Fullscreen, Theme, WindowAttributes, WindowSizeConstraints},
 };
 
 /// Contains information about states and the window that the callback is going
@@ -169,11 +163,8 @@ impl WindowState {
 
 	pub fn window_flags(&self) -> WindowFlags { self.window_flags }
 
-	pub fn set_window_flags<F>(
-		mut this:MutexGuard<'_, Self>,
-		window:HWND,
-		f:F,
-	) where
+	pub fn set_window_flags<F>(mut this:MutexGuard<'_, Self>, window:HWND, f:F)
+	where
 		F: FnOnce(&mut WindowFlags), {
 		let old_flags = this.window_flags;
 		f(&mut this.window_flags);
@@ -209,11 +200,7 @@ impl WindowState {
 impl MouseProperties {
 	pub fn cursor_flags(&self) -> CursorFlags { self.cursor_flags }
 
-	pub fn set_cursor_flags<F>(
-		&mut self,
-		window:HWND,
-		f:F,
-	) -> Result<(), io::Error>
+	pub fn set_cursor_flags<F>(&mut self, window:HWND, f:F) -> Result<(), io::Error>
 	where
 		F: FnOnce(&mut CursorFlags), {
 		let old_flags = self.cursor_flags;
@@ -240,8 +227,7 @@ impl WindowFlags {
 	}
 
 	pub fn to_window_styles(self) -> (WINDOW_STYLE, WINDOW_EX_STYLE) {
-		let (mut style, mut style_ex) =
-			(Default::default(), Default::default());
+		let (mut style, mut style_ex) = (Default::default(), Default::default());
 		style |= WS_CAPTION | WS_CLIPSIBLINGS | WS_SYSMENU;
 		style_ex |= WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES;
 		if self.contains(WindowFlags::RESIZABLE) {
@@ -287,8 +273,7 @@ impl WindowFlags {
 			style_ex |= WS_EX_TRANSPARENT | WS_EX_LAYERED;
 		}
 		if self.intersects(
-			WindowFlags::MARKER_EXCLUSIVE_FULLSCREEN
-				| WindowFlags::MARKER_BORDERLESS_FULLSCREEN,
+			WindowFlags::MARKER_EXCLUSIVE_FULLSCREEN | WindowFlags::MARKER_BORDERLESS_FULLSCREEN,
 		) {
 			style &= !WS_OVERLAPPEDWINDOW;
 		}
@@ -336,9 +321,7 @@ impl WindowFlags {
 					0,
 					0,
 					0,
-					SWP_ASYNCWINDOWPOS
-						| SWP_NOMOVE | SWP_NOSIZE
-						| SWP_NOACTIVATE,
+					SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
 				);
 				let _ = InvalidateRgn(window, HRGN::default(), false);
 			}
@@ -356,17 +339,13 @@ impl WindowFlags {
 					0,
 					0,
 					0,
-					SWP_ASYNCWINDOWPOS
-						| SWP_NOMOVE | SWP_NOSIZE
-						| SWP_NOACTIVATE,
+					SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
 				);
 				let _ = InvalidateRgn(window, HRGN::default(), false);
 			}
 		}
 
-		if diff.contains(WindowFlags::MAXIMIZED)
-			|| new.contains(WindowFlags::MAXIMIZED)
-		{
+		if diff.contains(WindowFlags::MAXIMIZED) || new.contains(WindowFlags::MAXIMIZED) {
 			unsafe {
 				let _ = ShowWindow(
 					window,
@@ -394,20 +373,14 @@ impl WindowFlags {
 			diff.remove(WindowFlags::MINIMIZED);
 		}
 
-		if diff.contains(WindowFlags::CLOSABLE)
-			|| new.contains(WindowFlags::CLOSABLE)
-		{
+		if diff.contains(WindowFlags::CLOSABLE) || new.contains(WindowFlags::CLOSABLE) {
 			unsafe {
 				let system_menu = GetSystemMenu(window, false);
 				let _ = EnableMenuItem(
 					system_menu,
 					SC_CLOSE,
 					MF_BYCOMMAND
-						| if new.contains(WindowFlags::CLOSABLE) {
-							MF_ENABLED
-						} else {
-							MF_GRAYED
-						},
+						| if new.contains(WindowFlags::CLOSABLE) { MF_ENABLED } else { MF_GRAYED },
 				);
 			}
 		}
@@ -436,8 +409,7 @@ impl WindowFlags {
 					SetWindowLongW(window, GWL_EXSTYLE, style_ex.0 as i32);
 				}
 
-				let mut flags =
-					SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED;
+				let mut flags = SWP_NOZORDER | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED;
 
 				// We generally don't want style changes here to affect window
 				// focus, but for fullscreen windows they must be activated
@@ -449,8 +421,7 @@ impl WindowFlags {
 				}
 
 				// Refresh the window frame
-				let _ =
-					SetWindowPos(window, HWND::default(), 0, 0, 0, 0, flags);
+				let _ = SetWindowPos(window, HWND::default(), 0, 0, 0, 0, flags);
 				SendMessageW(
 					window,
 					*event_loop::SET_RETAIN_STATE_ON_SIZE_MSG_ID,
@@ -472,8 +443,7 @@ impl CursorFlags {
 				false => None,
 			};
 
-			let rect_to_tuple =
-				|rect:RECT| (rect.left, rect.top, rect.right, rect.bottom);
+			let rect_to_tuple = |rect:RECT| (rect.left, rect.top, rect.right, rect.bottom);
 			let active_cursor_clip = rect_to_tuple(util::get_cursor_clip()?);
 			let desktop_rect = rect_to_tuple(util::get_desktop_rect());
 

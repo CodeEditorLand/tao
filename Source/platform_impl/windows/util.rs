@@ -15,16 +15,7 @@ use std::{
 use windows::{
 	core::{HRESULT, PCSTR, PCWSTR},
 	Win32::{
-		Foundation::{
-			BOOL,
-			FARPROC,
-			HWND,
-			LPARAM,
-			LRESULT,
-			POINT,
-			RECT,
-			WPARAM,
-		},
+		Foundation::{BOOL, FARPROC, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM},
 		Globalization::lstrlenW,
 		Graphics::Gdi::{ClientToScreen, InvalidateRgn, HMONITOR, HRGN},
 		System::LibraryLoader::*,
@@ -47,9 +38,7 @@ where
 	bitset & flag == flag
 }
 
-pub fn wchar_to_string(wchar:&[u16]) -> String {
-	String::from_utf16_lossy(wchar)
-}
+pub fn wchar_to_string(wchar:&[u16]) -> String { String::from_utf16_lossy(wchar) }
 
 pub fn wchar_ptr_to_string(wchar:PCWSTR) -> String {
 	let len = unsafe { lstrlenW(wchar) } as usize;
@@ -87,26 +76,14 @@ pub fn get_client_rect(hwnd:HWND) -> Result<RECT, io::Error> {
 	Ok(rect)
 }
 
-pub fn adjust_size(
-	hwnd:HWND,
-	size:PhysicalSize<u32>,
-	is_decorated:bool,
-) -> PhysicalSize<u32> {
+pub fn adjust_size(hwnd:HWND, size:PhysicalSize<u32>, is_decorated:bool) -> PhysicalSize<u32> {
 	let (width, height):(u32, u32) = size.into();
 	let rect = RECT { left:0, right:width as i32, top:0, bottom:height as i32 };
 	let rect = adjust_window_rect(hwnd, rect, is_decorated).unwrap_or(rect);
-	PhysicalSize::new(
-		(rect.right - rect.left) as _,
-		(rect.bottom - rect.top) as _,
-	)
+	PhysicalSize::new((rect.right - rect.left) as _, (rect.bottom - rect.top) as _)
 }
 
-pub(crate) fn set_inner_size_physical(
-	window:HWND,
-	x:u32,
-	y:u32,
-	is_decorated:bool,
-) {
+pub(crate) fn set_inner_size_physical(window:HWND, x:u32, y:u32, is_decorated:bool) {
 	unsafe {
 		let rect = adjust_window_rect(
 			window,
@@ -124,20 +101,13 @@ pub(crate) fn set_inner_size_physical(
 			0,
 			outer_x,
 			outer_y,
-			SWP_ASYNCWINDOWPOS
-				| SWP_NOZORDER
-				| SWP_NOREPOSITION
-				| SWP_NOMOVE | SWP_NOACTIVATE,
+			SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_NOREPOSITION | SWP_NOMOVE | SWP_NOACTIVATE,
 		);
 		let _ = InvalidateRgn(window, HRGN::default(), BOOL::default());
 	}
 }
 
-pub fn adjust_window_rect(
-	hwnd:HWND,
-	rect:RECT,
-	is_decorated:bool,
-) -> Option<RECT> {
+pub fn adjust_window_rect(hwnd:HWND, rect:RECT, is_decorated:bool) -> Option<RECT> {
 	unsafe {
 		let mut style = WINDOW_STYLE(GetWindowLongW(hwnd, GWL_STYLE) as u32);
 		// if the window isn't decorated, remove `WS_SIZEBOX` and `WS_CAPTION`
@@ -148,8 +118,7 @@ pub fn adjust_window_rect(
 			style &= !WS_CAPTION;
 			style &= !WS_SIZEBOX;
 		}
-		let style_ex =
-			WINDOW_EX_STYLE(GetWindowLongW(hwnd, GWL_EXSTYLE) as u32);
+		let style_ex = WINDOW_EX_STYLE(GetWindowLongW(hwnd, GWL_EXSTYLE) as u32);
 		adjust_window_rect_with_styles(hwnd, style, style_ex, rect)
 	}
 }
@@ -166,12 +135,8 @@ pub fn adjust_window_rect_with_styles(
 		(*GET_DPI_FOR_WINDOW, *ADJUST_WINDOW_RECT_EX_FOR_DPI)
 	{
 		let dpi = unsafe { get_dpi_for_window(hwnd) };
-		if unsafe {
-			adjust_window_rect_ex_for_dpi(
-				&mut rect, style, b_menu, style_ex, dpi,
-			)
-		}
-		.as_bool()
+		if unsafe { adjust_window_rect_ex_for_dpi(&mut rect, style, b_menu, style_ex, dpi) }
+			.as_bool()
 		{
 			Some(rect)
 		} else {
@@ -222,13 +187,9 @@ pub fn get_desktop_rect() -> RECT {
 	}
 }
 
-pub fn is_focused(window:HWND) -> bool {
-	window == unsafe { GetActiveWindow() }
-}
+pub fn is_focused(window:HWND) -> bool { window == unsafe { GetActiveWindow() } }
 
-pub fn is_visible(window:HWND) -> bool {
-	unsafe { IsWindowVisible(window).as_bool() }
-}
+pub fn is_visible(window:HWND) -> bool { unsafe { IsWindowVisible(window).as_bool() } }
 
 pub fn is_maximized(window:HWND) -> windows::core::Result<bool> {
 	let mut placement = WINDOWPLACEMENT {
@@ -253,10 +214,9 @@ impl CursorIcon {
 			CursorIcon::Crosshair => IDC_CROSS,
 			CursorIcon::Text | CursorIcon::VerticalText => IDC_IBEAM,
 			CursorIcon::NotAllowed | CursorIcon::NoDrop => IDC_NO,
-			CursorIcon::Grab
-			| CursorIcon::Grabbing
-			| CursorIcon::Move
-			| CursorIcon::AllScroll => IDC_SIZEALL,
+			CursorIcon::Grab | CursorIcon::Grabbing | CursorIcon::Move | CursorIcon::AllScroll => {
+				IDC_SIZEALL
+			},
 			CursorIcon::EResize
 			| CursorIcon::WResize
 			| CursorIcon::EwResize
@@ -265,12 +225,8 @@ impl CursorIcon {
 			| CursorIcon::SResize
 			| CursorIcon::NsResize
 			| CursorIcon::RowResize => IDC_SIZENS,
-			CursorIcon::NeResize
-			| CursorIcon::SwResize
-			| CursorIcon::NeswResize => IDC_SIZENESW,
-			CursorIcon::NwResize
-			| CursorIcon::SeResize
-			| CursorIcon::NwseResize => IDC_SIZENWSE,
+			CursorIcon::NeResize | CursorIcon::SwResize | CursorIcon::NeswResize => IDC_SIZENESW,
+			CursorIcon::NwResize | CursorIcon::SeResize | CursorIcon::NwseResize => IDC_SIZENWSE,
 			CursorIcon::Wait => IDC_WAIT,
 			CursorIcon::Progress => IDC_APPSTARTING,
 			CursorIcon::Help => IDC_HELP,
@@ -287,8 +243,7 @@ pub(super) fn get_function_impl(library:&str, function:&str) -> FARPROC {
 
 	// Library names we will use are ASCII so we can use the A version to avoid
 	// string conversion.
-	let module = unsafe { LoadLibraryW(PCWSTR::from_raw(library.as_ptr())) }
-		.unwrap_or_default();
+	let module = unsafe { LoadLibraryW(PCWSTR::from_raw(library.as_ptr())) }.unwrap_or_default();
 	if module.is_invalid() {
 		return None;
 	}
@@ -307,8 +262,7 @@ macro_rules! get_function {
 }
 
 pub type SetProcessDPIAware = unsafe extern "system" fn() -> BOOL;
-pub type SetProcessDpiAwareness =
-	unsafe extern "system" fn(value:PROCESS_DPI_AWARENESS) -> HRESULT;
+pub type SetProcessDpiAwareness = unsafe extern "system" fn(value:PROCESS_DPI_AWARENESS) -> HRESULT;
 pub type SetProcessDpiAwarenessContext =
 	unsafe extern "system" fn(value:DPI_AWARENESS_CONTEXT) -> BOOL;
 pub type GetDpiForWindow = unsafe extern "system" fn(hwnd:HWND) -> u32;
@@ -318,8 +272,7 @@ pub type GetDpiForMonitor = unsafe extern "system" fn(
 	dpi_x:*mut u32,
 	dpi_y:*mut u32,
 ) -> HRESULT;
-pub type EnableNonClientDpiScaling =
-	unsafe extern "system" fn(hwnd:HWND) -> BOOL;
+pub type EnableNonClientDpiScaling = unsafe extern "system" fn(hwnd:HWND) -> BOOL;
 pub type AdjustWindowRectExForDpi = unsafe extern "system" fn(
 	rect:*mut RECT,
 	dwStyle:WINDOW_STYLE,
@@ -347,21 +300,13 @@ lazy_static! {
 
 #[allow(non_snake_case)]
 #[cfg(target_pointer_width = "32")]
-pub fn SetWindowLongPtrW(
-	window:HWND,
-	index:WINDOW_LONG_PTR_INDEX,
-	value:isize,
-) -> isize {
+pub fn SetWindowLongPtrW(window:HWND, index:WINDOW_LONG_PTR_INDEX, value:isize) -> isize {
 	unsafe { win32wm::SetWindowLongW(window, index, value as _) as _ }
 }
 
 #[allow(non_snake_case)]
 #[cfg(target_pointer_width = "64")]
-pub fn SetWindowLongPtrW(
-	window:HWND,
-	index:WINDOW_LONG_PTR_INDEX,
-	value:isize,
-) -> isize {
+pub fn SetWindowLongPtrW(window:HWND, index:WINDOW_LONG_PTR_INDEX, value:isize) -> isize {
 	unsafe { win32wm::SetWindowLongPtrW(window, index, value) }
 }
 
@@ -390,9 +335,7 @@ pub fn HIWORD(dword:u32) -> u16 { ((dword & 0xFFFF_0000) >> 16) as u16 }
 /// Implementation of the `GET_X_LPARAM` macro.
 #[allow(non_snake_case)]
 #[inline]
-pub fn GET_X_LPARAM(lparam:LPARAM) -> i16 {
-	((lparam.0 as usize) & 0xFFFF) as u16 as i16
-}
+pub fn GET_X_LPARAM(lparam:LPARAM) -> i16 { ((lparam.0 as usize) & 0xFFFF) as u16 as i16 }
 
 /// Implementation of the `GET_Y_LPARAM` macro.
 #[allow(non_snake_case)]
@@ -420,9 +363,7 @@ pub fn GET_WHEEL_DELTA_WPARAM(wparam:WPARAM) -> i16 {
 /// Implementation of the `GET_XBUTTON_WPARAM` macro.
 #[allow(non_snake_case)]
 #[inline]
-pub fn GET_XBUTTON_WPARAM(wparam:WPARAM) -> u16 {
-	((wparam.0 & 0xFFFF_0000) >> 16) as u16
-}
+pub fn GET_XBUTTON_WPARAM(wparam:WPARAM) -> u16 { ((wparam.0 & 0xFFFF_0000) >> 16) as u16 }
 
 /// Implementation of the `PRIMARYLANGID` macro.
 #[allow(non_snake_case)]
@@ -447,11 +388,8 @@ pub fn get_instance_handle() -> windows::Win32::Foundation::HMODULE {
 	// DLLs: https://stackoverflow.com/questions/21718027/getmodulehandlenull-vs-hinstance
 
 	extern {
-		static __ImageBase:
-			windows::Win32::System::SystemServices::IMAGE_DOS_HEADER;
+		static __ImageBase: windows::Win32::System::SystemServices::IMAGE_DOS_HEADER;
 	}
 
-	windows::Win32::Foundation::HMODULE(unsafe {
-		&__ImageBase as *const _ as _
-	})
+	windows::Win32::Foundation::HMODULE(unsafe { &__ImageBase as *const _ as _ })
 }

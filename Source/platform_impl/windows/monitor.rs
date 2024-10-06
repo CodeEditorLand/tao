@@ -73,9 +73,7 @@ impl VideoMode {
 
 	pub fn refresh_rate(&self) -> u16 { self.refresh_rate }
 
-	pub fn monitor(&self) -> RootMonitorHandle {
-		RootMonitorHandle { inner:self.monitor.clone() }
-	}
+	pub fn monitor(&self) -> RootMonitorHandle { RootMonitorHandle { inner:self.monitor.clone() } }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -107,8 +105,7 @@ pub fn available_monitors() -> VecDeque<MonitorHandle> {
 
 pub fn primary_monitor() -> MonitorHandle {
 	const ORIGIN:POINT = POINT { x:0, y:0 };
-	let hmonitor =
-		unsafe { MonitorFromPoint(ORIGIN, MONITOR_DEFAULTTOPRIMARY) };
+	let hmonitor = unsafe { MonitorFromPoint(ORIGIN, MONITOR_DEFAULTTOPRIMARY) };
 	MonitorHandle::new(hmonitor)
 }
 
@@ -118,48 +115,29 @@ pub fn current_monitor(hwnd:HWND) -> MonitorHandle {
 }
 
 pub fn from_point(x:f64, y:f64) -> Option<MonitorHandle> {
-	let hmonitor = unsafe {
-		MonitorFromPoint(
-			POINT { x:x as i32, y:y as i32 },
-			MONITOR_DEFAULTTONULL,
-		)
-	};
-	if !hmonitor.is_invalid() {
-		Some(MonitorHandle::new(hmonitor))
-	} else {
-		None
-	}
+	let hmonitor =
+		unsafe { MonitorFromPoint(POINT { x:x as i32, y:y as i32 }, MONITOR_DEFAULTTONULL) };
+	if !hmonitor.is_invalid() { Some(MonitorHandle::new(hmonitor)) } else { None }
 }
 
 impl Window {
-	pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
-		available_monitors()
-	}
+	pub fn available_monitors(&self) -> VecDeque<MonitorHandle> { available_monitors() }
 
 	pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
 		let monitor = primary_monitor();
 		Some(RootMonitorHandle { inner:monitor })
 	}
 
-	pub fn monitor_from_point(
-		&self,
-		x:f64,
-		y:f64,
-	) -> Option<RootMonitorHandle> {
+	pub fn monitor_from_point(&self, x:f64, y:f64) -> Option<RootMonitorHandle> {
 		from_point(x, y).map(|inner| RootMonitorHandle { inner })
 	}
 }
 
-pub(crate) fn get_monitor_info(
-	hmonitor:HMONITOR,
-) -> Result<MONITORINFOEXW, io::Error> {
+pub(crate) fn get_monitor_info(hmonitor:HMONITOR) -> Result<MONITORINFOEXW, io::Error> {
 	let mut monitor_info = MONITORINFOEXW::default();
 	monitor_info.monitorInfo.cbSize = mem::size_of::<MONITORINFOEXW>() as u32;
 	let status = unsafe {
-		GetMonitorInfoW(
-			hmonitor,
-			&mut monitor_info as *mut MONITORINFOEXW as *mut MONITORINFO,
-		)
+		GetMonitorInfoW(hmonitor, &mut monitor_info as *mut MONITORINFOEXW as *mut MONITORINFO)
 	};
 	if !status.as_bool() {
 		Err(io::Error::last_os_error())
@@ -169,16 +147,12 @@ pub(crate) fn get_monitor_info(
 }
 
 impl MonitorHandle {
-	pub(crate) fn new(hmonitor:HMONITOR) -> Self {
-		MonitorHandle(hmonitor.0 as _)
-	}
+	pub(crate) fn new(hmonitor:HMONITOR) -> Self { MonitorHandle(hmonitor.0 as _) }
 
 	#[inline]
 	pub fn name(&self) -> Option<String> {
 		let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
-		Some(util::wchar_ptr_to_string(PCWSTR::from_raw(
-			monitor_info.szDevice.as_ptr(),
-		)))
+		Some(util::wchar_ptr_to_string(PCWSTR::from_raw(monitor_info.szDevice.as_ptr())))
 	}
 
 	#[inline]
@@ -223,8 +197,7 @@ impl MonitorHandle {
 		loop {
 			unsafe {
 				let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
-				let device_name =
-					PCWSTR::from_raw(monitor_info.szDevice.as_ptr());
+				let device_name = PCWSTR::from_raw(monitor_info.szDevice.as_ptr());
 				let mut mode:DEVMODEW = mem::zeroed();
 				mode.dmSize = mem::size_of_val(&mode) as u16;
 				if !EnumDisplaySettingsExW(
@@ -239,9 +212,8 @@ impl MonitorHandle {
 				}
 				i += 1;
 
-				let required_fields = DM_BITSPERPEL
-					| DM_PELSWIDTH | DM_PELSHEIGHT
-					| DM_DISPLAYFREQUENCY;
+				let required_fields =
+					DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
 				assert!(mode.dmFields & required_fields == required_fields);
 
 				modes.insert(RootVideoMode {

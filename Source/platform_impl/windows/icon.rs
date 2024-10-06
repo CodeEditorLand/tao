@@ -2,15 +2,7 @@
 // Copyright 2021-2023 Tauri Programme within The Commons Conservancy
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{
-	fmt,
-	io,
-	iter::once,
-	mem,
-	os::windows::ffi::OsStrExt,
-	path::Path,
-	sync::Arc,
-};
+use std::{fmt, io, iter::once, mem, os::windows::ffi::OsStrExt, path::Path, sync::Arc};
 
 use windows::{
 	core::PCWSTR,
@@ -32,12 +24,8 @@ impl RgbaIcon {
 		let mut rgba = self.rgba;
 		let pixel_count = rgba.len() / PIXEL_SIZE;
 		let mut and_mask = Vec::with_capacity(pixel_count);
-		let pixels = unsafe {
-			std::slice::from_raw_parts_mut(
-				rgba.as_mut_ptr() as *mut Pixel,
-				pixel_count,
-			)
-		};
+		let pixels =
+			unsafe { std::slice::from_raw_parts_mut(rgba.as_mut_ptr() as *mut Pixel, pixel_count) };
 		for pixel in pixels {
 			and_mask.push(pixel.a.wrapping_sub(std::u8::MAX)); // invert alpha channel
 			pixel.to_bgra();
@@ -86,8 +74,7 @@ impl WinIcon {
 		path:P,
 		size:Option<PhysicalSize<u32>>,
 	) -> Result<Self, BadIcon> {
-		let wide_path:Vec<u16> =
-			path.as_ref().as_os_str().encode_wide().chain(once(0)).collect();
+		let wide_path:Vec<u16> = path.as_ref().as_os_str().encode_wide().chain(once(0)).collect();
 
 		// width / height of 0 along with LR_DEFAULTSIZE tells windows to load
 		// the default icon size
@@ -109,10 +96,7 @@ impl WinIcon {
 		))
 	}
 
-	pub fn from_resource(
-		resource_id:u16,
-		size:Option<PhysicalSize<u32>>,
-	) -> Result<Self, BadIcon> {
+	pub fn from_resource(resource_id:u16, size:Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
 		// width / height of 0 along with LR_DEFAULTSIZE tells windows to load
 		// the default icon size
 		let (width, height) = size.map(Into::into).unwrap_or((0, 0));
@@ -132,11 +116,7 @@ impl WinIcon {
 		))
 	}
 
-	pub fn from_rgba(
-		rgba:Vec<u8>,
-		width:u32,
-		height:u32,
-	) -> Result<Self, BadIcon> {
+	pub fn from_rgba(rgba:Vec<u8>, width:u32, height:u32) -> Result<Self, BadIcon> {
 		let rgba_icon = RgbaIcon::from_rgba(rgba, width, height)?;
 		rgba_icon.into_windows_icon()
 	}
@@ -152,9 +132,7 @@ impl WinIcon {
 		}
 	}
 
-	fn from_handle(handle:HICON) -> Self {
-		Self { inner:Arc::new(RaiiIcon { handle }) }
-	}
+	fn from_handle(handle:HICON) -> Self { Self { inner:Arc::new(RaiiIcon { handle }) } }
 }
 
 impl Drop for RaiiIcon {

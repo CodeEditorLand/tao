@@ -33,10 +33,7 @@ fn main() {
 
 	let event_loop = EventLoop::new();
 	let window = WindowBuilder::new()
-		.with_title(
-			"Press 1, 2, 3 to change control flow mode. Press R to toggle \
-			 redraw requests.",
-		)
+		.with_title("Press 1, 2, 3 to change control flow mode. Press R to toggle redraw requests.")
 		.build(&event_loop)
 		.unwrap();
 
@@ -61,12 +58,7 @@ fn main() {
 						close_requested = true;
 					},
 					WindowEvent::KeyboardInput {
-						event:
-							KeyEvent {
-								logical_key,
-								state: ElementState::Pressed,
-								..
-							},
+						event: KeyEvent { logical_key, state: ElementState::Pressed, .. },
 						..
 					} => {
 						// WARNING: Consider using `key_without_modifers()` if
@@ -111,9 +103,7 @@ fn main() {
 						if wait_cancelled {
 							*control_flow
 						} else {
-							ControlFlow::WaitUntil(
-								time::Instant::now() + WAIT_TIME,
-							)
+							ControlFlow::WaitUntil(time::Instant::now() + WAIT_TIME)
 						}
 					},
 					Mode::Poll => {

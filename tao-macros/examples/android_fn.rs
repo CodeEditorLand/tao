@@ -40,15 +40,7 @@ android_fn!(
 	[__setup__, main],
 	__store_package_name__,
 );
-unsafe fn add7(
-	_env:JNIEnv,
-	_class:JClass,
-	_a:i32,
-	_b:i32,
-	_setup:fn(),
-	_main:fn(),
-) {
-}
+unsafe fn add7(_env:JNIEnv, _class:JClass, _a:i32, _b:i32, _setup:fn(), _main:fn()) {}
 
 android_fn!(
 	com_example,

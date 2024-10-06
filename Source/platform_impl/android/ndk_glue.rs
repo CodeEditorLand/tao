@@ -52,34 +52,13 @@ pub static PACKAGE:OnceCell<&str> = OnceCell::new();
 /// 5. the main entry point of your android application.
 #[macro_export]
 macro_rules! android_binding {
-	(
-		$domain:ident,
-		$package:ident,
-		$activity:ident,
-		$setup:path,
-		$main:ident
-	) => {
-		::tao::android_binding!(
-			$domain,
-			$package,
-			$activity,
-			$setup,
-			$main,
-			::tao
-		)
+	($domain:ident, $package:ident, $activity:ident, $setup:path, $main:ident) => {
+		::tao::android_binding!($domain, $package, $activity, $setup, $main, ::tao)
 	};
-	(
-		$domain:ident,
-		$package:ident,
-		$activity:ident,
-		$setup:path,
-		$main:ident,
-		$tao:path
-	) => {{
+	($domain:ident, $package:ident, $activity:ident, $setup:path, $main:ident, $tao:path) => {{
 		use $tao::platform::android::prelude::{android_fn, *};
 		fn _____tao_store_package_name__() {
-			PACKAGE
-				.get_or_init(move || generate_package_name!($domain, $package));
+			PACKAGE.get_or_init(move || generate_package_name!($domain, $package));
 		}
 
 		android_fn!(
@@ -129,17 +108,13 @@ pub fn android_log(level:Level, tag:&CStr, msg:&CStr) {
 }
 
 static WINDOW_MANGER:OnceCell<GlobalRef> = OnceCell::new();
-static INPUT_QUEUE:Lazy<RwLock<Option<InputQueue>>> =
-	Lazy::new(|| Default::default());
+static INPUT_QUEUE:Lazy<RwLock<Option<InputQueue>>> = Lazy::new(|| Default::default());
 static CONTENT_RECT:Lazy<RwLock<Rect>> = Lazy::new(|| Default::default());
-static LOOPER:Lazy<Mutex<Option<ForeignLooper>>> =
-	Lazy::new(|| Default::default());
+static LOOPER:Lazy<Mutex<Option<ForeignLooper>>> = Lazy::new(|| Default::default());
 
 pub fn window_manager() -> Option<&'static GlobalRef> { WINDOW_MANGER.get() }
 
-pub fn input_queue() -> RwLockReadGuard<'static, Option<InputQueue>> {
-	INPUT_QUEUE.read().unwrap()
-}
+pub fn input_queue() -> RwLockReadGuard<'static, Option<InputQueue>> { INPUT_QUEUE.read().unwrap() }
 
 pub fn content_rect() -> Rect { CONTENT_RECT.read().unwrap().clone() }
 
@@ -166,8 +141,7 @@ pub fn poll_events() -> Option<Event> {
 unsafe fn wake(event:Event) {
 	log::trace!("{:?}", event);
 	let size = std::mem::size_of::<Event>();
-	let res =
-		libc::write(PIPE[1].as_raw_fd(), &event as *const _ as *const _, size);
+	let res = libc::write(PIPE[1].as_raw_fd(), &event as *const _ as *const _, size);
 	assert_eq!(res, size as libc::ssize_t);
 }
 
@@ -211,12 +185,7 @@ pub unsafe fn create(
 	//-> jobjectArray {
 	// Initialize global context
 	let window_manager = env
-		.call_method(
-			&jobject,
-			"getWindowManager",
-			"()Landroid/view/WindowManager;",
-			&[],
-		)
+		.call_method(&jobject, "getWindowManager", "()Landroid/view/WindowManager;", &[])
 		.unwrap()
 		.l()
 		.unwrap();
@@ -287,9 +256,7 @@ pub unsafe fn create(
 	// `LOOPER` variable. It will be used from `on_input_queue_created` as soon
 	// as this function returns.
 	let locked_looper = LOOPER.lock().unwrap();
-	let _mutex_guard = looper_ready
-		.wait_while(locked_looper, |looper| looper.is_none())
-		.unwrap();
+	let _mutex_guard = looper_ready.wait_while(locked_looper, |looper| looper.is_none()).unwrap();
 }
 
 pub unsafe fn resume(_:JNIEnv, _:JClass, _:JObject) { wake(Event::Resume); }
@@ -297,11 +264,7 @@ pub unsafe fn resume(_:JNIEnv, _:JClass, _:JObject) { wake(Event::Resume); }
 pub unsafe fn pause(_:JNIEnv, _:JClass, _:JObject) { wake(Event::Pause); }
 
 pub unsafe fn focus(_:JNIEnv, _:JClass, has_focus:libc::c_int) {
-	let event = if has_focus == 0 {
-		Event::WindowLostFocus
-	} else {
-		Event::WindowHasFocus
-	};
+	let event = if has_focus == 0 { Event::WindowLostFocus } else { Event::WindowHasFocus };
 	wake(event);
 }
 
@@ -313,9 +276,7 @@ pub unsafe fn stop(_:JNIEnv, _:JClass, _:JObject) { wake(Event::Stop); }
 // Events below are not used by event loop yet.
 ///////////////////////////////////////////////
 
-pub unsafe fn save(_:JNIEnv, _:JClass, _:JObject) {
-	wake(Event::SaveInstanceState);
-}
+pub unsafe fn save(_:JNIEnv, _:JClass, _:JObject) { wake(Event::SaveInstanceState); }
 
 pub unsafe fn destroy(_:JNIEnv, _:JClass, _:JObject) {
 	wake(Event::Destroy);

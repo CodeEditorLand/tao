@@ -4,12 +4,7 @@
 
 // TODO: Upstream these
 
-#![allow(
-	dead_code,
-	non_snake_case,
-	non_upper_case_globals,
-	clippy::enum_variant_names
-)]
+#![allow(dead_code, non_snake_case, non_upper_case_globals, clippy::enum_variant_names)]
 
 use std::ffi::c_void;
 
@@ -40,9 +35,7 @@ pub struct NSRange {
 
 impl NSRange {
 	#[inline]
-	pub fn new(location:NSUInteger, length:NSUInteger) -> NSRange {
-		NSRange { location, length }
-	}
+	pub fn new(location:NSUInteger, length:NSUInteger) -> NSRange { NSRange { location, length } }
 }
 
 unsafe impl objc::Encode for NSRange {
@@ -58,9 +51,7 @@ unsafe impl objc::Encode for NSRange {
 }
 
 pub trait NSMutableAttributedString: Sized {
-	unsafe fn alloc(_:Self) -> id {
-		msg_send![class!(NSMutableAttributedString), alloc]
-	}
+	unsafe fn alloc(_:Self) -> id { msg_send![class!(NSMutableAttributedString), alloc] }
 
 	unsafe fn init(self) -> id; // *mut NSMutableAttributedString
 	unsafe fn initWithString(self, string:id) -> id;
@@ -74,9 +65,7 @@ pub trait NSMutableAttributedString: Sized {
 impl NSMutableAttributedString for id {
 	unsafe fn init(self) -> id { msg_send![self, init] }
 
-	unsafe fn initWithString(self, string:id) -> id {
-		msg_send![self, initWithString: string]
-	}
+	unsafe fn initWithString(self, string:id) -> id { msg_send![self, initWithString: string] }
 
 	unsafe fn initWithAttributedString(self, string:id) -> id {
 		msg_send![self, initWithAttributedString: string]
@@ -133,8 +122,7 @@ pub const kCGDisplayBlendNormal:f32 = 0.0;
 pub const kCGDisplayBlendSolidColor:f32 = 1.0;
 
 pub type CGDisplayFadeReservationToken = u32;
-pub const kCGDisplayFadeReservationInvalidToken:CGDisplayFadeReservationToken =
-	0;
+pub const kCGDisplayFadeReservationInvalidToken:CGDisplayFadeReservationToken = 0;
 
 pub type Boolean = u8;
 pub const FALSE:Boolean = 0;
@@ -180,9 +168,7 @@ pub type CGDisplayModeRef = *mut libc::c_void;
 // https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/OSX_Technology_Overview/SystemFrameworks/SystemFrameworks.html#//apple_ref/doc/uid/TP40001067-CH210-BBCFFIEG
 #[link(name = "ApplicationServices", kind = "framework")]
 extern {
-	pub fn CGDisplayCreateUUIDFromDisplayID(
-		display:CGDirectDisplayID,
-	) -> CFUUIDRef;
+	pub fn CGDisplayCreateUUIDFromDisplayID(display:CGDirectDisplayID) -> CFUUIDRef;
 }
 
 #[link(name = "CoreGraphics", kind = "framework")]
@@ -213,9 +199,7 @@ extern {
 		synchronous:Boolean,
 	) -> CGError;
 	pub fn CGRectContainsPoint(rect:CGRect, point:CGPoint) -> boolean_t;
-	pub fn CGReleaseDisplayFadeReservation(
-		token:CGDisplayFadeReservationToken,
-	) -> CGError;
+	pub fn CGReleaseDisplayFadeReservation(token:CGDisplayFadeReservationToken) -> CGError;
 	pub fn CGShieldingWindowLevel() -> CGWindowLevel;
 	pub fn CGDisplaySetDisplayMode(
 		display:CGDirectDisplayID,
@@ -229,8 +213,7 @@ extern {
 	pub fn CGDisplayModeGetPixelWidth(mode:CGDisplayModeRef) -> usize;
 	pub fn CGDisplayModeGetPixelHeight(mode:CGDisplayModeRef) -> usize;
 	pub fn CGDisplayModeGetRefreshRate(mode:CGDisplayModeRef) -> f64;
-	pub fn CGDisplayModeCopyPixelEncoding(mode:CGDisplayModeRef)
-	-> CFStringRef;
+	pub fn CGDisplayModeCopyPixelEncoding(mode:CGDisplayModeRef) -> CFStringRef;
 	pub fn CGDisplayModeRetain(mode:CGDisplayModeRef);
 	pub fn CGDisplayModeRelease(mode:CGDisplayModeRef);
 }

@@ -93,9 +93,7 @@ impl VideoMode {
 
 	pub fn refresh_rate(&self) -> u16 { self.refresh_rate }
 
-	pub fn monitor(&self) -> RootMonitorHandle {
-		RootMonitorHandle { inner:self.monitor.clone() }
-	}
+	pub fn monitor(&self) -> RootMonitorHandle { RootMonitorHandle { inner:self.monitor.clone() } }
 }
 
 #[derive(Clone)]
@@ -116,9 +114,7 @@ impl PartialEq for MonitorHandle {
 impl Eq for MonitorHandle {}
 
 impl PartialOrd for MonitorHandle {
-	fn partial_cmp(&self, other:&Self) -> Option<std::cmp::Ordering> {
-		Some(self.cmp(other))
-	}
+	fn partial_cmp(&self, other:&Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
 }
 
 impl Ord for MonitorHandle {
@@ -150,9 +146,7 @@ pub fn available_monitors() -> VecDeque<MonitorHandle> {
 	}
 }
 
-pub fn primary_monitor() -> MonitorHandle {
-	MonitorHandle(CGDisplay::main().id)
-}
+pub fn primary_monitor() -> MonitorHandle { MonitorHandle(CGDisplay::main().id) }
 
 // `from_point` get a monitor handle which contains the given point.
 pub fn from_point(x:f64, y:f64) -> Option<MonitorHandle> {
@@ -209,10 +203,7 @@ impl MonitorHandle {
 		let display = CGDisplay::new(display_id);
 		let height = display.pixels_high();
 		let width = display.pixels_wide();
-		PhysicalSize::from_logical::<_, f64>(
-			(width as f64, height as f64),
-			self.scale_factor(),
-		)
+		PhysicalSize::from_logical::<_, f64>((width as f64, height as f64), self.scale_factor())
 	}
 
 	#[inline]
@@ -236,15 +227,10 @@ impl MonitorHandle {
 		let cv_refresh_rate = unsafe {
 			let mut display_link = std::ptr::null_mut();
 			assert_eq!(
-				ffi::CVDisplayLinkCreateWithCGDisplay(
-					self.0,
-					&mut display_link
-				),
+				ffi::CVDisplayLinkCreateWithCGDisplay(self.0, &mut display_link),
 				ffi::kCVReturnSuccess
 			);
-			let time = ffi::CVDisplayLinkGetNominalOutputVideoRefreshPeriod(
-				display_link,
-			);
+			let time = ffi::CVDisplayLinkGetNominalOutputVideoRefreshPeriod(display_link);
 			ffi::CVDisplayLinkRelease(display_link);
 
 			// This value is indefinite if an invalid display link was specified
@@ -257,12 +243,8 @@ impl MonitorHandle {
 
 		unsafe {
 			let modes = {
-				let array =
-					ffi::CGDisplayCopyAllDisplayModes(self.0, std::ptr::null());
-				assert!(
-					!array.is_null(),
-					"failed to get list of display modes"
-				);
+				let array = ffi::CGDisplayCopyAllDisplayModes(self.0, std::ptr::null());
+				assert!(!array.is_null(), "failed to get list of display modes");
 				let array_count = CFArrayGetCount(array);
 				let modes:Vec<_> = (0..array_count)
 					.map(move |i| {
@@ -276,32 +258,21 @@ impl MonitorHandle {
 			};
 
 			modes.into_iter().map(move |mode| {
-				let cg_refresh_rate =
-					ffi::CGDisplayModeGetRefreshRate(mode).round() as i64;
+				let cg_refresh_rate = ffi::CGDisplayModeGetRefreshRate(mode).round() as i64;
 
 				// CGDisplayModeGetRefreshRate returns 0.0 for any display that
 				// isn't a CRT
-				let refresh_rate = if cg_refresh_rate > 0 {
-					cg_refresh_rate
-				} else {
-					cv_refresh_rate
-				};
+				let refresh_rate =
+					if cg_refresh_rate > 0 { cg_refresh_rate } else { cv_refresh_rate };
 
-				let pixel_encoding = CFString::wrap_under_create_rule(
-					ffi::CGDisplayModeCopyPixelEncoding(mode),
-				)
-				.to_string();
-				let bit_depth = if pixel_encoding
-					.eq_ignore_ascii_case(ffi::IO32BitDirectPixels)
-				{
+				let pixel_encoding =
+					CFString::wrap_under_create_rule(ffi::CGDisplayModeCopyPixelEncoding(mode))
+						.to_string();
+				let bit_depth = if pixel_encoding.eq_ignore_ascii_case(ffi::IO32BitDirectPixels) {
 					32
-				} else if pixel_encoding
-					.eq_ignore_ascii_case(ffi::IO16BitDirectPixels)
-				{
+				} else if pixel_encoding.eq_ignore_ascii_case(ffi::IO16BitDirectPixels) {
 					16
-				} else if pixel_encoding
-					.eq_ignore_ascii_case(ffi::kIO30BitDirectPixels)
-				{
+				} else if pixel_encoding.eq_ignore_ascii_case(ffi::kIO30BitDirectPixels) {
 					30
 				} else {
 					unimplemented!()
@@ -334,11 +305,9 @@ impl MonitorHandle {
 				let device_description = NSScreen::deviceDescription(screen);
 				let value:id = msg_send![device_description, objectForKey:*key];
 				if value != nil {
-					let other_native_id:NSUInteger =
-						msg_send![value, unsignedIntegerValue];
-					let other_uuid = ffi::CGDisplayCreateUUIDFromDisplayID(
-						other_native_id as CGDirectDisplayID,
-					);
+					let other_native_id:NSUInteger = msg_send![value, unsignedIntegerValue];
+					let other_uuid =
+						ffi::CGDisplayCreateUUIDFromDisplayID(other_native_id as CGDirectDisplayID);
 					if uuid == other_uuid {
 						return Some(screen);
 					}

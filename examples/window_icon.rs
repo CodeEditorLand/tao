@@ -56,12 +56,10 @@ fn load_icon(path:&Path) -> Icon {
 	let (icon_rgba, icon_width, icon_height) = {
 		// alternatively, you can embed the icon in the binary through
 		// `include_bytes!` macro and use `image::load_from_memory`
-		let image =
-			image::open(path).expect("Failed to open icon path").into_rgba8();
+		let image = image::open(path).expect("Failed to open icon path").into_rgba8();
 		let (width, height) = image.dimensions();
 		let rgba = image.into_raw();
 		(rgba, width, height)
 	};
-	Icon::from_rgba(icon_rgba, icon_width, icon_height)
-		.expect("Failed to open icon")
+	Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }

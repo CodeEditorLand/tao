@@ -18,8 +18,8 @@ fn main() {
 	let event_loop = EventLoop::new();
 
 	print!(
-		"Please choose the fullscreen mode: (1) exclusive, (2) borderless, \
-		 (3) borderless on current monitor: "
+		"Please choose the fullscreen mode: (1) exclusive, (2) borderless, (3) borderless on \
+		 current monitor: "
 	);
 	stdout().flush().unwrap();
 
@@ -28,11 +28,7 @@ fn main() {
 	let num = num.trim().parse().ok().expect("Please enter a number");
 
 	let fullscreen = Some(match num {
-		1 => {
-			Fullscreen::Exclusive(prompt_for_video_mode(&prompt_for_monitor(
-				&event_loop,
-			)))
-		},
+		1 => Fullscreen::Exclusive(prompt_for_video_mode(&prompt_for_monitor(&event_loop))),
 		2 => Fullscreen::Borderless(Some(prompt_for_monitor(&event_loop))),
 		3 => Fullscreen::Borderless(None),
 		_ => panic!("Please enter a valid number"),
@@ -52,16 +48,9 @@ fn main() {
 		match event {
 			Event::WindowEvent { event, .. } => {
 				match event {
-					WindowEvent::CloseRequested => {
-						*control_flow = ControlFlow::Exit
-					},
+					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
 					WindowEvent::KeyboardInput {
-						event:
-							KeyEvent {
-								logical_key,
-								state: ElementState::Pressed,
-								..
-							},
+						event: KeyEvent { logical_key, state: ElementState::Pressed, .. },
 						..
 					} => {
 						if Key::Escape == logical_key {
@@ -77,10 +66,7 @@ fn main() {
 						}
 
 						if Key::Character("s") == logical_key {
-							println!(
-								"window.fullscreen {:?}",
-								window.fullscreen()
-							);
+							println!("window.fullscreen {:?}", window.fullscreen());
 						}
 						if Key::Character("m") == logical_key {
 							let is_maximized = window.is_maximized();
@@ -111,10 +97,7 @@ fn prompt_for_monitor(event_loop:&EventLoop<()>) -> MonitorHandle {
 	let mut num = String::new();
 	stdin().read_line(&mut num).unwrap();
 	let num = num.trim().parse().expect("Please enter a number");
-	let monitor = event_loop
-		.available_monitors()
-		.nth(num)
-		.expect("Please enter a valid ID");
+	let monitor = event_loop.available_monitors().nth(num).expect("Please enter a valid ID");
 
 	println!("Using {:?}", monitor.name());
 
@@ -132,8 +115,7 @@ fn prompt_for_video_mode(monitor:&MonitorHandle) -> VideoMode {
 	let mut num = String::new();
 	stdin().read_line(&mut num).unwrap();
 	let num = num.trim().parse().expect("Please enter a number");
-	let video_mode =
-		monitor.video_modes().nth(num).expect("Please enter a valid ID");
+	let video_mode = monitor.video_modes().nth(num).expect("Please enter a valid ID");
 
 	println!("Using {}", video_mode);
 

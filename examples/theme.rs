@@ -31,20 +31,11 @@ fn main() {
 		match event {
 			Event::WindowEvent { event, .. } => {
 				match event {
-					WindowEvent::CloseRequested => {
-						*control_flow = ControlFlow::Exit
-					},
-					WindowEvent::KeyboardInput {
-						event: KeyEvent { physical_key, .. },
-						..
-					} => {
+					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+					WindowEvent::KeyboardInput { event: KeyEvent { physical_key, .. }, .. } => {
 						match physical_key {
-							KeyCode::KeyD => {
-								window.set_theme(Some(Theme::Dark))
-							},
-							KeyCode::KeyL => {
-								window.set_theme(Some(Theme::Light))
-							},
+							KeyCode::KeyD => window.set_theme(Some(Theme::Dark)),
+							KeyCode::KeyL => window.set_theme(Some(Theme::Light)),
 							KeyCode::KeyA => window.set_theme(None),
 							_ => {},
 						}

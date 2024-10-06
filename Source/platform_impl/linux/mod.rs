@@ -83,12 +83,7 @@ unsafe impl Sync for PlatformSpecificWindowBuilderAttributes {}
 pub struct OsError;
 
 impl std::fmt::Display for OsError {
-	fn fmt(
-		&self,
-		_f:&mut std::fmt::Formatter<'_>,
-	) -> Result<(), std::fmt::Error> {
-		Ok(())
-	}
+	fn fmt(&self, _f:&mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> { Ok(()) }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

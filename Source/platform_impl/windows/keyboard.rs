@@ -97,8 +97,7 @@ impl KeyEventBuilder {
 			win32wm::WM_SETFOCUS => {
 				// synthesize keydown events
 				let kbd_state = get_async_kbd_state();
-				let key_events = self
-					.synthesize_kbd_state(ElementState::Pressed, &kbd_state);
+				let key_events = self.synthesize_kbd_state(ElementState::Pressed, &kbd_state);
 				if !key_events.is_empty() {
 					return key_events;
 				}
@@ -106,15 +105,13 @@ impl KeyEventBuilder {
 			win32wm::WM_KILLFOCUS => {
 				// sythesize keyup events
 				let kbd_state = get_kbd_state();
-				let key_events = self
-					.synthesize_kbd_state(ElementState::Released, &kbd_state);
+				let key_events = self.synthesize_kbd_state(ElementState::Released, &kbd_state);
 				if !key_events.is_empty() {
 					return key_events;
 				}
 			},
 			win32wm::WM_KEYDOWN | win32wm::WM_SYSKEYDOWN => {
-				if msg_kind == WM_SYSKEYDOWN && wparam.0 == usize::from(VK_F4.0)
-				{
+				if msg_kind == WM_SYSKEYDOWN && wparam.0 == usize::from(VK_F4.0) {
 					// Don't dispatch Alt+F4 to the application.
 					// This is handled in `event_loop.rs`
 					return vec![];
@@ -136,13 +133,7 @@ impl KeyEventBuilder {
 
 				let mut next_msg = MaybeUninit::uninit();
 				let peek_retval = unsafe {
-					PeekMessageW(
-						next_msg.as_mut_ptr(),
-						hwnd,
-						WM_KEYFIRST,
-						WM_KEYLAST,
-						PM_NOREMOVE,
-					)
+					PeekMessageW(next_msg.as_mut_ptr(), hwnd, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE)
 				};
 				let has_next_key_message = peek_retval.as_bool();
 				self.event_info = None;
@@ -161,8 +152,7 @@ impl KeyEventBuilder {
 					} else {
 						let (_, layout) = layouts.get_current_layout();
 						let is_fake = {
-							let curr_event =
-								finished_event_info.as_ref().unwrap();
+							let curr_event = finished_event_info.as_ref().unwrap();
 							is_current_fake(curr_event, next_msg, layout)
 						};
 						if is_fake {
@@ -172,10 +162,7 @@ impl KeyEventBuilder {
 				}
 				if let Some(event_info) = finished_event_info {
 					let ev = event_info.finalize(&mut layouts.strings);
-					return vec![MessageAsKeyEvent {
-						event:ev,
-						is_synthetic:false,
-					}];
+					return vec![MessageAsKeyEvent { event:ev, is_synthetic:false }];
 				}
 			},
 			win32wm::WM_DEADCHAR | win32wm::WM_SYSDEADCHAR => {
@@ -185,16 +172,13 @@ impl KeyEventBuilder {
 				let event_info = self.event_info.take().unwrap();
 				let mut layouts = LAYOUT_CACHE.lock();
 				let ev = event_info.finalize(&mut layouts.strings);
-				return vec![MessageAsKeyEvent {
-					event:ev,
-					is_synthetic:false,
-				}];
+				return vec![MessageAsKeyEvent { event:ev, is_synthetic:false }];
 			},
 			win32wm::WM_CHAR | win32wm::WM_SYSCHAR => {
 				if self.event_info.is_none() {
 					trace!(
-						"Received a CHAR message but no `event_info` was \
-						 available. The message is probably IME, returning."
+						"Received a CHAR message but no `event_info` was available. The message \
+						 is probably IME, returning."
 					);
 					return vec![];
 				}
@@ -219,8 +203,7 @@ impl KeyEventBuilder {
 						more_char_coming = false;
 					} else {
 						let next_msg = next_msg.assume_init().message;
-						more_char_coming =
-							next_msg == WM_CHAR || next_msg == WM_SYSCHAR;
+						more_char_coming = next_msg == WM_CHAR || next_msg == WM_SYSCHAR;
 					}
 				}
 
@@ -235,10 +218,7 @@ impl KeyEventBuilder {
 					let utf16parts = match self.event_info.as_mut() {
 						Some(ev_info) => &mut ev_info.utf16parts,
 						None => {
-							warn!(
-								"The event_info was None when it was expected \
-								 to be some"
-							);
+							warn!("The event_info was None when it was expected to be some");
 							return vec![];
 						},
 					};
@@ -246,9 +226,7 @@ impl KeyEventBuilder {
 					let new_size = utf16parts.len() + 2;
 					utf16parts.resize(new_size, 0);
 					if let Some(ch) = char::from_u32(wparam.0 as u32) {
-						let encode_len = ch
-							.encode_utf16(&mut utf16parts[start_offset..])
-							.len();
+						let encode_len = ch.encode_utf16(&mut utf16parts[start_offset..]).len();
 						let new_size = start_offset + encode_len;
 						utf16parts.resize(new_size, 0);
 					}
@@ -257,10 +235,7 @@ impl KeyEventBuilder {
 					let mut event_info = match self.event_info.take() {
 						Some(ev_info) => ev_info,
 						None => {
-							warn!(
-								"The event_info was None when it was expected \
-								 to be some"
-							);
+							warn!("The event_info was None when it was expected to be some");
 							return vec![];
 						},
 					};
@@ -268,8 +243,7 @@ impl KeyEventBuilder {
 					// It's okay to call `ToUnicode` here, because at this point
 					// the dead key is already consumed by the character.
 					let kbd_state = get_kbd_state();
-					let mod_state =
-						WindowsModifiers::active_modifiers(&kbd_state);
+					let mod_state = WindowsModifiers::active_modifiers(&kbd_state);
 
 					let (_, layout) = layouts.get_current_layout();
 					let ctrl_on = if layout.has_alt_graph {
@@ -284,29 +258,18 @@ impl KeyEventBuilder {
 					// Otherwise, we would interpret the character
 					// incorrectly, missing the dead key.
 					if !ctrl_on {
-						event_info.text =
-							PartialText::System(event_info.utf16parts.clone());
+						event_info.text = PartialText::System(event_info.utf16parts.clone());
 					} else {
 						let mod_no_ctrl = mod_state.remove_only_ctrl();
-						let num_lock_on =
-							kbd_state[usize::from(VK_NUMLOCK.0)] & 1 != 0;
+						let num_lock_on = kbd_state[usize::from(VK_NUMLOCK.0)] & 1 != 0;
 						let vkey = event_info.vkey;
 						let scancode = event_info.scancode;
 						let keycode = event_info.code;
-						let key = layout.get_key(
-							mod_no_ctrl,
-							num_lock_on,
-							vkey,
-							scancode,
-							keycode,
-						);
+						let key = layout.get_key(mod_no_ctrl, num_lock_on, vkey, scancode, keycode);
 						event_info.text = PartialText::Text(key.to_text());
 					}
 					let ev = event_info.finalize(&mut layouts.strings);
-					return vec![MessageAsKeyEvent {
-						event:ev,
-						is_synthetic:false,
-					}];
+					return vec![MessageAsKeyEvent { event:ev, is_synthetic:false }];
 				}
 			},
 			win32wm::WM_KEYUP | win32wm::WM_SYSKEYUP => {
@@ -325,13 +288,7 @@ impl KeyEventBuilder {
 				);
 				let mut next_msg = MaybeUninit::uninit();
 				let peek_retval = unsafe {
-					PeekMessageW(
-						next_msg.as_mut_ptr(),
-						hwnd,
-						WM_KEYFIRST,
-						WM_KEYLAST,
-						PM_NOREMOVE,
-					)
+					PeekMessageW(next_msg.as_mut_ptr(), hwnd, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE)
 				};
 				let has_next_key_message = peek_retval.as_bool();
 				let mut valid_event_info = Some(event_info);
@@ -348,10 +305,7 @@ impl KeyEventBuilder {
 				}
 				if let Some(event_info) = valid_event_info {
 					let event = event_info.finalize(&mut layouts.strings);
-					return vec![MessageAsKeyEvent {
-						event,
-						is_synthetic:false,
-					}];
+					return vec![MessageAsKeyEvent { event, is_synthetic:false }];
 				}
 			},
 			_ => (),
@@ -370,8 +324,7 @@ impl KeyEventBuilder {
 		let mut layouts = LAYOUT_CACHE.lock();
 		let (locale_id, _) = layouts.get_current_layout();
 
-		let is_key_pressed =
-			|vk:VIRTUAL_KEY| &kbd_state[usize::from(vk.0)] & 0x80 != 0;
+		let is_key_pressed = |vk:VIRTUAL_KEY| &kbd_state[usize::from(vk.0)] & 0x80 != 0;
 
 		// Is caps-lock active? Note that this is different from caps-lock
 		// being held down.
@@ -382,10 +335,9 @@ impl KeyEventBuilder {
 		// following reasons:
 		// 1. If caps-lock is *not* held down but *is* active, then we have to
 		//    synthesize all printable keys, respecting the caps-lock state.
-		// 2. If caps-lock is held down, we could choose to sythesize its
-		//    keypress after every other key, in which case all other keys
-		//    *must* be sythesized as if the caps-lock state was be the opposite
-		//    of what it currently is.
+		// 2. If caps-lock is held down, we could choose to sythesize its keypress after
+		//    every other key, in which case all other keys *must* be sythesized as if
+		//    the caps-lock state was be the opposite of what it currently is.
 		// --
 		// For the sake of simplicity we are choosing to always sythesize
 		// caps-lock first, and always use the current caps-lock state
@@ -436,14 +388,8 @@ impl KeyEventBuilder {
 			}
 		};
 		let do_modifier = |key_events:&mut Vec<_>, layouts:&mut _| {
-			const CLEAR_MODIFIER_VKS:[VIRTUAL_KEY; 6] = [
-				VK_LCONTROL,
-				VK_LSHIFT,
-				VK_LMENU,
-				VK_RCONTROL,
-				VK_RSHIFT,
-				VK_RMENU,
-			];
+			const CLEAR_MODIFIER_VKS:[VIRTUAL_KEY; 6] =
+				[VK_LCONTROL, VK_LSHIFT, VK_LMENU, VK_RCONTROL, VK_RSHIFT, VK_RMENU];
 			for vk in CLEAR_MODIFIER_VKS.iter() {
 				if is_key_pressed(*vk) {
 					let event = self.create_synthetic(
@@ -487,9 +433,7 @@ impl KeyEventBuilder {
 		locale_id:HKL,
 		layouts:&mut MutexGuard<'_, LayoutCache>,
 	) -> Option<MessageAsKeyEvent> {
-		let scancode = unsafe {
-			MapVirtualKeyExW(u32::from(vk.0), MAPVK_VK_TO_VSC_EX, locale_id)
-		};
+		let scancode = unsafe { MapVirtualKeyExW(u32::from(vk.0), MAPVK_VK_TO_VSC_EX, locale_id) };
 		if scancode == 0 {
 			return None;
 		}
@@ -502,18 +446,9 @@ impl KeyEventBuilder {
 		};
 		let layout = layouts.layouts.get(&(locale_id.0 as _)).unwrap();
 		let logical_key = layout.get_key(mods, num_lock_on, vk, scancode, code);
-		let key_without_modifiers = layout.get_key(
-			WindowsModifiers::empty(),
-			false,
-			vk,
-			scancode,
-			code,
-		);
-		let text = if key_state == ElementState::Pressed {
-			logical_key.to_text()
-		} else {
-			None
-		};
+		let key_without_modifiers =
+			layout.get_key(WindowsModifiers::empty(), false, vk, scancode, code);
+		let text = if key_state == ElementState::Pressed { logical_key.to_text() } else { None };
 		let event_info = PartialKeyEventInfo {
 			vkey:vk,
 			logical_key:PartialLogicalKey::This(logical_key.clone()),
@@ -587,11 +522,7 @@ impl PartialKeyEventInfo {
 			// scancode of 0 but a valid virtual key. In these cases we
 			// obtain the scancode from the virtual key.
 			unsafe {
-				MapVirtualKeyExW(
-					u32::from(vkey.0),
-					MAPVK_VK_TO_VSC_EX,
-					HKL(layout.hkl as _),
-				) as u16
+				MapVirtualKeyExW(u32::from(vkey.0), MAPVK_VK_TO_VSC_EX, HKL(layout.hkl as _)) as u16
 			}
 		} else {
 			new_ex_scancode(lparam_struct.scancode, lparam_struct.extended)
@@ -621,22 +552,14 @@ impl PartialKeyEventInfo {
 			None
 		};
 
-		let preliminary_logical_key = layout.get_key(
-			mods_without_ctrl,
-			num_lock_on,
-			vkey,
-			scancode,
-			code,
-		);
+		let preliminary_logical_key =
+			layout.get_key(mods_without_ctrl, num_lock_on, vkey, scancode, code);
 		let key_is_char = matches!(preliminary_logical_key, Key::Character(_));
 		let is_pressed = state == ElementState::Pressed;
 
 		let logical_key = if let Some(key) = code_as_key.clone() {
 			PartialLogicalKey::This(key)
-		} else if is_pressed
-			&& key_is_char
-			&& !mods.contains(WindowsModifiers::CONTROL)
-		{
+		} else if is_pressed && key_is_char && !mods.contains(WindowsModifiers::CONTROL) {
 			// In some cases we want to use the UNICHAR text for logical_key in
 			// order to allow dead keys to have an effect on the character
 			// reported by `logical_key`.
@@ -661,8 +584,7 @@ impl PartialKeyEventInfo {
 						// talk about it :(
 						let mut utf8 = [0; 4];
 						let s = ch.encode_utf8(&mut utf8);
-						let static_str =
-							get_or_insert_str(&mut layouts.strings, s);
+						let static_str = get_or_insert_str(&mut layouts.strings, s);
 						Key::Character(static_str)
 					} else {
 						Key::Unidentified(NativeKeyCode::Unidentified)
@@ -723,9 +645,7 @@ impl PartialKeyEventInfo {
 							Key::Character(s)
 						}
 					},
-					None => {
-						Key::Unidentified(NativeKeyCode::Windows(self.scancode))
-					},
+					None => Key::Unidentified(NativeKeyCode::Windows(self.scancode)),
 				}
 			},
 			PartialLogicalKey::This(v) => v,
@@ -801,10 +721,7 @@ fn get_async_kbd_state() -> [u8; 256] {
 				*state = 0x80;
 			}
 
-			if matches!(
-				vk,
-				win32km::VK_CAPITAL | win32km::VK_NUMLOCK | win32km::VK_SCROLL
-			) {
+			if matches!(vk, win32km::VK_CAPITAL | win32km::VK_NUMLOCK | win32km::VK_SCROLL) {
 				// Toggle states aren't reported by `GetAsyncKeyState`
 				let toggle_state = GetKeyState(i32::from(vk.0));
 				let is_active = (toggle_state & 1) != 0;
@@ -822,13 +739,8 @@ fn get_async_kbd_state() -> [u8; 256] {
 /// the current event is a Ctrl event and if the next event is a right Alt
 /// (AltGr) event. If this is the case, the current event must be the
 /// fake Ctrl event.
-fn is_current_fake(
-	curr_info:&PartialKeyEventInfo,
-	next_msg:MSG,
-	layout:&Layout,
-) -> bool {
-	let curr_is_ctrl =
-		matches!(curr_info.logical_key, PartialLogicalKey::This(Key::Control));
+fn is_current_fake(curr_info:&PartialKeyEventInfo, next_msg:MSG, layout:&Layout) -> bool {
+	let curr_is_ctrl = matches!(curr_info.logical_key, PartialLogicalKey::This(Key::Control));
 	if layout.has_alt_graph {
 		let next_code = ex_scancode_from_lparam(next_msg.lParam);
 		let next_is_altgr = next_code == 0xE038; // 0xE038 is right alt
@@ -844,22 +756,19 @@ fn get_location(scancode:ExScancode, hkl:HKL) -> KeyLocation {
 
 	let extension = 0xE000;
 	let extended = (scancode & extension) == extension;
-	let vkey = VIRTUAL_KEY(unsafe {
-		MapVirtualKeyExW(scancode as u32, MAPVK_VSC_TO_VK_EX, hkl)
-	} as u16);
+	let vkey =
+		VIRTUAL_KEY(unsafe { MapVirtualKeyExW(scancode as u32, MAPVK_VSC_TO_VK_EX, hkl) } as u16);
 
 	// Use the native VKEY and the extended flag to cover most cases
 	// This is taken from the `druid` GUI library, specifically
 	// druid-shell/src/platform/windows/keyboard.rs
 	match vkey {
-		win32km::VK_LSHIFT
-		| win32km::VK_LCONTROL
-		| win32km::VK_LMENU
-		| win32km::VK_LWIN => KeyLocation::Left,
-		win32km::VK_RSHIFT
-		| win32km::VK_RCONTROL
-		| win32km::VK_RMENU
-		| win32km::VK_RWIN => KeyLocation::Right,
+		win32km::VK_LSHIFT | win32km::VK_LCONTROL | win32km::VK_LMENU | win32km::VK_LWIN => {
+			KeyLocation::Left
+		},
+		win32km::VK_RSHIFT | win32km::VK_RCONTROL | win32km::VK_RMENU | win32km::VK_RWIN => {
+			KeyLocation::Right
+		},
 		win32km::VK_RETURN if extended => KeyLocation::Numpad,
 		win32km::VK_INSERT
 		| win32km::VK_DELETE

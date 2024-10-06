@@ -17,10 +17,7 @@ use objc::{
 	runtime::{Class, Object, Sel, BOOL},
 };
 
-use crate::{
-	platform::macos::ActivationPolicy,
-	platform_impl::platform::app_state::AppState,
-};
+use crate::{platform::macos::ActivationPolicy, platform_impl::platform::app_state::AppState};
 
 static AUX_DELEGATE_STATE_NAME:&str = "auxState";
 
@@ -41,8 +38,7 @@ unsafe impl Sync for AppDelegateClass {}
 lazy_static! {
 	pub static ref APP_DELEGATE_CLASS: AppDelegateClass = unsafe {
 		let superclass = class!(NSResponder);
-		let mut decl =
-			ClassDecl::new("TaoAppDelegateParent", superclass).unwrap();
+		let mut decl = ClassDecl::new("TaoAppDelegateParent", superclass).unwrap();
 
 		decl.add_class_method(sel!(new), new as extern fn(&Class, Sel) -> id);
 		decl.add_method(sel!(dealloc), dealloc as extern fn(&Object, Sel));
@@ -61,13 +57,11 @@ lazy_static! {
 		);
 		decl.add_method(
 			sel!(applicationShouldHandleReopen:hasVisibleWindows:),
-			application_should_handle_reopen
-				as extern fn(&Object, Sel, id, BOOL) -> BOOL,
+			application_should_handle_reopen as extern fn(&Object, Sel, id, BOOL) -> BOOL,
 		);
 		decl.add_method(
 			sel!(applicationSupportsSecureRestorableState:),
-			application_supports_secure_restorable_state
-				as extern fn(&Object, Sel, id) -> BOOL,
+			application_supports_secure_restorable_state as extern fn(&Object, Sel, id) -> BOOL,
 		);
 		decl.add_ivar::<*mut c_void>(AUX_DELEGATE_STATE_NAME);
 
@@ -125,10 +119,8 @@ extern fn application_open_urls(_:&Object, _:Sel, _:id, urls:id) -> () {
 		(0..urls.count())
 			.map(|i| {
 				url::Url::parse(
-					&CStr::from_ptr(
-						urls.objectAtIndex(i).absoluteString().UTF8String(),
-					)
-					.to_string_lossy(),
+					&CStr::from_ptr(urls.objectAtIndex(i).absoluteString().UTF8String())
+						.to_string_lossy(),
 				)
 			})
 			.flatten()
@@ -151,11 +143,7 @@ extern fn application_should_handle_reopen(
 	has_visible_windows
 }
 
-extern fn application_supports_secure_restorable_state(
-	_:&Object,
-	_:Sel,
-	_:id,
-) -> BOOL {
+extern fn application_supports_secure_restorable_state(_:&Object, _:Sel, _:id) -> BOOL {
 	trace!("Triggered `applicationSupportsSecureRestorableState`");
 	trace!("Completed `applicationSupportsSecureRestorableState`");
 	objc::runtime::YES

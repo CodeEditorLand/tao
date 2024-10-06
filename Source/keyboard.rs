@@ -169,12 +169,8 @@ mod modifiers_serde {
 		fn deserialize<D>(deserializer:D) -> Result<Self, D::Error>
 		where
 			D: Deserializer<'de>, {
-			let ModifiersStateSerialize {
-				shift_key,
-				control_key,
-				alt_key,
-				super_key,
-			} = ModifiersStateSerialize::deserialize(deserializer)?;
+			let ModifiersStateSerialize { shift_key, control_key, alt_key, super_key } =
+				ModifiersStateSerialize::deserialize(deserializer)?;
 			let mut m = ModifiersState::empty();
 			m.set(ModifiersState::SHIFT, shift_key);
 			m.set(ModifiersState::CONTROL, control_key);
@@ -684,14 +680,10 @@ pub enum KeyCode {
 
 impl KeyCode {
 	/// Return platform specific scancode.
-	pub fn to_scancode(self) -> Option<u32> {
-		platform_keycode_to_scancode(self)
-	}
+	pub fn to_scancode(self) -> Option<u32> { platform_keycode_to_scancode(self) }
 
 	/// Return `KeyCode` from platform scancode.
-	pub fn from_scancode(scancode:u32) -> KeyCode {
-		platform_keycode_from_scancode(scancode)
-	}
+	pub fn from_scancode(scancode:u32) -> KeyCode { platform_keycode_from_scancode(scancode) }
 }
 
 impl FromStr for KeyCode {

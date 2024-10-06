@@ -26,10 +26,7 @@ fn main() {
 		if let Event::WindowEvent { event, window_id, .. } = event {
 			match event {
 				WindowEvent::CloseRequested => {
-					println!(
-						"Window {:?} has received the signal to close",
-						window_id
-					);
+					println!("Window {:?} has received the signal to close", window_id);
 
 					// This drops the window, causing it to close.
 					windows.remove(&window_id);

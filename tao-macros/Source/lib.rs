@@ -55,11 +55,7 @@ impl Parse for AndroidFnInput {
 		let ret = if input.peek(Ident) {
 			let ret = input.parse::<Type>()?;
 			let _:syn::Result<Comma> = input.parse();
-			if ret.to_token_stream().to_string() == "__VOID__" {
-				None
-			} else {
-				Some(ret)
-			}
+			if ret.to_token_stream().to_string() == "__VOID__" { None } else { Some(ret) }
 		} else {
 			None
 		};
@@ -67,8 +63,7 @@ impl Parse for AndroidFnInput {
 		let non_jni_args = if input.peek(syn::token::Bracket) {
 			let non_jni_args;
 			let _:syn::token::Bracket = bracketed!(non_jni_args in input);
-			let non_jni_args =
-				non_jni_args.parse_terminated(Type::parse, Token![,])?;
+			let non_jni_args = non_jni_args.parse_terminated(Type::parse, Token![,])?;
 			let _:syn::Result<Comma> = input.parse();
 			non_jni_args
 		} else {
@@ -82,16 +77,7 @@ impl Parse for AndroidFnInput {
 		} else {
 			None
 		};
-		Ok(Self {
-			domain,
-			package,
-			class,
-			function,
-			ret,
-			args,
-			non_jni_args,
-			function_before,
-		})
+		Ok(Self { domain, package, class, function, ret, args, non_jni_args, function_before })
 	}
 }
 
@@ -149,14 +135,7 @@ impl Parse for AndroidFnInput {
 /// 	add(env, class, a_1, a_2)
 /// }
 ///
-/// unsafe fn add<'local>(
-/// 	_env:JNIEnv<'local>,
-/// 	_class:JClass<'local>,
-/// 	a:i32,
-/// 	b:i32,
-/// ) -> i32 {
-/// 	a + b
-/// }
+/// unsafe fn add<'local>(_env:JNIEnv<'local>, _class:JClass<'local>, a:i32, b:i32) -> i32 { a + b }
 /// ```
 /// and now you can extern the function in your Java/kotlin:
 ///
@@ -175,14 +154,7 @@ impl Parse for AndroidFnInput {
 /// # }
 /// # type JClass<'a> = JNIEnv<'a>;
 /// # type JObject<'a> = JNIEnv<'a>;
-/// android_fn![
-/// 	com_example,
-/// 	tao,
-/// 	OperationsClass,
-/// 	add,
-/// 	[JObject<'local>],
-/// 	JClass<'local>
-/// ];
+/// android_fn![com_example, tao, OperationsClass, add, [JObject<'local>], JClass<'local>];
 /// unsafe fn add<'local>(
 /// 	mut _env:JNIEnv<'local>,
 /// 	class:JClass<'local>,
@@ -253,10 +225,7 @@ pub fn android_fn(tokens:TokenStream) -> TokenStream {
 	let args_ = args.iter().map(|a| &a.0);
 
 	let ret = if let Some(ret) = ret {
-		syn::ReturnType::Type(
-			syn::token::RArrow(proc_macro2::Span::call_site()),
-			Box::new(ret),
-		)
+		syn::ReturnType::Type(syn::token::RArrow(proc_macro2::Span::call_site()), Box::new(ret))
 	} else {
 		syn::ReturnType::Default
 	};
@@ -268,18 +237,18 @@ pub fn android_fn(tokens:TokenStream) -> TokenStream {
 	};
 
 	quote! {
-    #[no_mangle]
-    unsafe extern "C" fn #java_fn_name<'local>(
-      env: JNIEnv<'local>,
-      class: JClass<'local>,
-      #(#args),*
-    )  #ret {
-      #function_before();
-      #function(env, class, #(#args_),*  #comma_before_non_jni_args #(#non_jni_args),*)
-    }
+	  #[no_mangle]
+	  unsafe extern "C" fn #java_fn_name<'local>(
+		env: JNIEnv<'local>,
+		class: JClass<'local>,
+		#(#args),*
+	  )  #ret {
+		#function_before();
+		#function(env, class, #(#args_),*  #comma_before_non_jni_args #(#non_jni_args),*)
+	  }
 
-  }
-  .into()
+	}
+	.into()
 }
 
 struct GeneratePackageNameInput {

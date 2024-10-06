@@ -108,9 +108,7 @@ impl WindowExtMacOS for Window {
 	fn has_shadow(&self) -> bool { self.window.has_shadow() }
 
 	#[inline]
-	fn set_has_shadow(&self, has_shadow:bool) {
-		self.window.set_has_shadow(has_shadow)
-	}
+	fn set_has_shadow(&self, has_shadow:bool) { self.window.set_has_shadow(has_shadow) }
 
 	#[inline]
 	fn set_traffic_light_inset<P:Into<Position>>(&self, position:P) {
@@ -118,9 +116,7 @@ impl WindowExtMacOS for Window {
 	}
 
 	#[inline]
-	fn set_is_document_edited(&self, edited:bool) {
-		self.window.set_is_document_edited(edited)
-	}
+	fn set_is_document_edited(&self, edited:bool) { self.window.set_is_document_edited(edited) }
 
 	#[inline]
 	fn is_document_edited(&self) -> bool { self.window.is_document_edited() }
@@ -174,12 +170,8 @@ impl From<ActivationPolicy> for NSApplicationActivationPolicy {
 	fn from(act_pol:ActivationPolicy) -> Self {
 		match act_pol {
 			ActivationPolicy::Regular => NSApplicationActivationPolicyRegular,
-			ActivationPolicy::Accessory => {
-				NSApplicationActivationPolicyAccessory
-			},
-			ActivationPolicy::Prohibited => {
-				NSApplicationActivationPolicyProhibited
-			},
+			ActivationPolicy::Accessory => NSApplicationActivationPolicyAccessory,
+			ActivationPolicy::Prohibited => NSApplicationActivationPolicyProhibited,
 		}
 	}
 }
@@ -199,49 +191,28 @@ pub trait WindowBuilderExtMacOS {
 	fn with_parent_window(self, parent:*mut c_void) -> WindowBuilder;
 	/// Enables click-and-drag behavior for the entire window, not just the
 	/// titlebar.
-	fn with_movable_by_window_background(
-		self,
-		movable_by_window_background:bool,
-	) -> WindowBuilder;
+	fn with_movable_by_window_background(self, movable_by_window_background:bool) -> WindowBuilder;
 	/// Makes the titlebar transparent and allows the content to appear behind
 	/// it.
-	fn with_titlebar_transparent(
-		self,
-		titlebar_transparent:bool,
-	) -> WindowBuilder;
+	fn with_titlebar_transparent(self, titlebar_transparent:bool) -> WindowBuilder;
 	/// Hides the window title.
 	fn with_title_hidden(self, title_hidden:bool) -> WindowBuilder;
 	/// Hides the window titlebar.
 	fn with_titlebar_hidden(self, titlebar_hidden:bool) -> WindowBuilder;
 	/// Hides the window titlebar buttons.
-	fn with_titlebar_buttons_hidden(
-		self,
-		titlebar_buttons_hidden:bool,
-	) -> WindowBuilder;
+	fn with_titlebar_buttons_hidden(self, titlebar_buttons_hidden:bool) -> WindowBuilder;
 	/// Makes the window content appear behind the titlebar.
-	fn with_fullsize_content_view(
-		self,
-		fullsize_content_view:bool,
-	) -> WindowBuilder;
+	fn with_fullsize_content_view(self, fullsize_content_view:bool) -> WindowBuilder;
 	/// Build window with `resizeIncrements` property. Values must not be 0.
-	fn with_resize_increments(
-		self,
-		increments:LogicalSize<f64>,
-	) -> WindowBuilder;
+	fn with_resize_increments(self, increments:LogicalSize<f64>) -> WindowBuilder;
 	fn with_disallow_hidpi(self, disallow_hidpi:bool) -> WindowBuilder;
 	/// Sets whether or not the window has shadow.
 	fn with_has_shadow(self, has_shadow:bool) -> WindowBuilder;
 	/// Sets the traffic light position to (x, y) relative to the upper left
 	/// corner
-	fn with_traffic_light_inset<P:Into<Position>>(
-		self,
-		inset:P,
-	) -> WindowBuilder;
+	fn with_traffic_light_inset<P:Into<Position>>(self, inset:P) -> WindowBuilder;
 	/// Sets whether the system can automatically organize windows into tabs.
-	fn with_automatic_window_tabbing(
-		self,
-		automatic_tabbing:bool,
-	) -> WindowBuilder;
+	fn with_automatic_window_tabbing(self, automatic_tabbing:bool) -> WindowBuilder;
 	/// Defines the window [tabbing identifier].
 	///
 	/// [tabbing identifier]: <https://developer.apple.com/documentation/appkit/nswindow/1644704-tabbingidentifier>
@@ -260,16 +231,12 @@ impl WindowBuilderExtMacOS for WindowBuilder {
 		mut self,
 		movable_by_window_background:bool,
 	) -> WindowBuilder {
-		self.platform_specific.movable_by_window_background =
-			movable_by_window_background;
+		self.platform_specific.movable_by_window_background = movable_by_window_background;
 		self
 	}
 
 	#[inline]
-	fn with_titlebar_transparent(
-		mut self,
-		titlebar_transparent:bool,
-	) -> WindowBuilder {
+	fn with_titlebar_transparent(mut self, titlebar_transparent:bool) -> WindowBuilder {
 		self.platform_specific.titlebar_transparent = titlebar_transparent;
 		self
 	}
@@ -281,12 +248,8 @@ impl WindowBuilderExtMacOS for WindowBuilder {
 	}
 
 	#[inline]
-	fn with_titlebar_buttons_hidden(
-		mut self,
-		titlebar_buttons_hidden:bool,
-	) -> WindowBuilder {
-		self.platform_specific.titlebar_buttons_hidden =
-			titlebar_buttons_hidden;
+	fn with_titlebar_buttons_hidden(mut self, titlebar_buttons_hidden:bool) -> WindowBuilder {
+		self.platform_specific.titlebar_buttons_hidden = titlebar_buttons_hidden;
 		self
 	}
 
@@ -297,19 +260,13 @@ impl WindowBuilderExtMacOS for WindowBuilder {
 	}
 
 	#[inline]
-	fn with_fullsize_content_view(
-		mut self,
-		fullsize_content_view:bool,
-	) -> WindowBuilder {
+	fn with_fullsize_content_view(mut self, fullsize_content_view:bool) -> WindowBuilder {
 		self.platform_specific.fullsize_content_view = fullsize_content_view;
 		self
 	}
 
 	#[inline]
-	fn with_resize_increments(
-		mut self,
-		increments:LogicalSize<f64>,
-	) -> WindowBuilder {
+	fn with_resize_increments(mut self, increments:LogicalSize<f64>) -> WindowBuilder {
 		self.platform_specific.resize_increments = Some(increments);
 		self
 	}
@@ -327,31 +284,20 @@ impl WindowBuilderExtMacOS for WindowBuilder {
 	}
 
 	#[inline]
-	fn with_traffic_light_inset<P:Into<Position>>(
-		mut self,
-		inset:P,
-	) -> WindowBuilder {
+	fn with_traffic_light_inset<P:Into<Position>>(mut self, inset:P) -> WindowBuilder {
 		self.platform_specific.traffic_light_inset = Some(inset.into());
 		self
 	}
 
 	#[inline]
-	fn with_automatic_window_tabbing(
-		mut self,
-		automatic_tabbing:bool,
-	) -> WindowBuilder {
+	fn with_automatic_window_tabbing(mut self, automatic_tabbing:bool) -> WindowBuilder {
 		self.platform_specific.automatic_tabbing = automatic_tabbing;
 		self
 	}
 
 	#[inline]
-	fn with_tabbing_identifier(
-		mut self,
-		tabbing_identifier:&str,
-	) -> WindowBuilder {
-		self.platform_specific
-			.tabbing_identifier
-			.replace(tabbing_identifier.into());
+	fn with_tabbing_identifier(mut self, tabbing_identifier:&str) -> WindowBuilder {
+		self.platform_specific.tabbing_identifier.replace(tabbing_identifier.into());
 		self
 	}
 }
@@ -383,16 +329,14 @@ impl<T> EventLoopExtMacOS for EventLoop<T> {
 	#[inline]
 	fn set_activation_policy(&mut self, activation_policy:ActivationPolicy) {
 		unsafe {
-			get_aux_state_mut(&**self.event_loop.delegate).activation_policy =
-				activation_policy;
+			get_aux_state_mut(&**self.event_loop.delegate).activation_policy = activation_policy;
 		}
 	}
 
 	#[inline]
 	fn set_activate_ignoring_other_apps(&mut self, ignore:bool) {
 		unsafe {
-			get_aux_state_mut(&**self.event_loop.delegate)
-				.activate_ignoring_other_apps = ignore;
+			get_aux_state_mut(&**self.event_loop.delegate).activate_ignoring_other_apps = ignore;
 		}
 	}
 }
@@ -409,9 +353,7 @@ impl MonitorHandleExtMacOS for MonitorHandle {
 	#[inline]
 	fn native_id(&self) -> u32 { self.inner.native_identifier() }
 
-	fn ns_screen(&self) -> Option<*mut c_void> {
-		self.inner.ns_screen().map(|s| s as *mut c_void)
-	}
+	fn ns_screen(&self) -> Option<*mut c_void> { self.inner.ns_screen().map(|s| s as *mut c_void) }
 }
 
 /// Additional methods on `EventLoopWindowTarget` that are specific to macOS.
@@ -429,10 +371,7 @@ pub trait EventLoopWindowTargetExtMacOS {
 	///
 	/// To set the activation policy before the app starts running, see
 	/// [`EventLoopExtMacOS::set_activation_policy`](crate::platform::macos::EventLoopExtMacOS::set_activation_policy).
-	fn set_activation_policy_at_runtime(
-		&self,
-		activation_policy:ActivationPolicy,
-	);
+	fn set_activation_policy_at_runtime(&self, activation_policy:ActivationPolicy);
 }
 
 impl<T> EventLoopWindowTargetExtMacOS for EventLoopWindowTarget<T> {
@@ -454,14 +393,10 @@ impl<T> EventLoopWindowTargetExtMacOS for EventLoopWindowTarget<T> {
 		unsafe { msg_send![app, hideOtherApplications: 0] }
 	}
 
-	fn set_activation_policy_at_runtime(
-		&self,
-		activation_policy:ActivationPolicy,
-	) {
+	fn set_activation_policy_at_runtime(&self, activation_policy:ActivationPolicy) {
 		let cls = objc::runtime::Class::get("NSApplication").unwrap();
 		let app:cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
-		let ns_activation_policy:NSApplicationActivationPolicy =
-			activation_policy.into();
+		let ns_activation_policy:NSApplicationActivationPolicy = activation_policy.into();
 		unsafe { msg_send![app, setActivationPolicy: ns_activation_policy] }
 	}
 }

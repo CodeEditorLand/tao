@@ -58,20 +58,12 @@ impl<'a, Never> Event<'a, Never> {
 
 pub trait EventHandler: Debug {
 	// Not sure probably it should accept Event<'static, Never>
-	fn handle_nonuser_event(
-		&mut self,
-		event:Event<'_, Never>,
-		control_flow:&mut ControlFlow,
-	);
+	fn handle_nonuser_event(&mut self, event:Event<'_, Never>, control_flow:&mut ControlFlow);
 	fn handle_user_events(&mut self, control_flow:&mut ControlFlow);
 }
 
 struct EventLoopHandler<T:'static> {
-	callback: Weak<
-		RefCell<
-			dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow),
-		>,
-	>,
+	callback:Weak<RefCell<dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>>,
 	window_target:Rc<RootWindowTarget<T>>,
 }
 
@@ -80,18 +72,15 @@ impl<T> EventLoopHandler<T> {
 	where
 		F: FnOnce(
 			&mut EventLoopHandler<T>,
-			RefMut<
-				'_,
-				dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow),
-			>,
+			RefMut<'_, dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>,
 		), {
 		if let Some(callback) = self.callback.upgrade() {
 			let callback = callback.borrow_mut();
 			(f)(self, callback);
 		} else {
 			panic!(
-				"Tried to dispatch an event, but the event loop that owned \
-				 the event handler callback seems to be destroyed"
+				"Tried to dispatch an event, but the event loop that owned the event handler \
+				 callback seems to be destroyed"
 			);
 		}
 	}
@@ -107,11 +96,7 @@ impl<T> Debug for EventLoopHandler<T> {
 }
 
 impl<T> EventHandler for EventLoopHandler<T> {
-	fn handle_nonuser_event(
-		&mut self,
-		event:Event<'_, Never>,
-		control_flow:&mut ControlFlow,
-	) {
+	fn handle_nonuser_event(&mut self, event:Event<'_, Never>, control_flow:&mut ControlFlow) {
 		self.with_callback(|this, mut callback| {
 			if let ControlFlow::ExitWithCode(code) = *control_flow {
 				let dummy = &mut ControlFlow::ExitWithCode(code);
@@ -127,17 +112,9 @@ impl<T> EventHandler for EventLoopHandler<T> {
 			for event in this.window_target.p.receiver.try_iter() {
 				if let ControlFlow::ExitWithCode(code) = *control_flow {
 					let dummy = &mut ControlFlow::ExitWithCode(code);
-					(callback)(
-						Event::UserEvent(event),
-						&this.window_target,
-						dummy,
-					);
+					(callback)(Event::UserEvent(event), &this.window_target, dummy);
 				} else {
-					(callback)(
-						Event::UserEvent(event),
-						&this.window_target,
-						control_flow,
-					);
+					(callback)(Event::UserEvent(event), &this.window_target, control_flow);
 				}
 			}
 		});
@@ -165,23 +142,16 @@ impl Handler {
 		self.pending_events.lock().unwrap()
 	}
 
-	fn redraw<'a>(&'a self) -> MutexGuard<'a, Vec<WindowId>> {
-		self.pending_redraw.lock().unwrap()
-	}
+	fn redraw<'a>(&'a self) -> MutexGuard<'a, Vec<WindowId>> { self.pending_redraw.lock().unwrap() }
 
-	fn waker(&self) -> MutexGuard<'_, EventLoopWaker> {
-		self.waker.lock().unwrap()
-	}
+	fn waker(&self) -> MutexGuard<'_, EventLoopWaker> { self.waker.lock().unwrap() }
 
 	fn is_ready(&self) -> bool { self.ready.load(Ordering::Acquire) }
 
 	fn set_ready(&self) { self.ready.store(true, Ordering::Release); }
 
 	fn should_exit(&self) -> bool {
-		matches!(
-			*self.control_flow.lock().unwrap(),
-			ControlFlow::ExitWithCode(_)
-		)
+		matches!(*self.control_flow.lock().unwrap(), ControlFlow::ExitWithCode(_))
 	}
 
 	fn get_control_flow_and_update_prev(&self) -> ControlFlow {
@@ -196,23 +166,15 @@ impl Handler {
 		(old, new)
 	}
 
-	fn get_start_time(&self) -> Option<Instant> {
-		*self.start_time.lock().unwrap()
-	}
+	fn get_start_time(&self) -> Option<Instant> { *self.start_time.lock().unwrap() }
 
-	fn update_start_time(&self) {
-		*self.start_time.lock().unwrap() = Some(Instant::now());
-	}
+	fn update_start_time(&self) { *self.start_time.lock().unwrap() = Some(Instant::now()); }
 
-	fn take_events(&self) -> VecDeque<EventWrapper> {
-		mem::take(&mut *self.events())
-	}
+	fn take_events(&self) -> VecDeque<EventWrapper> { mem::take(&mut *self.events()) }
 
 	fn should_redraw(&self) -> Vec<WindowId> { mem::take(&mut *self.redraw()) }
 
-	fn get_in_callback(&self) -> bool {
-		self.in_callback.load(Ordering::Acquire)
-	}
+	fn get_in_callback(&self) -> bool { self.in_callback.load(Ordering::Acquire) }
 
 	fn set_in_callback(&self, in_callback:bool) {
 		self.in_callback.store(in_callback, Ordering::Release);
@@ -222,22 +184,16 @@ impl Handler {
 		if let Some(ref mut callback) = *self.callback.lock().unwrap() {
 			match wrapper {
 				EventWrapper::StaticEvent(event) => {
-					callback.handle_nonuser_event(
-						event,
-						&mut *self.control_flow.lock().unwrap(),
-					)
+					callback.handle_nonuser_event(event, &mut *self.control_flow.lock().unwrap())
 				},
-				EventWrapper::EventProxy(proxy) => {
-					self.handle_proxy(proxy, callback)
-				},
+				EventWrapper::EventProxy(proxy) => self.handle_proxy(proxy, callback),
 			}
 		}
 	}
 
 	fn handle_user_events(&self) {
 		if let Some(ref mut callback) = *self.callback.lock().unwrap() {
-			callback
-				.handle_user_events(&mut *self.control_flow.lock().unwrap());
+			callback.handle_user_events(&mut *self.control_flow.lock().unwrap());
 		}
 	}
 
@@ -252,16 +208,10 @@ impl Handler {
 		let old_size = size.clone();
 		let event = Event::WindowEvent {
 			window_id:WindowId(get_window_id(*ns_window)),
-			event:WindowEvent::ScaleFactorChanged {
-				scale_factor,
-				new_inner_size:&mut size,
-			},
+			event:WindowEvent::ScaleFactorChanged { scale_factor, new_inner_size:&mut size },
 		};
 
-		callback.handle_nonuser_event(
-			event,
-			&mut *self.control_flow.lock().unwrap(),
-		);
+		callback.handle_nonuser_event(event, &mut *self.control_flow.lock().unwrap());
 
 		if old_size != size {
 			let logical_size = size.to_logical(scale_factor);
@@ -270,17 +220,9 @@ impl Handler {
 		}
 	}
 
-	fn handle_proxy(
-		&self,
-		proxy:EventProxy,
-		callback:&mut Box<dyn EventHandler + 'static>,
-	) {
+	fn handle_proxy(&self, proxy:EventProxy, callback:&mut Box<dyn EventHandler + 'static>) {
 		match proxy {
-			EventProxy::DpiChangedProxy {
-				ns_window,
-				suggested_size,
-				scale_factor,
-			} => {
+			EventProxy::DpiChangedProxy { ns_window, suggested_size, scale_factor } => {
 				self.handle_scale_factor_changed_event(
 					callback,
 					ns_window,
@@ -296,11 +238,7 @@ pub enum AppState {}
 
 impl AppState {
 	pub fn set_callback<T>(
-		callback:Weak<
-			RefCell<
-				dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow),
-			>,
-		>,
+		callback:Weak<RefCell<dyn FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow)>>,
 		window_target:Rc<RootWindowTarget<T>>,
 	) {
 		*HANDLER.callback.lock().unwrap() =
@@ -309,14 +247,10 @@ impl AppState {
 
 	pub fn exit() -> i32 {
 		HANDLER.set_in_callback(true);
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::LoopDestroyed,
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::LoopDestroyed));
 		HANDLER.set_in_callback(false);
 		HANDLER.callback.lock().unwrap().take();
-		if let ControlFlow::ExitWithCode(code) =
-			HANDLER.get_old_and_new_control_flow().1
-		{
+		if let ControlFlow::ExitWithCode(code) = HANDLER.get_old_and_new_control_flow().1 {
 			code
 		} else {
 			0
@@ -328,9 +262,7 @@ impl AppState {
 		unsafe {
 			let ns_app = NSApp();
 			window_activation_hack(ns_app);
-			let ignore = if get_aux_state_mut(app_delegate)
-				.activate_ignoring_other_apps
-			{
+			let ignore = if get_aux_state_mut(app_delegate).activate_ignoring_other_apps {
 				YES
 			} else {
 				NO
@@ -340,58 +272,43 @@ impl AppState {
 		HANDLER.set_ready();
 		HANDLER.waker().start();
 		HANDLER.set_in_callback(true);
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::NewEvents(StartCause::Init),
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::NewEvents(StartCause::Init)));
 		HANDLER.set_in_callback(false);
 	}
 
 	pub fn open_urls(urls:Vec<url::Url>) {
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::Opened { urls },
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::Opened { urls }));
 	}
 
 	pub fn reopen(has_visible_windows:bool) {
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::Reopen { has_visible_windows },
-		));
+		HANDLER
+			.handle_nonuser_event(EventWrapper::StaticEvent(Event::Reopen { has_visible_windows }));
 	}
 
 	pub fn wakeup(panic_info:Weak<PanicInfo>) {
-		let panic_info = panic_info.upgrade().expect(
-			"The panic info must exist here. This failure indicates a \
-			 developer error.",
-		);
+		let panic_info = panic_info
+			.upgrade()
+			.expect("The panic info must exist here. This failure indicates a developer error.");
 		// Return when in callback due to https://github.com/rust-windowing/winit/issues/1779
-		if panic_info.is_panicking()
-			|| !HANDLER.is_ready()
-			|| HANDLER.get_in_callback()
-		{
+		if panic_info.is_panicking() || !HANDLER.is_ready() || HANDLER.get_in_callback() {
 			return;
 		}
 		let start = HANDLER.get_start_time().unwrap();
 		let cause = match HANDLER.get_control_flow_and_update_prev() {
 			ControlFlow::Poll => StartCause::Poll,
-			ControlFlow::Wait => {
-				StartCause::WaitCancelled { start, requested_resume:None }
-			},
+			ControlFlow::Wait => StartCause::WaitCancelled { start, requested_resume:None },
 			ControlFlow::WaitUntil(requested_resume) => {
 				if Instant::now() >= requested_resume {
 					StartCause::ResumeTimeReached { start, requested_resume }
 				} else {
-					StartCause::WaitCancelled {
-						start,
-						requested_resume:Some(requested_resume),
-					}
+					StartCause::WaitCancelled { start, requested_resume:Some(requested_resume) }
 				}
 			},
-			ControlFlow::ExitWithCode(_) => StartCause::Poll, /* panic!("unexpected `ControlFlow::Exit`"), */
+			ControlFlow::ExitWithCode(_) => StartCause::Poll, /* panic!("unexpected
+			                                                   * `ControlFlow::Exit`"), */
 		};
 		HANDLER.set_in_callback(true);
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::NewEvents(cause),
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::NewEvents(cause)));
 		HANDLER.set_in_callback(false);
 	}
 
@@ -408,9 +325,7 @@ impl AppState {
 	}
 
 	pub fn handle_redraw(window_id:WindowId) {
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::RedrawRequested(window_id),
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::RedrawRequested(window_id)));
 	}
 
 	pub fn queue_event(wrapper:EventWrapper) {
@@ -428,15 +343,11 @@ impl AppState {
 	}
 
 	pub fn cleared(panic_info:Weak<PanicInfo>) {
-		let panic_info = panic_info.upgrade().expect(
-			"The panic info must exist here. This failure indicates a \
-			 developer error.",
-		);
+		let panic_info = panic_info
+			.upgrade()
+			.expect("The panic info must exist here. This failure indicates a developer error.");
 		// Return when in callback due to https://github.com/rust-windowing/winit/issues/1779
-		if panic_info.is_panicking()
-			|| !HANDLER.is_ready()
-			|| HANDLER.get_in_callback()
-		{
+		if panic_info.is_panicking() || !HANDLER.is_ready() || HANDLER.get_in_callback() {
 			return;
 		}
 		HANDLER.set_in_callback(true);
@@ -444,17 +355,12 @@ impl AppState {
 		for event in HANDLER.take_events() {
 			HANDLER.handle_nonuser_event(event);
 		}
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::MainEventsCleared,
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::MainEventsCleared));
 		for window_id in HANDLER.should_redraw() {
-			HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-				Event::RedrawRequested(window_id),
-			));
+			HANDLER
+				.handle_nonuser_event(EventWrapper::StaticEvent(Event::RedrawRequested(window_id)));
 		}
-		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(
-			Event::RedrawEventsCleared,
-		));
+		HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::RedrawEventsCleared));
 		HANDLER.set_in_callback(false);
 		if HANDLER.should_exit() {
 			unsafe {
@@ -469,13 +375,10 @@ impl AppState {
 		}
 		HANDLER.update_start_time();
 		match HANDLER.get_old_and_new_control_flow() {
-			(ControlFlow::ExitWithCode(_), _)
-			| (_, ControlFlow::ExitWithCode(_)) => (),
+			(ControlFlow::ExitWithCode(_), _) | (_, ControlFlow::ExitWithCode(_)) => (),
 			(old, new) if old == new => (),
 			(_, ControlFlow::Wait) => HANDLER.waker().stop(),
-			(_, ControlFlow::WaitUntil(instant)) => {
-				HANDLER.waker().start_at(instant)
-			},
+			(_, ControlFlow::WaitUntil(instant)) => HANDLER.waker().start_at(instant),
 			(_, ControlFlow::Poll) => HANDLER.waker().start(),
 		}
 	}
@@ -523,12 +426,8 @@ fn apply_activation_policy(app_delegate:&Object) {
 		let act_pol = get_aux_state_mut(app_delegate).activation_policy;
 		ns_app.setActivationPolicy_(match act_pol {
 			ActivationPolicy::Regular => NSApplicationActivationPolicyRegular,
-			ActivationPolicy::Accessory => {
-				NSApplicationActivationPolicyAccessory
-			},
-			ActivationPolicy::Prohibited => {
-				NSApplicationActivationPolicyProhibited
-			},
+			ActivationPolicy::Accessory => NSApplicationActivationPolicyAccessory,
+			ActivationPolicy::Prohibited => NSApplicationActivationPolicyProhibited,
 		});
 	}
 }

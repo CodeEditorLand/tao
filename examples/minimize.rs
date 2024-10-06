@@ -25,18 +25,16 @@ fn main() {
 		*control_flow = ControlFlow::Wait;
 
 		match event {
-			Event::WindowEvent {
-				event: WindowEvent::CloseRequested, ..
-			} => *control_flow = ControlFlow::Exit,
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+				*control_flow = ControlFlow::Exit
+			},
 
 			// Keyboard input event to handle minimize via a hotkey
 			Event::WindowEvent {
 				event: WindowEvent::KeyboardInput { event, .. },
 				window_id,
 				..
-			} if window_id == window.id()
-				&& Key::Character("m") == event.logical_key =>
-			{
+			} if window_id == window.id() && Key::Character("m") == event.logical_key => {
 				// Pressing the 'm' key will minimize the window
 				// WARNING: Consider using `key_without_modifers()` if available
 				// on your platform. See the `key_binding` example

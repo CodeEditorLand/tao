@@ -39,9 +39,7 @@ fn main() {
 						// for that is far beyond the scope of this
 						// example, so here we'll just respond to the Y and N
 						// keys.
-						println!(
-							"Are you ready to bid your window farewell? [Y/N]"
-						);
+						println!("Are you ready to bid your window farewell? [Y/N]");
 						close_requested = true;
 
 						// In applications where you can safely close the window
@@ -83,10 +81,7 @@ fn main() {
 							},
 							"n" => {
 								if close_requested {
-									println!(
-										"Your window will continue to stay by \
-										 your side."
-									);
+									println!("Your window will continue to stay by your side.");
 									close_requested = false;
 								}
 							},

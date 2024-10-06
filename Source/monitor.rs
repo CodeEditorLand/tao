@@ -31,15 +31,11 @@ pub struct VideoMode {
 }
 
 impl std::fmt::Debug for VideoMode {
-	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		self.video_mode.fmt(f)
-	}
+	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result { self.video_mode.fmt(f) }
 }
 
 impl PartialOrd for VideoMode {
-	fn partial_cmp(&self, other:&VideoMode) -> Option<std::cmp::Ordering> {
-		Some(self.cmp(other))
-	}
+	fn partial_cmp(&self, other:&VideoMode) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
 }
 
 impl Ord for VideoMode {
@@ -142,7 +138,5 @@ impl MonitorHandle {
 	/// ## Platform-specific
 	/// - **Linux:** Unsupported. This will always return empty iterator.
 	#[inline]
-	pub fn video_modes(&self) -> impl Iterator<Item = VideoMode> {
-		self.inner.video_modes()
-	}
+	pub fn video_modes(&self) -> impl Iterator<Item = VideoMode> { self.inner.video_modes() }
 }

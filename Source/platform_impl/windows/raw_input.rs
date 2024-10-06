@@ -13,19 +13,14 @@ use windows::Win32::{
 	},
 };
 
-use crate::{
-	event::ElementState,
-	event_loop::DeviceEventFilter,
-	platform_impl::platform::util,
-};
+use crate::{event::ElementState, event_loop::DeviceEventFilter, platform_impl::platform::util};
 
 #[allow(dead_code)]
 pub fn get_raw_input_device_list() -> Option<Vec<RAWINPUTDEVICELIST>> {
 	let list_size = size_of::<RAWINPUTDEVICELIST>() as u32;
 
 	let mut num_devices = 0;
-	let status =
-		unsafe { GetRawInputDeviceList(None, &mut num_devices, list_size) };
+	let status = unsafe { GetRawInputDeviceList(None, &mut num_devices, list_size) };
 
 	if status == u32::max_value() {
 		return None;
@@ -33,13 +28,8 @@ pub fn get_raw_input_device_list() -> Option<Vec<RAWINPUTDEVICELIST>> {
 
 	let mut buffer = Vec::with_capacity(num_devices as _);
 
-	let num_stored = unsafe {
-		GetRawInputDeviceList(
-			Some(buffer.as_ptr() as _),
-			&mut num_devices,
-			list_size,
-		)
-	};
+	let num_stored =
+		unsafe { GetRawInputDeviceList(Some(buffer.as_ptr() as _), &mut num_devices, list_size) };
 
 	if num_stored == u32::max_value() {
 		return None;
@@ -64,12 +54,8 @@ impl From<RID_DEVICE_INFO> for RawDeviceInfo {
 	fn from(info:RID_DEVICE_INFO) -> Self {
 		unsafe {
 			match info.dwType {
-				win32i::RIM_TYPEMOUSE => {
-					RawDeviceInfo::Mouse(info.Anonymous.mouse)
-				},
-				win32i::RIM_TYPEKEYBOARD => {
-					RawDeviceInfo::Keyboard(info.Anonymous.keyboard)
-				},
+				win32i::RIM_TYPEMOUSE => RawDeviceInfo::Mouse(info.Anonymous.mouse),
+				win32i::RIM_TYPEKEYBOARD => RawDeviceInfo::Keyboard(info.Anonymous.keyboard),
 				win32i::RIM_TYPEHID => RawDeviceInfo::Hid(info.Anonymous.hid),
 				_ => unreachable!(),
 			}
@@ -105,9 +91,8 @@ pub fn get_raw_input_device_info(handle:HANDLE) -> Option<RawDeviceInfo> {
 
 pub fn get_raw_input_device_name(handle:HANDLE) -> Option<String> {
 	let mut minimum_size = 0;
-	let status = unsafe {
-		GetRawInputDeviceInfoW(handle, RIDI_DEVICENAME, None, &mut minimum_size)
-	};
+	let status =
+		unsafe { GetRawInputDeviceInfoW(handle, RIDI_DEVICENAME, None, &mut minimum_size) };
 
 	if status != 0 {
 		return None;
@@ -116,12 +101,7 @@ pub fn get_raw_input_device_name(handle:HANDLE) -> Option<String> {
 	let mut name:Vec<u16> = Vec::with_capacity(minimum_size as _);
 
 	let status = unsafe {
-		GetRawInputDeviceInfoW(
-			handle,
-			RIDI_DEVICENAME,
-			Some(name.as_ptr() as _),
-			&mut minimum_size,
-		)
+		GetRawInputDeviceInfoW(handle, RIDI_DEVICENAME, Some(name.as_ptr() as _), &mut minimum_size)
 	};
 
 	if status == u32::max_value() || status == 0 {
@@ -211,9 +191,7 @@ fn button_flags_to_element_state(
 	}
 }
 
-pub fn get_raw_mouse_button_state(
-	button_flags:u16,
-) -> [Option<ElementState>; 3] {
+pub fn get_raw_mouse_button_state(button_flags:u16) -> [Option<ElementState>; 3] {
 	[
 		button_flags_to_element_state(
 			button_flags,

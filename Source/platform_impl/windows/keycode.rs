@@ -175,9 +175,7 @@ pub fn keycode_to_scancode(code:KeyCode) -> Option<u32> {
 		KeyCode::AudioVolumeDown => Some(0xE02E),
 		KeyCode::AudioVolumeMute => Some(0xE020),
 		KeyCode::AudioVolumeUp => Some(0xE030),
-		KeyCode::Unidentified(NativeKeyCode::Windows(scancode)) => {
-			Some(scancode as u32)
-		},
+		KeyCode::Unidentified(NativeKeyCode::Windows(scancode)) => Some(scancode as u32),
 		_ => None,
 	}
 }

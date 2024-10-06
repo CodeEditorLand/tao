@@ -65,8 +65,7 @@ impl MinimalIme {
 							more_char_coming = false;
 						} else {
 							let next_msg = next_msg.assume_init().message;
-							more_char_coming =
-								next_msg == WM_CHAR || next_msg == WM_SYSCHAR;
+							more_char_coming = next_msg == WM_CHAR || next_msg == WM_SYSCHAR;
 						}
 					}
 					if !more_char_coming {

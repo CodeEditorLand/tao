@@ -7,15 +7,7 @@ use std::fmt;
 
 pub use crate::icon::{BadIcon, Icon};
 use crate::{
-	dpi::{
-		LogicalSize,
-		PhysicalPosition,
-		PhysicalSize,
-		Pixel,
-		PixelUnit,
-		Position,
-		Size,
-	},
+	dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Pixel, PixelUnit, Position, Size},
 	error::{ExternalError, NotSupportedError, OsError},
 	event_loop::EventLoopWindowTarget,
 	monitor::{MonitorHandle, VideoMode},
@@ -64,9 +56,9 @@ pub struct ProgressBarState {
 /// 	*control_flow = ControlFlow::Wait;
 ///
 /// 	match event {
-/// 		Event::WindowEvent {
-/// 			event: WindowEvent::CloseRequested, ..
-/// 		} => *control_flow = ControlFlow::Exit,
+/// 		Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+/// 			*control_flow = ControlFlow::Exit
+/// 		},
 /// 		_ => (),
 /// 	}
 /// });
@@ -76,9 +68,7 @@ pub struct Window {
 }
 
 impl fmt::Debug for Window {
-	fn fmt(&self, fmtr:&mut fmt::Formatter<'_>) -> fmt::Result {
-		fmtr.pad("Window { .. }")
-	}
+	fn fmt(&self, fmtr:&mut fmt::Formatter<'_>) -> fmt::Result { fmtr.pad("Window { .. }") }
 }
 
 impl Drop for Window {
@@ -120,15 +110,12 @@ pub struct WindowBuilder {
 	pub window:WindowAttributes,
 
 	// Platform-specific configuration.
-	pub(crate) platform_specific:
-		platform_impl::PlatformSpecificWindowBuilderAttributes,
+	pub(crate) platform_specific:platform_impl::PlatformSpecificWindowBuilderAttributes,
 }
 
 impl fmt::Debug for WindowBuilder {
 	fn fmt(&self, fmtr:&mut fmt::Formatter<'_>) -> fmt::Result {
-		fmtr.debug_struct("WindowBuilder")
-			.field("window", &self.window)
-			.finish()
+		fmtr.debug_struct("WindowBuilder").field("window", &self.window).finish()
 	}
 }
 
@@ -159,8 +146,8 @@ pub struct WindowAttributes {
 	/// If you need to precisely position the top left corner of the whole
 	/// window you have to use [`Window::set_outer_position`] after creating
 	/// the window.
-	/// - **Windows**: The top left corner position of the window title bar,
-	///   the window's "outer"
+	/// - **Windows**: The top left corner position of the window title bar, the
+	///   window's "outer"
 	/// position.
 	/// There may be a small gap between this position and the window due to
 	/// the specifics of the Window Manager.
@@ -349,10 +336,7 @@ impl WindowBuilder {
 	///
 	/// [`Window::set_inner_size_constraints`]: crate::window::Window::set_inner_size_constraints
 	#[inline]
-	pub fn with_inner_size_constraints(
-		mut self,
-		constraints:WindowSizeConstraints,
-	) -> Self {
+	pub fn with_inner_size_constraints(mut self, constraints:WindowSizeConstraints) -> Self {
 		self.window.inner_size_constraints = constraints;
 		self
 	}
@@ -557,10 +541,7 @@ impl WindowBuilder {
 	///
 	/// - **iOS / Android / Windows:** Unsupported.
 	#[inline]
-	pub fn with_visible_on_all_workspaces(
-		mut self,
-		visible:bool,
-	) -> WindowBuilder {
+	pub fn with_visible_on_all_workspaces(mut self, visible:bool) -> WindowBuilder {
 		self.window.visible_on_all_workspaces = visible;
 		self
 	}
@@ -574,15 +555,12 @@ impl WindowBuilder {
 		self,
 		window_target:&EventLoopWindowTarget<T>,
 	) -> Result<Window, OsError> {
-		platform_impl::Window::new(
-			&window_target.p,
-			self.window,
-			self.platform_specific,
+		platform_impl::Window::new(&window_target.p, self.window, self.platform_specific).map(
+			|window| {
+				window.request_redraw();
+				Window { window }
+			},
 		)
-		.map(|window| {
-			window.request_redraw();
-			Window { window }
-		})
 	}
 }
 
@@ -598,9 +576,7 @@ impl Window {
 	///
 	/// [`WindowBuilder::new().build(event_loop)`]: crate::window::WindowBuilder::build
 	#[inline]
-	pub fn new<T:'static>(
-		event_loop:&EventLoopWindowTarget<T>,
-	) -> Result<Window, OsError> {
+	pub fn new<T:'static>(event_loop:&EventLoopWindowTarget<T>) -> Result<Window, OsError> {
 		let builder = WindowBuilder::new();
 		builder.build(event_loop)
 	}
@@ -668,9 +644,7 @@ impl Window {
 	///
 	/// [safe area]: https://developer.apple.com/documentation/uikit/uiview/2891103-safeareainsets?language=objc
 	#[inline]
-	pub fn inner_position(
-		&self,
-	) -> Result<PhysicalPosition<i32>, NotSupportedError> {
+	pub fn inner_position(&self) -> Result<PhysicalPosition<i32>, NotSupportedError> {
 		self.window.inner_position()
 	}
 
@@ -693,9 +667,7 @@ impl Window {
 	/// - **Linux(Wayland)**: Has no effect, since Wayland doesn't support a
 	///   global cordinate system
 	#[inline]
-	pub fn outer_position(
-		&self,
-	) -> Result<PhysicalPosition<i32>, NotSupportedError> {
+	pub fn outer_position(&self) -> Result<PhysicalPosition<i32>, NotSupportedError> {
 		self.window.outer_position()
 	}
 
@@ -738,9 +710,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_inner_size<S:Into<Size>>(&self, size:S) {
-		self.window.set_inner_size(size.into())
-	}
+	pub fn set_inner_size<S:Into<Size>>(&self, size:S) { self.window.set_inner_size(size.into()) }
 
 	/// Returns the physical size of the entire window.
 	///
@@ -780,10 +750,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_inner_size_constraints(
-		&self,
-		constraints:WindowSizeConstraints,
-	) {
+	pub fn set_inner_size_constraints(&self, constraints:WindowSizeConstraints) {
 		self.window.set_inner_size_constraints(constraints)
 	}
 }
@@ -864,9 +831,7 @@ impl Window {
 	/// window is really maximized.
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_resizable(&self, resizable:bool) {
-		self.window.set_resizable(resizable)
-	}
+	pub fn set_resizable(&self, resizable:bool) { self.window.set_resizable(resizable) }
 
 	/// Sets whether the window is minimizable or not.
 	///
@@ -874,9 +839,7 @@ impl Window {
 	///
 	/// - **Linux / iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_minimizable(&self, minimizable:bool) {
-		self.window.set_minimizable(minimizable)
-	}
+	pub fn set_minimizable(&self, minimizable:bool) { self.window.set_minimizable(minimizable) }
 
 	/// Sets whether the window is maximizable or not.
 	///
@@ -886,9 +849,7 @@ impl Window {
 	///   also used to enter fullscreen mode.
 	/// - **Linux / iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_maximizable(&self, maximizable:bool) {
-		self.window.set_maximizable(maximizable)
-	}
+	pub fn set_maximizable(&self, maximizable:bool) { self.window.set_maximizable(maximizable) }
 
 	/// Sets whether the window is closable or not.
 	///
@@ -899,9 +860,7 @@ impl Window {
 	///   have any effect when called on a window that is already visible"
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_closable(&self, closable:bool) {
-		self.window.set_closable(closable)
-	}
+	pub fn set_closable(&self, closable:bool) { self.window.set_closable(closable) }
 
 	/// Sets the window to minimized or back
 	///
@@ -909,9 +868,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_minimized(&self, minimized:bool) {
-		self.window.set_minimized(minimized);
-	}
+	pub fn set_minimized(&self, minimized:bool) { self.window.set_minimized(minimized); }
 
 	/// Sets the window to maximized or back.
 	///
@@ -919,9 +876,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_maximized(&self, maximized:bool) {
-		self.window.set_maximized(maximized)
-	}
+	pub fn set_maximized(&self, maximized:bool) { self.window.set_maximized(maximized) }
 
 	/// Gets the window's current maximized state.
 	///
@@ -1029,9 +984,7 @@ impl Window {
 	///
 	/// [`setPrefersStatusBarHidden`]: https://developer.apple.com/documentation/uikit/uiviewcontroller/1621440-prefersstatusbarhidden?language=objc
 	#[inline]
-	pub fn set_decorations(&self, decorations:bool) {
-		self.window.set_decorations(decorations)
-	}
+	pub fn set_decorations(&self, decorations:bool) { self.window.set_decorations(decorations) }
 
 	/// Change whether or not the window will always be below other windows.
 	///
@@ -1117,10 +1070,7 @@ impl Window {
 	/// - **macOS:** `None` has no effect.
 	/// - **Linux:** Urgency levels have the same effect.
 	#[inline]
-	pub fn request_user_attention(
-		&self,
-		request_type:Option<UserAttentionType>,
-	) {
+	pub fn request_user_attention(&self, request_type:Option<UserAttentionType>) {
 		self.window.request_user_attention(request_type)
 	}
 
@@ -1181,9 +1131,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_cursor_icon(&self, cursor:CursorIcon) {
-		self.window.set_cursor_icon(cursor);
-	}
+	pub fn set_cursor_icon(&self, cursor:CursorIcon) { self.window.set_cursor_icon(cursor); }
 
 	/// Changes the position of the cursor in window coordinates.
 	///
@@ -1191,10 +1139,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Always returns an [`ExternalError::NotSupported`].
 	#[inline]
-	pub fn set_cursor_position<P:Into<Position>>(
-		&self,
-		position:P,
-	) -> Result<(), ExternalError> {
+	pub fn set_cursor_position<P:Into<Position>>(&self, position:P) -> Result<(), ExternalError> {
 		self.window.set_cursor_position(position.into())
 	}
 
@@ -1226,9 +1171,7 @@ impl Window {
 	///   even if the cursor is outside of the window.
 	/// - **iOS / Android:** Unsupported.
 	#[inline]
-	pub fn set_cursor_visible(&self, visible:bool) {
-		self.window.set_cursor_visible(visible)
-	}
+	pub fn set_cursor_visible(&self, visible:bool) { self.window.set_cursor_visible(visible) }
 
 	/// Moves the window with the left mouse button until the button is
 	/// released.
@@ -1241,9 +1184,7 @@ impl Window {
 	/// - **macOS:** May prevent the button release event to be triggered.
 	/// - **iOS / Android:** Always returns an [`ExternalError::NotSupported`].
 	#[inline]
-	pub fn drag_window(&self) -> Result<(), ExternalError> {
-		self.window.drag_window()
-	}
+	pub fn drag_window(&self) -> Result<(), ExternalError> { self.window.drag_window() }
 
 	/// Resizes the window with the left mouse button until the button is
 	/// released.
@@ -1256,10 +1197,7 @@ impl Window {
 	/// - **macOS / iOS / Android:** Always returns an
 	///   [`ExternalError::NotSupported`].
 	#[inline]
-	pub fn drag_resize_window(
-		&self,
-		direction:ResizeDirection,
-	) -> Result<(), ExternalError> {
+	pub fn drag_resize_window(&self, direction:ResizeDirection) -> Result<(), ExternalError> {
 		self.window.drag_resize_window(direction)
 	}
 
@@ -1273,10 +1211,7 @@ impl Window {
 	///
 	/// - **iOS / Android:** Always returns an [`ExternalError::NotSupported`]
 	#[inline]
-	pub fn set_ignore_cursor_events(
-		&self,
-		ignore:bool,
-	) -> Result<(), ExternalError> {
+	pub fn set_ignore_cursor_events(&self, ignore:bool) -> Result<(), ExternalError> {
 		self.window.set_ignore_cursor_events(ignore)
 	}
 
@@ -1286,9 +1221,7 @@ impl Window {
 	///
 	/// - **iOS / Android / Linux(Wayland)**: Unsupported, returns `0,0`.
 	#[inline]
-	pub fn cursor_position(
-		&self,
-	) -> Result<PhysicalPosition<f64>, ExternalError> {
+	pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, ExternalError> {
 		self.window.cursor_position()
 	}
 }
@@ -1303,9 +1236,7 @@ impl Window {
 	///
 	/// **iOS:** Can only be called on the main thread.
 	#[inline]
-	pub fn current_monitor(&self) -> Option<MonitorHandle> {
-		self.window.current_monitor()
-	}
+	pub fn current_monitor(&self) -> Option<MonitorHandle> { self.window.current_monitor() }
 
 	#[inline]
 	/// Returns the monitor that contains the given point.
@@ -1344,9 +1275,7 @@ impl Window {
 	///
 	/// **iOS:** Can only be called on the main thread.
 	#[inline]
-	pub fn primary_monitor(&self) -> Option<MonitorHandle> {
-		self.window.primary_monitor()
-	}
+	pub fn primary_monitor(&self) -> Option<MonitorHandle> { self.window.primary_monitor() }
 }
 
 #[cfg(feature = "rwh_04")]
@@ -1372,9 +1301,7 @@ unsafe impl rwh_05::HasRawDisplayHandle for Window {
 
 #[cfg(feature = "rwh_06")]
 impl rwh_06::HasWindowHandle for Window {
-	fn window_handle(
-		&self,
-	) -> Result<rwh_06::WindowHandle<'_>, rwh_06::HandleError> {
+	fn window_handle(&self) -> Result<rwh_06::WindowHandle<'_>, rwh_06::HandleError> {
 		let raw = self.window.raw_window_handle_rwh_06()?;
 		// SAFETY: The window handle will never be deallocated while the window
 		// is alive.
@@ -1384,9 +1311,7 @@ impl rwh_06::HasWindowHandle for Window {
 
 #[cfg(feature = "rwh_06")]
 impl rwh_06::HasDisplayHandle for Window {
-	fn display_handle(
-		&self,
-	) -> Result<rwh_06::DisplayHandle<'_>, rwh_06::HandleError> {
+	fn display_handle(&self) -> Result<rwh_06::DisplayHandle<'_>, rwh_06::HandleError> {
 		let raw = self.window.raw_display_handle_rwh_06()?;
 		// SAFETY: The window handle will never be deallocated while the window
 		// is alive.
@@ -1533,78 +1458,44 @@ impl WindowSizeConstraints {
 	}
 
 	/// Returns true if `min_width` or `min_height` is set.
-	pub fn has_min(&self) -> bool {
-		self.min_width.is_some() || self.min_height.is_some()
-	}
+	pub fn has_min(&self) -> bool { self.min_width.is_some() || self.min_height.is_some() }
 
 	/// Returns true if `max_width` or `max_height` is set.
-	pub fn has_max(&self) -> bool {
-		self.max_width.is_some() || self.max_height.is_some()
-	}
+	pub fn has_max(&self) -> bool { self.max_width.is_some() || self.max_height.is_some() }
 
 	/// Returns a physical size that represents the minimum constraints set and
 	/// fallbacks to [`PixelUnit::MIN`] for unset values
-	pub fn min_size_physical<T:Pixel>(
-		&self,
-		scale_factor:f64,
-	) -> PhysicalSize<T> {
+	pub fn min_size_physical<T:Pixel>(&self, scale_factor:f64) -> PhysicalSize<T> {
 		PhysicalSize::new(
-			self.min_width
-				.unwrap_or(PixelUnit::MIN)
-				.to_physical(scale_factor)
-				.0,
-			self.min_height
-				.unwrap_or(PixelUnit::MIN)
-				.to_physical(scale_factor)
-				.0,
+			self.min_width.unwrap_or(PixelUnit::MIN).to_physical(scale_factor).0,
+			self.min_height.unwrap_or(PixelUnit::MIN).to_physical(scale_factor).0,
 		)
 	}
 
 	/// Returns a logical size that represents the minimum constraints set and
 	/// fallbacks to [`PixelUnit::MIN`] for unset values
-	pub fn min_size_logical<T:Pixel>(
-		&self,
-		scale_factor:f64,
-	) -> LogicalSize<T> {
+	pub fn min_size_logical<T:Pixel>(&self, scale_factor:f64) -> LogicalSize<T> {
 		LogicalSize::new(
 			self.min_width.unwrap_or(PixelUnit::MIN).to_logical(scale_factor).0,
-			self.min_height
-				.unwrap_or(PixelUnit::MIN)
-				.to_logical(scale_factor)
-				.0,
+			self.min_height.unwrap_or(PixelUnit::MIN).to_logical(scale_factor).0,
 		)
 	}
 
 	/// Returns a physical size that represents the maximum constraints set and
 	/// fallbacks to [`PixelUnit::MAX`] for unset values
-	pub fn max_size_physical<T:Pixel>(
-		&self,
-		scale_factor:f64,
-	) -> PhysicalSize<T> {
+	pub fn max_size_physical<T:Pixel>(&self, scale_factor:f64) -> PhysicalSize<T> {
 		PhysicalSize::new(
-			self.max_width
-				.unwrap_or(PixelUnit::MAX)
-				.to_physical(scale_factor)
-				.0,
-			self.max_height
-				.unwrap_or(PixelUnit::MAX)
-				.to_physical(scale_factor)
-				.0,
+			self.max_width.unwrap_or(PixelUnit::MAX).to_physical(scale_factor).0,
+			self.max_height.unwrap_or(PixelUnit::MAX).to_physical(scale_factor).0,
 		)
 	}
 
 	/// Returns a logical size that represents the maximum constraints set and
 	/// fallbacks to [`PixelUnit::MAX`] for unset values
-	pub fn max_size_logical<T:Pixel>(
-		&self,
-		scale_factor:f64,
-	) -> LogicalSize<T> {
+	pub fn max_size_logical<T:Pixel>(&self, scale_factor:f64) -> LogicalSize<T> {
 		LogicalSize::new(
 			self.max_width.unwrap_or(PixelUnit::MAX).to_logical(scale_factor).0,
-			self.max_height
-				.unwrap_or(PixelUnit::MAX)
-				.to_logical(scale_factor)
-				.0,
+			self.max_height.unwrap_or(PixelUnit::MAX).to_logical(scale_factor).0,
 		)
 	}
 
@@ -1612,12 +1503,7 @@ impl WindowSizeConstraints {
 	pub fn clamp(&self, desired_size:Size, scale_factor:f64) -> Size {
 		let min_size:PhysicalSize<f64> = self.min_size_physical(scale_factor);
 		let max_size:PhysicalSize<f64> = self.max_size_physical(scale_factor);
-		Size::clamp(
-			desired_size,
-			min_size.into(),
-			max_size.into(),
-			scale_factor,
-		)
+		Size::clamp(desired_size, min_size.into(), max_size.into(), scale_factor)
 	}
 }
 

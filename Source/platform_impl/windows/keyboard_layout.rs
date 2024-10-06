@@ -18,8 +18,7 @@ use crate::{
 };
 
 lazy_static! {
-	pub(crate) static ref LAYOUT_CACHE: Mutex<LayoutCache> =
-		Mutex::new(LayoutCache::default());
+	pub(crate) static ref LAYOUT_CACHE: Mutex<LayoutCache> = Mutex::new(LayoutCache::default());
 }
 
 fn key_pressed(vkey:VIRTUAL_KEY) -> bool {
@@ -210,12 +209,8 @@ impl Layout {
 			// the scancode coming from the KEYDOWN message for the same key.
 			// For example: `VK_LEFT` is mapped to `0x004B`, but the scancode
 			// for the left arrow is `0xE04B`.
-			let key_from_vkey = vkey_to_non_char_key(
-				vkey,
-				native_code,
-				HKL(self.hkl as _),
-				self.has_alt_graph,
-			);
+			let key_from_vkey =
+				vkey_to_non_char_key(vkey, native_code, HKL(self.hkl as _), self.has_alt_graph);
 
 			if !matches!(key_from_vkey, Key::Unidentified(_)) {
 				return key_from_vkey;
@@ -265,25 +260,13 @@ impl LayoutCache {
 		let filter_out_altgr = layout.has_alt_graph && key_pressed(VK_RMENU);
 		let mut mods = ModifiersState::empty();
 		mods.set(ModifiersState::SHIFT, key_pressed(VK_SHIFT));
-		mods.set(
-			ModifiersState::CONTROL,
-			key_pressed(VK_CONTROL) && !filter_out_altgr,
-		);
-		mods.set(
-			ModifiersState::ALT,
-			key_pressed(VK_MENU) && !filter_out_altgr,
-		);
-		mods.set(
-			ModifiersState::SUPER,
-			key_pressed(VK_LWIN) || key_pressed(VK_RWIN),
-		);
+		mods.set(ModifiersState::CONTROL, key_pressed(VK_CONTROL) && !filter_out_altgr);
+		mods.set(ModifiersState::ALT, key_pressed(VK_MENU) && !filter_out_altgr);
+		mods.set(ModifiersState::SUPER, key_pressed(VK_LWIN) || key_pressed(VK_RWIN));
 		mods
 	}
 
-	fn prepare_layout(
-		strings:&mut HashSet<&'static str>,
-		locale_id:HKL,
-	) -> Layout {
+	fn prepare_layout(strings:&mut HashSet<&'static str>, locale_id:HKL) -> Layout {
 		let mut layout = Layout {
 			hkl:locale_id.0 as _,
 			numlock_on_keys:Default::default(),
@@ -312,13 +295,8 @@ impl LayoutCache {
 		// map_value: Key  <-  map_vkey: VK
 		layout.numlock_off_keys.reserve(NUMPAD_KEYCODES.len());
 		for vk in 0_u16..256 {
-			let scancode = unsafe {
-				MapVirtualKeyExW(
-					u32::from(vk),
-					MAPVK_VK_TO_VSC_EX,
-					locale_id as HKL,
-				)
-			};
+			let scancode =
+				unsafe { MapVirtualKeyExW(u32::from(vk), MAPVK_VK_TO_VSC_EX, locale_id as HKL) };
 			if scancode == 0 {
 				continue;
 			}
@@ -330,8 +308,7 @@ impl LayoutCache {
 				if map_vkey == Default::default() {
 					continue;
 				}
-				let map_value =
-					vkey_to_non_char_key(vk, native_code, locale_id, false);
+				let map_value = vkey_to_non_char_key(vk, native_code, locale_id, false);
 				if matches!(map_value, Key::Unidentified(_)) {
 					continue;
 				}
@@ -341,15 +318,9 @@ impl LayoutCache {
 
 		layout.numlock_on_keys.reserve(NUMPAD_VKEYS.len());
 		for vk in NUMPAD_VKEYS.iter() {
-			let scancode = unsafe {
-				MapVirtualKeyExW(
-					u32::from(vk.0),
-					MAPVK_VK_TO_VSC_EX,
-					locale_id as HKL,
-				)
-			};
-			let unicode =
-				Self::to_unicode_string(&key_state, *vk, scancode, locale_id);
+			let scancode =
+				unsafe { MapVirtualKeyExW(u32::from(vk.0), MAPVK_VK_TO_VSC_EX, locale_id as HKL) };
+			let unicode = Self::to_unicode_string(&key_state, *vk, scancode, locale_id);
 			if let ToUnicodeResult::Str(s) = unicode {
 				let static_str = get_or_insert_str(strings, s);
 				layout.numlock_on_keys.insert(vk.0, Key::Character(static_str));
@@ -370,27 +341,20 @@ impl LayoutCache {
 			// key values giving the key state for the virtual key used for
 			// indexing.
 			for vk in 0_u16..256 {
-				let scancode = unsafe {
-					MapVirtualKeyExW(
-						u32::from(vk),
-						MAPVK_VK_TO_VSC_EX,
-						locale_id,
-					)
-				};
+				let scancode =
+					unsafe { MapVirtualKeyExW(u32::from(vk), MAPVK_VK_TO_VSC_EX, locale_id) };
 				if scancode == 0 {
 					continue;
 				}
 				let vk = VIRTUAL_KEY(vk);
-				let native_code =
-					NativeKeyCode::Windows(scancode as ExScancode);
+				let native_code = NativeKeyCode::Windows(scancode as ExScancode);
 				let key_code = KeyCode::from_scancode(scancode);
 				// Let's try to get the key from just the scancode and vk
 				// We don't necessarily know yet if AltGraph is present on this
 				// layout so we'll assume it isn't. Then we'll do a second
 				// pass where we set the "AltRight" keys to "AltGr" in case
 				// we find out that there's an AltGraph.
-				let preliminary_key =
-					vkey_to_non_char_key(vk, native_code, locale_id, false);
+				let preliminary_key = vkey_to_non_char_key(vk, native_code, locale_id, false);
 				match preliminary_key {
 					Key::Unidentified(_) => (),
 					_ => {
@@ -399,9 +363,7 @@ impl LayoutCache {
 					},
 				}
 
-				let unicode = Self::to_unicode_string(
-					&key_state, vk, scancode, locale_id,
-				);
+				let unicode = Self::to_unicode_string(&key_state, vk, scancode, locale_id);
 				let key = match unicode {
 					ToUnicodeResult::Str(str) => {
 						let static_str = get_or_insert_str(strings, str);
@@ -413,14 +375,11 @@ impl LayoutCache {
           },
 					ToUnicodeResult::None => {
 						let has_alt = mod_state.contains(WindowsModifiers::ALT);
-						let has_ctrl =
-							mod_state.contains(WindowsModifiers::CONTROL);
+						let has_ctrl = mod_state.contains(WindowsModifiers::CONTROL);
 						// HACK: `ToUnicodeEx` seems to fail getting the string
 						// for the numpad divide key, so we handle that
 						// explicitly here
-						if !has_alt
-							&& !has_ctrl && key_code == KeyCode::NumpadDivide
-						{
+						if !has_alt && !has_ctrl && key_code == KeyCode::NumpadDivide {
 							Key::Character("/")
 						} else {
 							// Just use the unidentified key, we got earlier
@@ -433,18 +392,14 @@ impl LayoutCache {
 				// The logic is that if a key pressed with no modifier produces
 				// a different `Character` from when it's pressed with CTRL+ALT
 				// then the layout has AltGr.
-				let ctrl_alt:WindowsModifiers =
-					WindowsModifiers::CONTROL | WindowsModifiers::ALT;
+				let ctrl_alt:WindowsModifiers = WindowsModifiers::CONTROL | WindowsModifiers::ALT;
 				let is_in_ctrl_alt = mod_state == ctrl_alt;
 				if !layout.has_alt_graph && is_in_ctrl_alt {
 					// Unwrapping here because if we are in the ctrl+alt
 					// modifier state then the alt modifier state must have
 					// come before.
-					let simple_keys =
-						layout.keys.get(&WindowsModifiers::empty()).unwrap();
-					if let Some(Key::Character(key_no_altgr)) =
-						simple_keys.get(&key_code)
-					{
+					let simple_keys = layout.keys.get(&WindowsModifiers::empty()).unwrap();
+					if let Some(Key::Character(key_no_altgr)) = simple_keys.get(&key_code) {
 						if let Key::Character(key) = key.clone() {
 							layout.has_alt_graph = key != *key_no_altgr;
 						}
@@ -480,14 +435,8 @@ impl LayoutCache {
 	) -> ToUnicodeResult {
 		unsafe {
 			let mut label_wide = [0u16; 8];
-			let mut wide_len = ToUnicodeEx(
-				u32::from(vkey.0),
-				scancode,
-				key_state,
-				&mut label_wide,
-				0,
-				locale_id,
-			);
+			let mut wide_len =
+				ToUnicodeEx(u32::from(vkey.0), scancode, key_state, &mut label_wide, 0, locale_id);
 			if wide_len < 0 {
 				// If it's dead, we run `ToUnicode` again to consume the
 				// dead-key
@@ -500,8 +449,7 @@ impl LayoutCache {
 					locale_id,
 				);
 				if wide_len > 0 {
-					let os_string =
-						OsString::from_wide(&label_wide[0..wide_len as usize]);
+					let os_string = OsString::from_wide(&label_wide[0..wide_len as usize]);
 					if let Ok(label_str) = os_string.into_string() {
 						if let Some(ch) = label_str.chars().next() {
 							return ToUnicodeResult::Dead(Some(ch));
@@ -511,8 +459,7 @@ impl LayoutCache {
 				return ToUnicodeResult::Dead(None);
 			}
 			if wide_len > 0 {
-				let os_string =
-					OsString::from_wide(&label_wide[0..wide_len as usize]);
+				let os_string = OsString::from_wide(&label_wide[0..wide_len as usize]);
 				if let Ok(label_str) = os_string.into_string() {
 					return ToUnicodeResult::Str(label_str);
 				}
@@ -522,10 +469,7 @@ impl LayoutCache {
 	}
 }
 
-pub fn get_or_insert_str<T>(
-	strings:&mut HashSet<&'static str>,
-	string:T,
-) -> &'static str
+pub fn get_or_insert_str<T>(strings:&mut HashSet<&'static str>, string:T) -> &'static str
 where
 	T: AsRef<str>,
 	String: From<T>, {
@@ -798,15 +742,15 @@ fn vkey_to_non_char_key(
 	let is_japanese = primary_lang_id == LANG_JAPANESE;
 
 	match vkey {
-		win32km::VK_LBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), /* Mouse */
-		win32km::VK_RBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), /* Mouse */
+		win32km::VK_LBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), // Mouse
+		win32km::VK_RBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), // Mouse
 
 		// I don't think this can be represented with a Key
 		win32km::VK_CANCEL => Key::Unidentified(native_code),
 
-		win32km::VK_MBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), /* Mouse */
-		win32km::VK_XBUTTON1 => Key::Unidentified(NativeKeyCode::Unidentified), /* Mouse */
-		win32km::VK_XBUTTON2 => Key::Unidentified(NativeKeyCode::Unidentified), /* Mouse */
+		win32km::VK_MBUTTON => Key::Unidentified(NativeKeyCode::Unidentified), // Mouse
+		win32km::VK_XBUTTON1 => Key::Unidentified(NativeKeyCode::Unidentified), // Mouse
+		win32km::VK_XBUTTON2 => Key::Unidentified(NativeKeyCode::Unidentified), // Mouse
 		win32km::VK_BACK => Key::Backspace,
 		win32km::VK_TAB => Key::Tab,
 		win32km::VK_CLEAR => Key::Clear,
@@ -972,36 +916,16 @@ fn vkey_to_non_char_key(
 		win32km::VK_GAMEPAD_DPAD_RIGHT => Key::Unidentified(native_code),
 		win32km::VK_GAMEPAD_MENU => Key::Unidentified(native_code),
 		win32km::VK_GAMEPAD_VIEW => Key::Unidentified(native_code),
-		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_UP => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_DOWN => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_LEFT => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_UP => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT => {
-			Key::Unidentified(native_code)
-		},
-		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT => {
-			Key::Unidentified(native_code)
-		},
+		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_BUTTON => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_BUTTON => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_UP => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_DOWN => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_RIGHT => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_LEFT_THUMBSTICK_LEFT => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_UP => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_DOWN => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_RIGHT => Key::Unidentified(native_code),
+		win32km::VK_GAMEPAD_RIGHT_THUMBSTICK_LEFT => Key::Unidentified(native_code),
 
 		// This function only converts "non-printable"
 		win32km::VK_OEM_4 => Key::Unidentified(native_code),
