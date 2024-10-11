@@ -43,22 +43,21 @@ fn main() {
 	windows.insert(child_window.id(), child_window);
 	windows.insert(main_window.id(), main_window);
 
-	event_loop.run(move |event, _, control_flow| {
-		*control_flow = ControlFlow::Wait;
-
-		match event {
-			Event::NewEvents(StartCause::Init) => println!("TAO application started!"),
-			Event::WindowEvent { event, window_id, .. } if event == WindowEvent::CloseRequested => {
-				println!("Window {:?} has received the signal to close", window_id);
-				// This drop the window, causing it to close.
-				windows.remove(&window_id);
-				if windows.is_empty() {
-					*control_flow = ControlFlow::Exit;
-				}
-			},
-			_ => (),
-		};
-	})
+    match event {
+      Event::NewEvents(StartCause::Init) => println!("TAO application started!"),
+      Event::WindowEvent {
+        event, window_id, ..
+      } if event == WindowEvent::CloseRequested => {
+        println!("Window {window_id:?} has received the signal to close");
+        // This drop the window, causing it to close.
+        windows.remove(&window_id);
+        if windows.is_empty() {
+          *control_flow = ControlFlow::Exit;
+        }
+      }
+      _ => (),
+    };
+  })
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]

@@ -104,10 +104,10 @@ fn prompt_for_monitor(event_loop:&EventLoop<()>) -> MonitorHandle {
 	monitor
 }
 
-fn prompt_for_video_mode(monitor:&MonitorHandle) -> VideoMode {
-	for (i, video_mode) in monitor.video_modes().enumerate() {
-		println!("Video mode #{}: {}", i, video_mode);
-	}
+fn prompt_for_video_mode(monitor: &MonitorHandle) -> VideoMode {
+  for (i, video_mode) in monitor.video_modes().enumerate() {
+    println!("Video mode #{i}: {video_mode}");
+  }
 
 	print!("Please write the number of the video mode to use: ");
 	stdout().flush().unwrap();
@@ -117,7 +117,7 @@ fn prompt_for_video_mode(monitor:&MonitorHandle) -> VideoMode {
 	let num = num.trim().parse().expect("Please enter a number");
 	let video_mode = monitor.video_modes().nth(num).expect("Please enter a valid ID");
 
-	println!("Using {}", video_mode);
+  println!("Using {video_mode}");
 
 	video_mode
 }

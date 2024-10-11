@@ -23,10 +23,13 @@ fn main() {
 	event_loop.run(move |event, event_loop, control_flow| {
 		*control_flow = ControlFlow::Wait;
 
-		if let Event::WindowEvent { event, window_id, .. } = event {
-			match event {
-				WindowEvent::CloseRequested => {
-					println!("Window {:?} has received the signal to close", window_id);
+    if let Event::WindowEvent {
+      event, window_id, ..
+    } = event
+    {
+      match event {
+        WindowEvent::CloseRequested => {
+          println!("Window {window_id:?} has received the signal to close");
 
 					// This drops the window, causing it to close.
 					windows.remove(&window_id);

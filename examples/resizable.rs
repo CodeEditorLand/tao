@@ -27,25 +27,25 @@ fn main() {
 	event_loop.run(move |event, _, control_flow| {
 		*control_flow = ControlFlow::Wait;
 
-		match event {
-			Event::WindowEvent { event, .. } => {
-				match event {
-					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-					WindowEvent::KeyboardInput {
-						event:
-							KeyEvent {
-								physical_key: KeyCode::Space, state: ElementState::Released, ..
-							},
-						..
-					} => {
-						resizable = !resizable;
-						println!("Resizable: {}", resizable);
-						window.set_resizable(resizable);
-					},
-					_ => (),
-				}
-			},
-			_ => (),
-		};
-	});
+    match event {
+      Event::WindowEvent { event, .. } => match event {
+        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+        WindowEvent::KeyboardInput {
+          event:
+            KeyEvent {
+              physical_key: KeyCode::Space,
+              state: ElementState::Released,
+              ..
+            },
+          ..
+        } => {
+          resizable = !resizable;
+          println!("Resizable: {resizable}");
+          window.set_resizable(resizable);
+        }
+        _ => (),
+      },
+      _ => (),
+    };
+  });
 }

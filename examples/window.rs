@@ -21,9 +21,9 @@ fn main() {
 			.unwrap(),
 	);
 
-	event_loop.run(move |event, _, control_flow| {
-		*control_flow = ControlFlow::Wait;
-		println!("{:?}", event);
+  event_loop.run(move |event, _, control_flow| {
+    *control_flow = ControlFlow::Wait;
+    println!("{event:?}");
 
 		match event {
 			Event::WindowEvent { event: WindowEvent::CloseRequested, window_id: _, .. } => {

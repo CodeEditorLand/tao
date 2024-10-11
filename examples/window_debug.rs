@@ -95,81 +95,81 @@ fn main() {
 					"e" => {
 						fn area(size:PhysicalSize<u32>) -> u32 { size.width * size.height }
 
-						let monitor = window.current_monitor().unwrap();
-						if let Some(mode) =
-							monitor.video_modes().max_by(|a, b| area(a.size()).cmp(&area(b.size())))
-						{
-							window.set_fullscreen(Some(Fullscreen::Exclusive(mode)));
-						} else {
-							eprintln!("no video modes available");
-						}
-					},
-					"f" => {
-						if window.fullscreen().is_some() {
-							window.set_fullscreen(None);
-						} else {
-							let monitor = window.current_monitor();
-							window.set_fullscreen(Some(Fullscreen::Borderless(monitor)));
-						}
-					},
-					"p" => {
-						if window.fullscreen().is_some() {
-							window.set_fullscreen(None);
-						} else {
-							window.set_fullscreen(Some(Fullscreen::Borderless(None)));
-						}
-					},
-					"r" => {
-						resizable = !resizable;
-						window.set_resizable(resizable);
-						println!("Resizable: {}", resizable);
-					},
-					"m" => {
-						window.set_minimized(!window.is_minimized());
-					},
-					"q" => {
-						*control_flow = ControlFlow::Exit;
-					},
-					"v" => {
-						visible = !visible;
-						window.set_visible(visible);
-					},
-					"x" => {
-						window.set_maximized(!window.is_maximized());
-					},
-					"t" => {
-						always_on_top = !always_on_top;
-						window.set_always_on_top(always_on_top);
-					},
-					"b" => {
-						always_on_bottom = !always_on_bottom;
-						window.set_always_on_bottom(always_on_bottom);
-					},
-					"c" => {
-						content_protection = !content_protection;
-						window.set_content_protection(content_protection);
-					},
-					"M" => {
-						let minimizable = !window.is_minimizable();
-						window.set_minimizable(minimizable);
-					},
-					"X" => {
-						let maximizable = !window.is_maximizable();
-						window.set_maximizable(maximizable);
-					},
-					"Q" => {
-						let closable = !window.is_closable();
-						window.set_closable(closable);
-					},
-					_ => (),
-				}
-			},
-			Event::WindowEvent { event: WindowEvent::CloseRequested, window_id, .. }
-				if window_id == window.id() =>
-			{
-				*control_flow = ControlFlow::Exit
-			},
-			_ => (),
-		}
-	});
+          let monitor = window.current_monitor().unwrap();
+          if let Some(mode) = monitor
+            .video_modes()
+            .max_by(|a, b| area(a.size()).cmp(&area(b.size())))
+          {
+            window.set_fullscreen(Some(Fullscreen::Exclusive(mode)));
+          } else {
+            eprintln!("no video modes available");
+          }
+        }
+        "f" => {
+          if window.fullscreen().is_some() {
+            window.set_fullscreen(None);
+          } else {
+            let monitor = window.current_monitor();
+            window.set_fullscreen(Some(Fullscreen::Borderless(monitor)));
+          }
+        }
+        "p" => {
+          if window.fullscreen().is_some() {
+            window.set_fullscreen(None);
+          } else {
+            window.set_fullscreen(Some(Fullscreen::Borderless(None)));
+          }
+        }
+        "r" => {
+          resizable = !resizable;
+          window.set_resizable(resizable);
+          println!("Resizable: {resizable}");
+        }
+        "m" => {
+          window.set_minimized(!window.is_minimized());
+        }
+        "q" => {
+          *control_flow = ControlFlow::Exit;
+        }
+        "v" => {
+          visible = !visible;
+          window.set_visible(visible);
+        }
+        "x" => {
+          window.set_maximized(!window.is_maximized());
+        }
+        "t" => {
+          always_on_top = !always_on_top;
+          window.set_always_on_top(always_on_top);
+        }
+        "b" => {
+          always_on_bottom = !always_on_bottom;
+          window.set_always_on_bottom(always_on_bottom);
+        }
+        "c" => {
+          content_protection = !content_protection;
+          window.set_content_protection(content_protection);
+        }
+        "M" => {
+          let minimizable = !window.is_minimizable();
+          window.set_minimizable(minimizable);
+        }
+        "X" => {
+          let maximizable = !window.is_maximizable();
+          window.set_maximizable(maximizable);
+        }
+        "Q" => {
+          let closable = !window.is_closable();
+          window.set_closable(closable);
+        }
+        _ => (),
+      },
+      Event::WindowEvent {
+        event: WindowEvent::CloseRequested,
+        window_id,
+        ..
+      } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+      _ => (),
+    }
+  });
 }
