@@ -14,9 +14,11 @@ fn main() {
 		platform::run_return::EventLoopExtRunReturn,
 		window::WindowBuilder,
 	};
+
 	let mut event_loop = EventLoop::new();
 
 	env_logger::init();
+
 	let _window = WindowBuilder::new()
 		.with_title("A fantastic window!")
 		.build(&event_loop)
@@ -46,6 +48,7 @@ fn main() {
 
 		// Sleep for 1/60 second to simulate rendering
 		println!("rendering");
+
 		sleep(Duration::from_millis(16));
 	}
 }

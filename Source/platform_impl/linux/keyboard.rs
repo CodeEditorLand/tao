@@ -120,6 +120,7 @@ pub(crate) fn raw_key_to_location(raw: RawKey) -> KeyLocation {
     | KP_Page_Up | KP_Right | KP_Separator | KP_Space | KP_Subtract | KP_Tab | KP_Up => {
       KeyLocation::Numpad
     }
+
     _ => KeyLocation::Standard,
   }
 }
@@ -212,8 +213,10 @@ pub(crate) fn make_key_event(
   // make sure we have a valid key
   if !matches!(key_without_modifiers, Key::Unidentified(_)) {
     let location = raw_key_to_location(keyval_with_modifiers);
+
     let text_with_all_modifiers =
       text_without_modifiers.map(|text| insert_or_get_key_str(text.to_string()));
+
     return Some(KeyEvent {
       location,
       logical_key,
@@ -241,7 +244,9 @@ fn hardware_keycode_to_keyval(keycode: u16) -> Option<RawKey> {
     let keymap = gdk::ffi::gdk_keymap_get_default();
 
     let mut nkeys = 0;
+
     let mut keys: *mut gdk::ffi::GdkKeymapKey = ptr::null_mut();
+
     let mut keyvals: *mut c_uint = ptr::null_mut();
 
     // call into gdk to retrieve the keyvals and keymap keys

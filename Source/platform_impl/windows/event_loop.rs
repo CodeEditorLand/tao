@@ -187,12 +187,15 @@ impl<T: 'static> EventLoop<T> {
     super::dark_mode::allow_dark_mode_for_app(true);
 
     let send_thread_msg_target = thread_msg_target.0 as isize;
+
     thread::spawn(move || wait_thread(thread_id, HWND(send_thread_msg_target as _)));
+
     let wait_thread_id = get_wait_thread_id();
 
     let runner_shared = Rc::new(EventLoopRunner::new(thread_msg_target, wait_thread_id));
 
     let thread_msg_sender = subclass_event_target_window(thread_msg_target, runner_shared.clone());
+
     raw_input::register_all_mice_and_keyboards_for_raw_input(thread_msg_target, Default::default());
 
     EventLoop {
@@ -254,6 +257,7 @@ impl<T: 'static> EventLoop<T> {
         } else {
           false
         };
+
         if !handled {
           let _ = TranslateMessage(&msg);
           DispatchMessageW(&msg);
@@ -275,7 +279,9 @@ impl<T: 'static> EventLoop<T> {
     unsafe {
       runner.loop_destroyed();
     }
+
     runner.reset_runner();
+
     exit_code
   }
 
@@ -303,6 +309,7 @@ impl<T> EventLoopWindowTarget<T> {
 
   pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
     let monitor = monitor::primary_monitor();
+
     Some(RootMonitorHandle { inner: monitor })
   }
 
@@ -334,6 +341,7 @@ impl<T> EventLoopWindowTarget<T> {
   #[inline]
   pub fn set_theme(&self, theme: Option<Theme>) {
     *self.preferred_theme.lock() = theme;
+
     self.runner_shared.owned_windows(|window| {
       let _ = unsafe { SendMessageW(window, *CHANGE_THEME_MSG_ID, WPARAM(0), LPARAM(0)) };
     });
@@ -349,6 +357,7 @@ fn main_thread_id() -> u32 {
     unsafe fn initer() {
       MAIN_THREAD_ID = GetCurrentThreadId();
     }
+
     initer
   };
 
@@ -358,17 +367,20 @@ fn main_thread_id() -> u32 {
 fn get_wait_thread_id() -> u32 {
   unsafe {
     let mut msg = MSG::default();
+
     let result = GetMessageW(
       &mut msg,
       HWND::default(),
       *SEND_WAIT_THREAD_ID_MSG_ID,
       *SEND_WAIT_THREAD_ID_MSG_ID,
     );
+
     assert_eq!(
       msg.message, *SEND_WAIT_THREAD_ID_MSG_ID,
       "this shouldn't be possible. please open an issue with Tauri. error code: {}",
       result.0
     );
+
     msg.lParam.0 as u32
   }
 }
@@ -378,6 +390,7 @@ fn wait_thread(parent_thread_id: u32, msg_window_id: HWND) {
     let mut msg: MSG;
 
     let cur_thread_id = GetCurrentThreadId();
+
     let _ = PostThreadMessageW(
       parent_thread_id,
       *SEND_WAIT_THREAD_ID_MSG_ID,
@@ -401,6 +414,7 @@ fn wait_thread(parent_thread_id: u32, msg_window_id: HWND) {
         break 'main;
       } else {
         let _ = TranslateMessage(&msg);
+
         DispatchMessageW(&msg);
       }
 
@@ -412,6 +426,7 @@ fn wait_thread(parent_thread_id: u32, msg_window_id: HWND) {
 
       if let Some(wait_until) = wait_until_opt {
         let now = Instant::now();
+
         if now < wait_until {
           // MsgWaitForMultipleObjects tends to overshoot just a little bit. We subtract
           // 1 millisecond from the requested time and spinlock for the remainder to
@@ -429,6 +444,7 @@ fn wait_thread(parent_thread_id: u32, msg_window_id: HWND) {
               WPARAM(0),
               LPARAM(0),
             );
+
             wait_until_opt = None;
           }
         } else {
@@ -495,6 +511,7 @@ impl EventLoopThreadExecutor {
   /// Check to see if we're in the parent event loop's thread.
   pub(super) fn in_event_loop_thread(&self) -> bool {
     let cur_thread_id = unsafe { GetCurrentThreadId() };
+
     self.thread_id == cur_thread_id
   }
 
@@ -521,6 +538,7 @@ impl EventLoopThreadExecutor {
       } else {
         // We double-box because the first box is a fat pointer.
         let boxed = Box::new(function) as Box<dyn FnMut()>;
+
         let boxed2: ThreadExecFn = Box::new(boxed);
 
         let raw = Box::into_raw(boxed2);
@@ -531,6 +549,7 @@ impl EventLoopThreadExecutor {
           WPARAM(raw as _),
           LPARAM(0),
         );
+
         assert!(
           res.is_ok(),
           "PostMessage failed ; is the messages queue full?"
@@ -563,6 +582,7 @@ impl<T: 'static> EventLoopProxy<T> {
     unsafe {
       if PostMessageW(self.target_window, *USER_EVENT_MSG_ID, WPARAM(0), LPARAM(0)).is_ok() {
         self.event_send.send(event).ok();
+
         Ok(())
       } else {
         Err(EventLoopClosed(event))
@@ -589,6 +609,7 @@ lazy_static! {
             RegisterWindowMessageA(s!("Tao::ExecMsg"))
         }
     };
+
     static ref PROCESS_NEW_EVENTS_MSG_ID: u32 = {
         unsafe {
             RegisterWindowMessageA(s!("Tao::ProcessNewEvents"))
@@ -607,6 +628,7 @@ lazy_static! {
             RegisterWindowMessageA(s!("Tao::WaitUntil"))
         }
     };
+
     static ref CANCEL_WAIT_UNTIL_MSG_ID: u32 = {
         unsafe {
             RegisterWindowMessageA(s!("Tao::CancelWaitUntil"))
@@ -634,6 +656,7 @@ lazy_static! {
     pub static ref S_U_TASKBAR_RESTART: u32 = unsafe {
       RegisterWindowMessageA(s!("TaskbarCreated"))
     };
+
     static ref THREAD_EVENT_TARGET_WINDOW_CLASS: Vec<u16> = unsafe {
         let class_name= util::encode_wide("Tao Thread Event Target");
 
@@ -711,13 +734,16 @@ fn subclass_event_target_window<T>(
       event_loop_runner,
       user_event_receiver: rx,
     };
+
     let input_ptr = Box::into_raw(Box::new(subclass_input));
+
     let subclass_result = SetWindowSubclass(
       window,
       Some(thread_event_target_callback::<T>),
       THREAD_EVENT_TARGET_SUBCLASS_ID,
       input_ptr as usize,
     );
+
     assert!(subclass_result.as_bool());
 
     tx
@@ -749,6 +775,7 @@ unsafe fn release_mouse(mut window_state: parking_lot::MutexGuard<'_, WindowStat
   if window_state.mouse.capture_count == 0 {
     // ReleaseCapture() causes a WM_CAPTURECHANGED where we lock the window_state.
     drop(window_state);
+
     let _ = ReleaseCapture();
   }
 }
@@ -806,7 +833,9 @@ unsafe fn flush_paint_messages<T: 'static>(
 ) -> bool {
   if !runner.redrawing() {
     runner.main_events_cleared();
+
     let mut msg = MSG::default();
+
     runner.owned_windows(|redraw_window| {
       if Some(redraw_window) == except {
         return;
@@ -827,6 +856,7 @@ unsafe fn flush_paint_messages<T: 'static>(
       let _ = TranslateMessage(&msg);
       DispatchMessageW(&msg);
     });
+
     true
   } else {
     false
@@ -843,6 +873,7 @@ unsafe fn process_control_flow<T: 'static>(runner: &EventLoopRunner<T>) {
         LPARAM(0),
       );
     }
+
     ControlFlow::Wait => (),
     ControlFlow::WaitUntil(until) => {
       let _ = PostThreadMessageW(
@@ -852,6 +883,7 @@ unsafe fn process_control_flow<T: 'static>(runner: &EventLoopRunner<T>) {
         LPARAM(Box::into_raw(WaitUntilInstantBox::new(until)) as _),
       );
     }
+
     ControlFlow::ExitWithCode(_) => (),
   }
 }
@@ -922,6 +954,7 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
   let subclass_input_ptr = subclass_input_ptr as *mut SubclassInput<T>;
   let (result, subclass_removed, recurse_depth) = {
     let subclass_input = &*subclass_input_ptr;
+
     subclass_input
       .recurse_depth
       .set(subclass_input.recurse_depth.get() + 1);
@@ -933,7 +966,9 @@ unsafe extern "system" fn public_window_callback<T: 'static>(
       public_window_callback_inner(window, msg, wparam, lparam, uidsubclass, subclass_input);
 
     let subclass_removed = subclass_input.subclass_removed.get();
+
     let recurse_depth = subclass_input.recurse_depth.get() - 1;
+
     subclass_input.recurse_depth.set(recurse_depth);
 
     (result, subclass_removed, recurse_depth)
@@ -969,6 +1004,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       update_modifiers(window, subclass_input);
       result = ProcResult::Value(LRESULT(0));
     }
+
     _ => (),
   };
   subclass_input
@@ -978,12 +1014,15 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
   let keyboard_callback = || {
     use crate::event::WindowEvent::KeyboardInput;
+
     let is_keyboard_related = is_msg_keyboard_related(msg);
+
     if !is_keyboard_related {
       // We return early to avoid a deadlock from locking the window state
       // when not appropriate.
       return;
     }
+
     let events = {
       let mut key_event_builders =
         crate::platform_impl::platform::keyboard::KEY_EVENT_BUILDERS.lock();
@@ -993,6 +1032,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
         Vec::new()
       }
     };
+
     for event in events {
       subclass_input.send_event(Event::WindowEvent {
         window_id: RootWindowId(WindowId(window.0 as _)),
@@ -1011,16 +1051,20 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
   let ime_callback = || {
     use crate::event::WindowEvent::ReceivedImeText;
+
     let is_ime_related = is_msg_ime_related(msg);
+
     if !is_ime_related {
       return;
     }
+
     let text = {
       let mut window_state = subclass_input.window_state.lock();
       window_state
         .ime_handler
         .process_message(window, msg, wparam, lparam, &mut result)
     };
+
     if let Some(str) = text {
       subclass_input.send_event(Event::WindowEvent {
         window_id: RootWindowId(WindowId(window.0 as _)),
@@ -1049,6 +1093,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       let mut state = subclass_input.window_state.lock();
       if state.dragging {
         state.dragging = false;
+
         let _ = unsafe { PostMessageW(window, WM_LBUTTONUP, WPARAM::default(), lparam) };
       }
       state.set_window_flags_in_place(|f| f.remove(WindowFlags::MARKER_IN_SIZE_MOVE));
@@ -1058,6 +1103,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
     win32wm::WM_NCCREATE => {
       enable_non_client_dpi_scaling(window);
     }
+
     win32wm::WM_NCLBUTTONDOWN => {
       if wparam.0 == HTCAPTION as _ {
         let _ = PostMessageW(window, WM_MOUSEMOVE, WPARAM(0), lparam);
@@ -1103,9 +1149,11 @@ unsafe fn public_window_callback_inner<T: 'static>(
         let _ = RedrawWindow(window, None, HRGN::default(), RDW_INTERNALPAINT);
       } else {
         let managing_redraw = flush_paint_messages(Some(window), &subclass_input.event_loop_runner);
+
         subclass_input.send_event(Event::RedrawRequested(RootWindowId(WindowId(
           window.0 as _,
         ))));
+
         if managing_redraw {
           subclass_input.event_loop_runner.redraw_events_cleared();
           process_control_flow(&subclass_input.event_loop_runner);
@@ -1117,7 +1165,9 @@ unsafe fn public_window_callback_inner<T: 'static>(
       let w = subclass_input.window_state.lock();
       if let Some(color) = w.background_color {
         let hdc = HDC(wparam.0 as *mut _);
+
         let mut rc = RECT::default();
+
         if GetClientRect(window, &mut rc).is_ok() {
           let brush = CreateSolidBrush(util::RGB(color.0, color.1, color.2));
           FillRect(hdc, &rc, brush);
@@ -1137,6 +1187,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
       if let Some(ref mut fullscreen) = window_state.fullscreen {
         let window_pos = &mut *(lparam.0 as *mut WINDOWPOS);
+
         let new_rect = RECT {
           left: window_pos.x,
           top: window_pos.y,
@@ -1196,13 +1247,18 @@ unsafe fn public_window_callback_inner<T: 'static>(
                 });
               }
             }
+
             Fullscreen::Exclusive(ref video_mode) => {
               let old_monitor = video_mode.video_mode.monitor.hmonitor();
               if let Ok(old_monitor_info) = monitor::get_monitor_info(old_monitor) {
                 let old_monitor_rect = old_monitor_info.monitorInfo.rcMonitor;
+
                 window_pos.x = old_monitor_rect.left;
+
                 window_pos.y = old_monitor_rect.top;
+
                 window_pos.cx = old_monitor_rect.right - old_monitor_rect.left;
+
                 window_pos.cy = old_monitor_rect.bottom - old_monitor_rect.top;
               }
             }
@@ -1213,6 +1269,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       let window_flags = window_state.window_flags;
       if window_flags.contains(WindowFlags::ALWAYS_ON_BOTTOM) {
         let window_pos = &mut *(lparam.0 as *mut WINDOWPOS);
+
         window_pos.hwndInsertAfter = HWND_BOTTOM;
       }
 
@@ -1226,6 +1283,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       let windowpos = lparam.0 as *const WINDOWPOS;
       if (*windowpos).flags & SWP_NOMOVE != SWP_NOMOVE {
         let physical_position = PhysicalPosition::new((*windowpos).x, (*windowpos).y);
+
         subclass_input.send_event(Event::WindowEvent {
           window_id: RootWindowId(WindowId(window.0 as _)),
           event: Moved(physical_position),
@@ -1267,16 +1325,19 @@ unsafe fn public_window_callback_inner<T: 'static>(
     win32wm::WM_SYSCOMMAND => {
       if wparam.0 == SC_RESTORE as _ {
         let mut w = subclass_input.window_state.lock();
+
         w.set_window_flags_in_place(|f| f.set(WindowFlags::MINIMIZED, false));
       }
       if wparam.0 == SC_MINIMIZE as _ {
         let mut w = subclass_input.window_state.lock();
+
         w.set_window_flags_in_place(|f| f.set(WindowFlags::MINIMIZED, true));
       }
       // Send `WindowEvent::Minimized` here if we decide to implement one
 
       if wparam.0 == SC_SCREENSAVE as _ {
         let window_state = subclass_input.window_state.lock();
+
         if window_state.fullscreen.is_some() {
           result = ProcResult::Value(LRESULT(0));
           return;
@@ -1292,9 +1353,11 @@ unsafe fn public_window_callback_inner<T: 'static>(
         let mut w = subclass_input.window_state.lock();
 
         let was_outside_window = !w.mouse.cursor_flags().contains(CursorFlags::IN_WINDOW);
+
         w.mouse
           .set_cursor_flags(window, |f| f.set(CursorFlags::IN_WINDOW, true))
           .ok();
+
         was_outside_window
       };
 
@@ -1324,11 +1387,14 @@ unsafe fn public_window_callback_inner<T: 'static>(
         // see https://devblogs.microsoft.com/oldnewthing/20031001-00/?p=42343
         // and http://debugandconquer.blogspot.com/2015/08/the-cause-of-spurious-mouse-move.html
         let mut w = subclass_input.window_state.lock();
+
         cursor_moved = w.mouse.last_position != Some(position);
+
         w.mouse.last_position = Some(position);
       }
       if cursor_moved {
         let modifiers = update_modifiers(window, subclass_input);
+
         subclass_input.send_event(Event::WindowEvent {
           window_id: RootWindowId(WindowId(window.0 as _)),
           event: CursorMoved {
@@ -1346,6 +1412,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       use crate::event::WindowEvent::CursorLeft;
       {
         let mut w = subclass_input.window_state.lock();
+
         w.mouse
           .set_cursor_flags(window, |f| f.set(CursorFlags::IN_WINDOW, false))
           .ok();
@@ -1587,6 +1654,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       .is_ok()
       {
         inputs.set_len(pcount);
+
         for input in &inputs {
           let mut location = POINT {
             x: input.x / 100,
@@ -1635,8 +1703,11 @@ unsafe fn public_window_callback_inner<T: 'static>(
         *GET_POINTER_DEVICE_RECTS,
       ) {
         let pointer_id = u32::from(util::LOWORD(wparam.0 as u32));
+
         let mut entries_count = 0_u32;
+
         let mut pointers_count = 0_u32;
+
         if !GetPointerFrameInfoHistory(
           pointer_id,
           &mut entries_count as *mut _,
@@ -1650,8 +1721,11 @@ unsafe fn public_window_callback_inner<T: 'static>(
         }
 
         let pointer_info_count = (entries_count * pointers_count) as usize;
+
         let mut pointer_infos: Vec<POINTER_INFO> = Vec::with_capacity(pointer_info_count);
+
         let uninit_pointer_infos = pointer_infos.spare_capacity_mut();
+
         if !GetPointerFrameInfoHistory(
           pointer_id,
           &mut entries_count as *mut _,
@@ -1663,6 +1737,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
           result = ProcResult::Value(LRESULT(0));
           return;
         }
+
         pointer_infos.set_len(pointer_info_count);
 
         // https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-getpointerframeinfohistory
@@ -1720,6 +1795,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
                 }
               })
             }
+
             win32wm::PT_PEN => {
               let mut pen_info = mem::MaybeUninit::uninit();
               GET_POINTER_PEN_INFO.and_then(|GetPointerPenInfo| {
@@ -1730,6 +1806,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
                 }
               })
             }
+
             _ => None,
           };
 
@@ -1798,6 +1875,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
         // provided through the low-order word of lParam. We use that here since
         // `WM_MOUSEMOVE` seems to come after `WM_SETCURSOR` for a given cursor movement.
         let in_client_area = u32::from(util::LOWORD(lparam.0 as u32)) == HTCLIENT;
+
         if in_client_area {
           Some(window_state.mouse.cursor)
         } else {
@@ -1812,6 +1890,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
           }
           result = ProcResult::Value(LRESULT(0));
         }
+
         None => result = ProcResult::DefWindowProc,
       }
     }
@@ -1839,6 +1918,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
             .to_physical(window_state.scale_factor)
             .0,
         );
+
         let (width, height): (u32, u32) = util::adjust_size(window, min_size, is_decorated).into();
         (*mmi).ptMinTrackSize = POINT {
           x: width as i32,
@@ -1858,6 +1938,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
             .to_physical(window_state.scale_factor)
             .0,
         );
+
         let (width, height): (u32, u32) = util::adjust_size(window, max_size, is_decorated).into();
         (*mmi).ptMaxTrackSize = POINT {
           x: width as i32,
@@ -1883,7 +1964,9 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
       let (allow_resize, is_decorated) = {
         let mut window_state = subclass_input.window_state.lock();
+
         old_scale_factor = window_state.scale_factor;
+
         window_state.scale_factor = new_scale_factor;
 
         if (new_scale_factor - old_scale_factor).abs() < f64::EPSILON {
@@ -1904,6 +1987,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
       // calculates a correct size for the client area.
       if !is_decorated {
         style &= !WS_CAPTION;
+
         style &= !WS_SIZEBOX;
       }
       let style_ex = WINDOW_EX_STYLE(GetWindowLongW(window, GWL_EXSTYLE) as u32);
@@ -1923,7 +2007,9 @@ unsafe fn public_window_callback_inner<T: 'static>(
         let adjusted_rect =
           util::adjust_window_rect_with_styles(window, style, style_ex, suggested_rect)
             .unwrap_or(suggested_rect);
+
         margin_left = suggested_rect.left - adjusted_rect.left;
+
         margin_top = suggested_rect.top - adjusted_rect.top;
         // margin_right = adjusted_rect.right - suggested_rect.right;
         // margin_bottom = adjusted_rect.bottom - suggested_rect.bottom;
@@ -1931,13 +2017,19 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
       let old_physical_inner_rect = {
         let mut old_physical_inner_rect = RECT::default();
+
         let _ = GetClientRect(window, &mut old_physical_inner_rect);
+
         let mut origin = POINT::default();
+
         let _ = ClientToScreen(window, &mut origin);
 
         old_physical_inner_rect.left += origin.x;
+
         old_physical_inner_rect.right += origin.x;
+
         old_physical_inner_rect.top += origin.y;
+
         old_physical_inner_rect.bottom += origin.y;
 
         old_physical_inner_rect
@@ -1975,6 +2067,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
 
       {
         let window_state = subclass_input.window_state.lock();
+
         dragging_window = window_state
           .window_flags()
           .contains(WindowFlags::MARKER_IN_SIZE_MOVE);
@@ -2013,6 +2106,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
               let _ = GetCursorPos(&mut pos);
               pos
             };
+
             let suggested_cursor_horizontal_ratio = (cursor_pos.x - suggested_rect.left) as f64
               / (suggested_rect.right - suggested_rect.left) as f64;
 
@@ -2028,7 +2122,9 @@ unsafe fn public_window_callback_inner<T: 'static>(
         // Check to see if the new window rect is on the monitor with the new DPI factor.
         // If it isn't, offset the window so that it is.
         let new_dpi_monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONULL);
+
         let conservative_rect_monitor = MonitorFromRect(&conservative_rect, MONITOR_DEFAULTTONULL);
+
         new_outer_rect = {
           if conservative_rect_monitor != new_dpi_monitor {
             let get_monitor_rect = |monitor| {
@@ -2039,8 +2135,11 @@ unsafe fn public_window_callback_inner<T: 'static>(
               let _ = GetMonitorInfoW(monitor, &mut monitor_info);
               monitor_info.rcMonitor
             };
+
             let wrong_monitor = conservative_rect_monitor;
+
             let wrong_monitor_rect = get_monitor_rect(wrong_monitor);
+
             let new_monitor_rect = get_monitor_rect(new_dpi_monitor);
 
             // The direction to nudge the window in to get the window onto the monitor with
@@ -2066,6 +2165,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
             let abort_after_iterations = new_monitor_rect.right - new_monitor_rect.left
               + new_monitor_rect.bottom
               - new_monitor_rect.top;
+
             for _ in 0..abort_after_iterations {
               conservative_rect.left += delta_nudge_to_dpi_monitor.0;
               conservative_rect.right += delta_nudge_to_dpi_monitor.0;
@@ -2115,6 +2215,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
             let mut rect = monitor_info.monitorInfo.rcWork;
 
             let mut edges = 0;
+
             for edge in [ABE_BOTTOM, ABE_LEFT, ABE_TOP, ABE_RIGHT] {
               let mut app_data = APPBARDATA {
                 cbSize: std::mem::size_of::<APPBARDATA>() as _,
@@ -2130,12 +2231,15 @@ unsafe fn public_window_callback_inner<T: 'static>(
             if edges & ABE_BOTTOM != 0 {
               rect.bottom -= 1;
             }
+
             if edges & ABE_LEFT != 0 {
               rect.left += 1;
             }
+
             if edges & ABE_TOP != 0 {
               rect.top += 1;
             }
+
             if edges & ABE_RIGHT != 0 {
               rect.right -= 1;
             }
@@ -2149,6 +2253,7 @@ unsafe fn public_window_callback_inner<T: 'static>(
           params.rgrc[0].left += 1;
           params.rgrc[0].right += 1;
         }
+
         result = ProcResult::Value(LRESULT(0)); // return 0 here to make the window borderless
       }
     }
@@ -2170,10 +2275,13 @@ unsafe fn public_window_callback_inner<T: 'static>(
         );
 
         let mut rect = RECT::default();
+
         let _ = GetWindowRect(window, &mut rect);
 
         let padded_border = GetSystemMetrics(SM_CXPADDEDBORDER);
+
         let border_x = GetSystemMetrics(SM_CXFRAME) + padded_border;
+
         let border_y = GetSystemMetrics(SM_CYFRAME) + padded_border;
 
         let hit_result = crate::window::hit_test(
@@ -2201,18 +2309,23 @@ unsafe fn public_window_callback_inner<T: 'static>(
     _ => {
       if msg == *DESTROY_MSG_ID {
         let _ = DestroyWindow(window);
+
         result = ProcResult::Value(LRESULT(0));
       } else if msg == *SET_RETAIN_STATE_ON_SIZE_MSG_ID {
         let mut window_state = subclass_input.window_state.lock();
+
         window_state.set_window_flags_in_place(|f| {
           f.set(WindowFlags::MARKER_RETAIN_STATE_ON_SIZE, wparam.0 != 0)
         });
+
         result = ProcResult::Value(LRESULT(0));
       } else if msg == *CHANGE_THEME_MSG_ID {
         update_theme(subclass_input, window, false);
+
         result = ProcResult::Value(LRESULT(0));
       } else if msg == *S_U_TASKBAR_RESTART {
         let window_state = subclass_input.window_state.lock();
+
         let _ = set_skip_taskbar(window, window_state.skip_taskbar);
       }
     }
@@ -2245,7 +2358,9 @@ fn update_theme<T>(
   let new_theme = try_window_theme(window, preferred_theme, !from_settings_change_event);
   if window_state.current_theme != new_theme {
     window_state.current_theme = new_theme;
+
     mem::drop(window_state);
+
     unsafe {
       subclass_input.send_event(Event::WindowEvent {
         window_id: RootWindowId(WindowId(window.0 as _)),
@@ -2337,6 +2452,7 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
     win32wm::WM_INPUT => {
       if let Some(data) = raw_input::get_raw_input_data(HRAWINPUT(lparam.0 as _)) {
         handle_raw_input(&subclass_input, data);
+
         let _ = RedrawWindow(window, None, HRGN::default(), RDW_INTERNALPAINT);
       }
 
@@ -2350,12 +2466,14 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
       let _ = RedrawWindow(window, None, HRGN::default(), RDW_INTERNALPAINT);
       LRESULT(0)
     }
+
     _ if msg == *EXEC_MSG_ID => {
       let mut function: ThreadExecFn = Box::from_raw(wparam.0 as *mut _);
       function();
       let _ = RedrawWindow(window, None, HRGN::default(), RDW_INTERNALPAINT);
       LRESULT(0)
     }
+
     _ if msg == *PROCESS_NEW_EVENTS_MSG_ID => {
       let _ = PostThreadMessageW(
         subclass_input.event_loop_runner.wait_thread_id(),
@@ -2368,6 +2486,7 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
       // before emitting NewEvents
       if let ControlFlow::WaitUntil(wait_until) = subclass_input.event_loop_runner.control_flow() {
         let mut msg = MSG::default();
+
         while Instant::now() < wait_until {
           if PeekMessageW(&mut msg, HWND::default(), 0, 0, PM_NOREMOVE).as_bool() {
             // This works around a "feature" in PeekMessageW. If the message PeekMessageW
@@ -2391,6 +2510,7 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
       let _ = RedrawWindow(window, None, HRGN::default(), RDW_INTERNALPAINT);
       LRESULT(0)
     }
+
     _ => DefSubclassProc(window, msg, wparam, lparam),
   };
 
@@ -2470,6 +2590,7 @@ unsafe fn handle_raw_input<T: 'static>(
         // seem to be anything else reasonable to do for a mouse
         // button ID.
         let button = (index + 1) as _;
+
         subclass_input.send_event(Event::DeviceEvent {
           device_id,
           event: Button { button, state },
@@ -2480,6 +2601,7 @@ unsafe fn handle_raw_input<T: 'static>(
     let keyboard = data.data.keyboard;
 
     let pressed = keyboard.Message == WM_KEYDOWN || keyboard.Message == WM_SYSKEYDOWN;
+
     let released = keyboard.Message == WM_KEYUP || keyboard.Message == WM_SYSKEYUP;
 
     if !pressed && !released {
@@ -2487,6 +2609,7 @@ unsafe fn handle_raw_input<T: 'static>(
     }
 
     let state = if pressed { Pressed } else { Released };
+
     let extension = {
       if util::has_flag(keyboard.Flags, RI_KEY_E0 as _) {
         0xE000
@@ -2496,6 +2619,7 @@ unsafe fn handle_raw_input<T: 'static>(
         0x0000
       }
     };
+
     let scancode = if keyboard.MakeCode == 0 {
       // In some cases (often with media keys) the device reports a scancode of 0 but a
       // valid virtual key. In these cases we obtain the scancode from the virtual key.
@@ -2503,6 +2627,7 @@ unsafe fn handle_raw_input<T: 'static>(
     } else {
       keyboard.MakeCode | extension
     };
+
     if scancode == 0xE11D || scancode == 0xE02A {
       // At the hardware (or driver?) level, pressing the Pause key is equivalent to pressing
       // Ctrl+NumLock.
@@ -2526,6 +2651,7 @@ unsafe fn handle_raw_input<T: 'static>(
       // https://devblogs.microsoft.com/oldnewthing/20080211-00/?p=23503
       return;
     }
+
     let code = if VIRTUAL_KEY(keyboard.VKey) == VK_NUMLOCK {
       // Historically, the NumLock and the Pause key were one and the same physical key.
       // The user could trigger Pause by pressing Ctrl+NumLock.
@@ -2543,6 +2669,7 @@ unsafe fn handle_raw_input<T: 'static>(
     } else {
       KeyCode::from_scancode(scancode as u32)
     };
+
     if VIRTUAL_KEY(keyboard.VKey) == VK_SHIFT {
       match code {
         KeyCode::NumpadDecimal
@@ -2573,9 +2700,11 @@ unsafe fn handle_raw_input<T: 'static>(
           // https://devblogs.microsoft.com/oldnewthing/20040906-00/?p=37953
           return;
         }
+
         _ => (),
       }
     }
+
     subclass_input.send_event(Event::DeviceEvent {
       device_id,
       event: Key(RawKeyEvent {

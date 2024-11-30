@@ -24,6 +24,7 @@ fn main() {
 			},
 			Event::Reopen { has_visible_windows, .. } => {
 				println!("on reopen, has visible windows: {has_visible_windows}");
+
 				if !has_visible_windows {
 					window = Some(Window::new(&event_loop).unwrap())
 				}

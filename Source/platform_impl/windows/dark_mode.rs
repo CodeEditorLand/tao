@@ -191,12 +191,15 @@ fn refresh_titlebar_theme_color(hwnd: HWND, is_dark_mode: bool, redraw_title_bar
           &dark_mode as *const BOOL as *const c_void,
           std::mem::size_of::<BOOL>() as u32,
         );
+
         if redraw_title_bar {
           if GetActiveWindow() == hwnd {
             DefWindowProcW(hwnd, WM_NCACTIVATE, None, None);
+
             DefWindowProcW(hwnd, WM_NCACTIVATE, WPARAM(true.into()), None);
           } else {
             DefWindowProcW(hwnd, WM_NCACTIVATE, WPARAM(true.into()), None);
+
             DefWindowProcW(hwnd, WM_NCACTIVATE, None, None);
           }
         }

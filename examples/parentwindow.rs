@@ -12,15 +12,20 @@ fn main() {
 	use tao::platform::unix::{WindowBuilderExtUnix, WindowExtUnix};
 	#[cfg(target_os = "windows")]
 	use tao::platform::windows::{WindowBuilderExtWindows, WindowExtWindows};
+
 	use tao::{
 		dpi::LogicalSize,
 		event::{Event, StartCause, WindowEvent},
 		event_loop::{ControlFlow, EventLoop},
 		window::WindowBuilder,
 	};
+
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
+
 	let mut windows = HashMap::new();
+
 	let main_window = WindowBuilder::new().build(&event_loop).unwrap();
 
 	#[cfg(target_os = "macos")]
@@ -41,6 +46,7 @@ fn main() {
 	let child_window = child_window_builder.build(&event_loop).unwrap();
 
 	windows.insert(child_window.id(), child_window);
+
 	windows.insert(main_window.id(), main_window);
 
     match event {
@@ -51,6 +57,7 @@ fn main() {
         println!("Window {window_id:?} has received the signal to close");
         // This drop the window, causing it to close.
         windows.remove(&window_id);
+
         if windows.is_empty() {
           *control_flow = ControlFlow::Exit;
         }

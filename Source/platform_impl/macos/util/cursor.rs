@@ -86,17 +86,21 @@ impl Cursor {
       Cursor::Default => null_mut(),
       Cursor::Native(cursor_name) => {
         let sel = Sel::register(cursor_name);
+
         msg_send![class!(NSCursor), performSelector: sel]
       }
       Cursor::Undocumented(cursor_name) => {
         let class = class!(NSCursor);
+
         let sel = Sel::register(cursor_name);
+
         let sel = if msg_send![class, respondsToSelector: sel] {
           sel
         } else {
           warn!("Cursor `{}` appears to be invalid", cursor_name);
           sel!(arrowCursor)
         };
+
         msg_send![class, performSelector: sel]
       }
       Cursor::WebKit(cursor_name) => load_webkit_cursor(cursor_name),

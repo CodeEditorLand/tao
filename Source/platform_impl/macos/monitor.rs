@@ -47,8 +47,11 @@ impl Eq for VideoMode {}
 impl std::hash::Hash for VideoMode {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     self.size.hash(state);
+
     self.bit_depth.hash(state);
+
     self.refresh_rate.hash(state);
+
     self.monitor.hash(state);
   }
 }
@@ -81,6 +84,7 @@ impl Clone for NativeDisplayMode {
     unsafe {
       ffi::CGDisplayModeRetain(self.0);
     }
+
     NativeDisplayMode(self.0)
   }
 }
@@ -148,9 +152,11 @@ impl std::hash::Hash for MonitorHandle {
 pub fn available_monitors() -> VecDeque<MonitorHandle> {
   if let Ok(displays) = CGDisplay::active_displays() {
     let mut monitors = VecDeque::with_capacity(displays.len());
+
     for display in displays {
       monitors.push_back(MonitorHandle(display));
     }
+
     monitors
   } else {
     VecDeque::with_capacity(0)
@@ -206,7 +212,9 @@ impl MonitorHandle {
 
   pub fn name(&self) -> Option<String> {
     let MonitorHandle(display_id) = *self;
+
     let screen_num = CGDisplay::new(display_id).model_number();
+
     Some(format!("Monitor #{}", screen_num))
   }
 
@@ -217,15 +225,20 @@ impl MonitorHandle {
 
   pub fn size(&self) -> PhysicalSize<u32> {
     let MonitorHandle(display_id) = *self;
+
     let display = CGDisplay::new(display_id);
+
     let height = display.pixels_high();
+
     let width = display.pixels_wide();
+
     PhysicalSize::from_logical::<_, f64>((width as f64, height as f64), self.scale_factor())
   }
 
   #[inline]
   pub fn position(&self) -> PhysicalPosition<i32> {
     let bounds = unsafe { CGDisplayBounds(self.native_identifier()) };
+
     PhysicalPosition::from_logical::<_, f64>(
       (bounds.origin.x as f64, bounds.origin.y as f64),
       self.scale_factor(),
@@ -237,6 +250,7 @@ impl MonitorHandle {
       Some(screen) => screen,
       None => return 1.0, // default to 1.0 when we can't find the screen
     };
+
     unsafe { NSScreen::backingScaleFactor(screen) as f64 }
   }
 
@@ -261,16 +275,23 @@ impl MonitorHandle {
     unsafe {
       let modes = {
         let array = ffi::CGDisplayCopyAllDisplayModes(self.0, std::ptr::null());
+
         assert!(!array.is_null(), "failed to get list of display modes");
+
         let array_count = CFArrayGetCount(array);
+
         let modes: Vec<_> = (0..array_count)
           .map(move |i| {
             let mode = CFArrayGetValueAtIndex(array, i) as *mut _;
+
             ffi::CGDisplayModeRetain(mode);
+
             mode
           })
           .collect();
+
         CFRelease(array as *const _);
+
         modes
       };
 
@@ -287,6 +308,7 @@ impl MonitorHandle {
 
         let pixel_encoding =
           CFString::wrap_under_create_rule(ffi::CGDisplayModeCopyPixelEncoding(mode)).to_string();
+
         let bit_depth = if pixel_encoding.eq_ignore_ascii_case(ffi::IO32BitDirectPixels) {
           32
         } else if pixel_encoding.eq_ignore_ascii_case(ffi::IO16BitDirectPixels) {
@@ -321,8 +343,11 @@ impl MonitorHandle {
       let key = util::ns_string_id_ref("NSScreenNumber");
       for i in 0..count {
         let screen = msg_send![screens, objectAtIndex: i as NSUInteger];
+
         let device_description = NSScreen::deviceDescription(screen);
+
         let value: id = msg_send![device_description, objectForKey:*key];
+
         if value != nil {
           let other_native_id: NSUInteger = msg_send![value, unsignedIntegerValue];
           let other_uuid =

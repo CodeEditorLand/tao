@@ -191,8 +191,11 @@ impl<T: 'static> EventLoop<T> {
             while let Ok(Some(event)) = input_queue.event() {
               if let Some(event) = input_queue.pre_dispatch(event) {
                 let mut handled = true;
+
                 let window_id = window::WindowId(WindowId);
+
                 let device_id = event::DeviceId(DeviceId);
+
                 match &event {
                   InputEvent::MotionEvent(motion_event) => {
                     let phase = match motion_event.action() {
@@ -204,9 +207,11 @@ impl<T: 'static> EventLoop<T> {
                       MotionAction::Cancel => Some(event::TouchPhase::Cancelled),
                       _ => {
                         handled = false;
+
                         None // TODO mouse events
                       }
                     };
+
                     if let Some(phase) = phase {
                       let pointers: Box<dyn Iterator<Item = ndk::event::Pointer<'_>>> = match phase
                       {
@@ -215,6 +220,7 @@ impl<T: 'static> EventLoop<T> {
                             motion_event.pointer_at_index(motion_event.pointer_index()),
                           ))
                         }
+
                         event::TouchPhase::Moved | event::TouchPhase::Cancelled => {
                           Box::new(motion_event.pointers())
                         }
@@ -225,6 +231,7 @@ impl<T: 'static> EventLoop<T> {
                           x: pointer.x() as _,
                           y: pointer.y() as _,
                         };
+
                         let event = event::Event::WindowEvent {
                           window_id,
                           event: event::WindowEvent::Touch(event::Touch {
@@ -235,6 +242,7 @@ impl<T: 'static> EventLoop<T> {
                             force: None,
                           }),
                         };
+
                         call_event_handler!(
                           event_handler,
                           self.window_target(),
@@ -252,8 +260,11 @@ impl<T: 'static> EventLoop<T> {
                     };
 
                     let keycode = key.key_code();
+
                     let native = NativeKeyCode::Android(keycode.into());
+
                     let physical_key = KeyCode::Unidentified(native);
+
                     let logical_key = keycode_to_logical(keycode, native);
                     // TODO: maybe use getUnicodeChar to get the logical key
 
@@ -273,15 +284,18 @@ impl<T: 'static> EventLoop<T> {
                         is_synthetic: false,
                       },
                     };
+
                     call_event_handler!(event_handler, self.window_target(), control_flow, event);
                   }
                   _ => {}
                 };
+
                 input_queue.finish_event(event, handled);
               }
             }
           }
         }
+
         Some(EventSource::User) => {
           while let Ok(event) = self.receiver.try_recv() {
             call_event_handler!(
@@ -292,6 +306,7 @@ impl<T: 'static> EventLoop<T> {
             );
           }
         }
+
         None => {}
       }
 
@@ -304,15 +319,18 @@ impl<T: 'static> EventLoop<T> {
 
       if resized && self.running {
         let size = MonitorHandle.size();
+
         let event = event::Event::WindowEvent {
           window_id: window::WindowId(WindowId),
           event: event::WindowEvent::Resized(size),
         };
+
         call_event_handler!(event_handler, self.window_target(), control_flow, event);
       }
 
       if redraw && self.running {
         let event = event::Event::RedrawRequested(window::WindowId(WindowId));
+
         call_event_handler!(event_handler, self.window_target(), control_flow, event);
       }
 
@@ -337,6 +355,7 @@ impl<T: 'static> EventLoop<T> {
           };
           break 'event_loop code;
         }
+
         ControlFlow::Poll => {
           self.first_event = poll(
             self
@@ -346,6 +365,7 @@ impl<T: 'static> EventLoop<T> {
           );
           self.start_cause = event::StartCause::Poll;
         }
+
         ControlFlow::Wait => {
           self.first_event = poll(self.looper.poll_all().unwrap());
           self.start_cause = event::StartCause::WaitCancelled {
@@ -353,6 +373,7 @@ impl<T: 'static> EventLoop<T> {
             requested_resume: None,
           }
         }
+
         ControlFlow::WaitUntil(instant) => {
           let start = Instant::now();
           let duration = if instant <= start {
@@ -397,7 +418,9 @@ pub struct EventLoopProxy<T: 'static> {
 impl<T> EventLoopProxy<T> {
   pub fn send_event(&self, event: T) -> Result<(), event_loop::EventLoopClosed<T>> {
     _ = self.queue.try_send(event);
+
     self.looper.wake();
+
     Ok(())
   }
 }
@@ -426,12 +449,15 @@ impl<T: 'static> EventLoopWindowTarget<T> {
   #[inline]
   pub fn monitor_from_point(&self, _x: f64, _y: f64) -> Option<MonitorHandle> {
     warn!("`Window::monitor_from_point` is ignored on Android");
+
     return None;
   }
 
   pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
     let mut v = VecDeque::with_capacity(1);
+
     v.push_back(MonitorHandle);
+
     v
   }
 
@@ -451,6 +477,7 @@ impl<T: 'static> EventLoopWindowTarget<T> {
 
   pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, error::ExternalError> {
     debug!("`EventLoopWindowTarget::cursor_position` is ignored on Android");
+
     Ok((0, 0).into())
   }
 }
@@ -500,13 +527,16 @@ impl Window {
 
   pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
     let mut v = VecDeque::with_capacity(1);
+
     v.push_back(MonitorHandle);
+
     v
   }
 
   #[inline]
   pub fn monitor_from_point(&self, _x: f64, _y: f64) -> Option<monitor::MonitorHandle> {
     warn!("`Window::monitor_from_point` is ignored on Android");
+
     None
   }
 
@@ -566,11 +596,13 @@ impl Window {
 
   pub fn is_focused(&self) -> bool {
     log::warn!("`Window::is_focused` is ignored on Android");
+
     false
   }
 
   pub fn is_always_on_top(&self) -> bool {
     log::warn!("`Window::is_always_on_top` is ignored on Android");
+
     false
   }
 
@@ -604,31 +636,37 @@ impl Window {
 
   pub fn is_visible(&self) -> bool {
     log::warn!("`Window::is_visible` is ignored on Android");
+
     false
   }
 
   pub fn is_resizable(&self) -> bool {
     warn!("`Window::is_resizable` is ignored on Android");
+
     false
   }
 
   pub fn is_minimizable(&self) -> bool {
     warn!("`Window::is_minimizable` is ignored on Android");
+
     false
   }
 
   pub fn is_maximizable(&self) -> bool {
     warn!("`Window::is_maximizable` is ignored on Android");
+
     false
   }
 
   pub fn is_closable(&self) -> bool {
     warn!("`Window::is_closable` is ignored on Android");
+
     false
   }
 
   pub fn is_decorated(&self) -> bool {
     warn!("`Window::is_decorated` is ignored on Android");
+
     false
   }
 
@@ -693,6 +731,7 @@ impl Window {
 
   pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, error::ExternalError> {
     debug!("`Window::cursor_position` is ignored on Android");
+
     Ok((0, 0).into())
   }
 
@@ -700,11 +739,13 @@ impl Window {
   pub fn raw_window_handle_rwh_04(&self) -> rwh_04::RawWindowHandle {
     // TODO: Use main activity instead?
     let mut handle = rwh_04::AndroidNdkHandle::empty();
+
     if let Some(w) = ndk_glue::window_manager().as_ref() {
       handle.a_native_window = w.as_obj().as_raw() as *mut _;
     } else {
       panic!("Cannot get the native window, it's null and will always be null before Event::Resumed and after Event::Suspended. Make sure you only call this function between those events.");
     };
+
     rwh_04::RawWindowHandle::AndroidNdk(handle)
   }
 
@@ -712,11 +753,13 @@ impl Window {
   pub fn raw_window_handle_rwh_05(&self) -> rwh_05::RawWindowHandle {
     // TODO: Use main activity instead?
     let mut handle = rwh_05::AndroidNdkWindowHandle::empty();
+
     if let Some(w) = ndk_glue::window_manager().as_ref() {
       handle.a_native_window = w.as_obj().as_raw() as *mut _;
     } else {
       panic!("Cannot get the native window, it's null and will always be null before Event::Resumed and after Event::Suspended. Make sure you only call this function between those events.");
     };
+
     rwh_05::RawWindowHandle::AndroidNdk(handle)
   }
 
@@ -822,6 +865,7 @@ impl MonitorHandle {
 
   pub fn scale_factor(&self) -> f64 {
     let config = CONFIG.read().unwrap();
+
     config
       .density()
       .map(|dpi| dpi as f64 / 160.0)
@@ -830,6 +874,7 @@ impl MonitorHandle {
 
   pub fn video_modes(&self) -> impl Iterator<Item = monitor::VideoMode> {
     let size = self.size().into();
+
     let mut v = Vec::new();
     // FIXME this is not the real refresh rate
     // (it is guarunteed to support 32 bit color though)
@@ -841,6 +886,7 @@ impl MonitorHandle {
         monitor: self.clone(),
       },
     });
+
     v.into_iter()
   }
 }

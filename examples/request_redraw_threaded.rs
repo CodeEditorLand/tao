@@ -14,6 +14,7 @@ use tao::{
 #[allow(clippy::collapsible_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new()
@@ -24,6 +25,7 @@ fn main() {
 	thread::spawn(move || {
 		loop {
 			thread::sleep(time::Duration::from_secs(1));
+
 			window.request_redraw();
 		}
 	});

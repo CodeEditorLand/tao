@@ -48,8 +48,11 @@ impl Eq for VideoMode {}
 impl std::hash::Hash for VideoMode {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     self.size.hash(state);
+
     self.bit_depth.hash(state);
+
     self.refresh_rate.hash(state);
+
     self.monitor.hash(state);
   }
 }
@@ -147,6 +150,7 @@ impl Window {
 
   pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
     let monitor = primary_monitor();
+
     Some(RootMonitorHandle { inner: monitor })
   }
 
@@ -179,6 +183,7 @@ impl MonitorHandle {
   #[inline]
   pub fn name(&self) -> Option<String> {
     let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
+
     Some(util::wchar_ptr_to_string(PCWSTR::from_raw(
       monitor_info.szDevice.as_ptr(),
     )))
@@ -197,6 +202,7 @@ impl MonitorHandle {
   #[inline]
   pub fn size(&self) -> PhysicalSize<u32> {
     let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
+
     PhysicalSize {
       width: (monitor_info.monitorInfo.rcMonitor.right - monitor_info.monitorInfo.rcMonitor.left)
         as u32,
@@ -208,6 +214,7 @@ impl MonitorHandle {
   #[inline]
   pub fn position(&self) -> PhysicalPosition<i32> {
     let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
+
     PhysicalPosition {
       x: monitor_info.monitorInfo.rcMonitor.left,
       y: monitor_info.monitorInfo.rcMonitor.top,
@@ -225,14 +232,19 @@ impl MonitorHandle {
     // fields are probably changing, but we aren't looking at those fields
     // anyway), so we're using a BTreeSet deduplicate
     let mut modes = BTreeSet::new();
+
     let mut i = 0;
 
     loop {
       unsafe {
         let monitor_info = get_monitor_info(self.hmonitor()).unwrap();
+
         let device_name = PCWSTR::from_raw(monitor_info.szDevice.as_ptr());
+
         let mut mode: DEVMODEW = mem::zeroed();
+
         mode.dmSize = mem::size_of_val(&mode) as u16;
+
         if !EnumDisplaySettingsExW(
           device_name,
           ENUM_DISPLAY_SETTINGS_MODE(i),
@@ -243,9 +255,11 @@ impl MonitorHandle {
         {
           break;
         }
+
         i += 1;
 
         let required_fields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+
         assert!(mode.dmFields & required_fields == required_fields);
 
         modes.insert(RootVideoMode {

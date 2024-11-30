@@ -136,6 +136,7 @@ pub fn register_all_mice_and_keyboards_for_raw_input(
       window_handle = HWND(std::ptr::null_mut());
       RIDEV_REMOVE
     }
+
     DeviceEventFilter::Unfocused => RIDEV_DEVNOTIFY,
     DeviceEventFilter::Never => RIDEV_DEVNOTIFY | RIDEV_INPUTSINK,
   };

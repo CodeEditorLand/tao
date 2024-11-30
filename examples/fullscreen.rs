@@ -15,16 +15,20 @@ use tao::{
 #[allow(clippy::ok_expect)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	print!(
 		"Please choose the fullscreen mode: (1) exclusive, (2) borderless, (3) borderless on \
 		 current monitor: "
 	);
+
 	stdout().flush().unwrap();
 
 	let mut num = String::new();
+
 	stdin().read_line(&mut num).unwrap();
+
 	let num = num.trim().parse().ok().expect("Please enter a number");
 
 	let fullscreen = Some(match num {
@@ -68,12 +72,16 @@ fn main() {
 						if Key::Character("s") == logical_key {
 							println!("window.fullscreen {:?}", window.fullscreen());
 						}
+
 						if Key::Character("m") == logical_key {
 							let is_maximized = window.is_maximized();
+
 							window.set_maximized(!is_maximized);
 						}
+
 						if Key::Character("d") == logical_key {
 							decorations = !decorations;
+
 							window.set_decorations(decorations);
 						}
 					},
@@ -92,11 +100,15 @@ fn prompt_for_monitor(event_loop:&EventLoop<()>) -> MonitorHandle {
 	}
 
 	print!("Please write the number of the monitor to use: ");
+
 	stdout().flush().unwrap();
 
 	let mut num = String::new();
+
 	stdin().read_line(&mut num).unwrap();
+
 	let num = num.trim().parse().expect("Please enter a number");
+
 	let monitor = event_loop.available_monitors().nth(num).expect("Please enter a valid ID");
 
 	println!("Using {:?}", monitor.name());
@@ -110,11 +122,15 @@ fn prompt_for_video_mode(monitor: &MonitorHandle) -> VideoMode {
   }
 
 	print!("Please write the number of the video mode to use: ");
+
 	stdout().flush().unwrap();
 
 	let mut num = String::new();
+
 	stdin().read_line(&mut num).unwrap();
+
 	let num = num.trim().parse().expect("Please enter a number");
+
 	let video_mode = monitor.video_modes().nth(num).expect("Please enter a valid ID");
 
   println!("Using {video_mode}");

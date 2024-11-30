@@ -12,6 +12,7 @@ fn main() {
 	};
 
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new()
@@ -21,8 +22,11 @@ fn main() {
     .unwrap();
 
 	println!("Initial theme: {:?}", window.theme());
+
 	println!("Press D for Dark Mode");
+
 	println!("Press L for Light Mode");
+
 	println!("Press A for Auto Mode");
 
 	event_loop.run(move |event, _, control_flow| {

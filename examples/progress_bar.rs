@@ -12,6 +12,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new().build(&event_loop).unwrap();
@@ -19,11 +20,17 @@ fn main() {
 	let mut modifiers = ModifiersState::default();
 
 	eprintln!("Key mappings:");
+
 	eprintln!("  [1-5]: Set progress to [0%, 25%, 50%, 75%, 100%]");
+
 	eprintln!("  Ctrl+1: Set state to None");
+
 	eprintln!("  Ctrl+2: Set state to Normal");
+
 	eprintln!("  Ctrl+3: Set state to Indeterminate");
+
 	eprintln!("  Ctrl+4: Set state to Paused");
+
 	eprintln!("  Ctrl+5: Set state to Error");
 
 	event_loop.run(move |event, _, control_flow| {
@@ -49,6 +56,7 @@ fn main() {
 					} => {
 						if modifiers.is_empty() {
 							let mut progress:u64 = 0;
+
 							match key_str {
 								"1" => progress = 0,
 								"2" => progress = 25,
@@ -65,6 +73,7 @@ fn main() {
 							});
 						} else if modifiers.control_key() {
 							let mut state = ProgressState::None;
+
 							match key_str {
 								"1" => state = ProgressState::None,
 								"2" => state = ProgressState::Normal,

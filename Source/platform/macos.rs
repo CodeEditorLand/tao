@@ -243,6 +243,7 @@ impl WindowBuilderExtMacOS for WindowBuilder {
   #[inline]
   fn with_parent_window(mut self, parent: *mut c_void) -> WindowBuilder {
     self.platform_specific.parent = Parent::ChildOf(parent);
+
     self
   }
 
@@ -252,66 +253,77 @@ impl WindowBuilderExtMacOS for WindowBuilder {
     movable_by_window_background: bool,
   ) -> WindowBuilder {
     self.platform_specific.movable_by_window_background = movable_by_window_background;
+
     self
   }
 
   #[inline]
   fn with_titlebar_transparent(mut self, titlebar_transparent: bool) -> WindowBuilder {
     self.platform_specific.titlebar_transparent = titlebar_transparent;
+
     self
   }
 
   #[inline]
   fn with_titlebar_hidden(mut self, titlebar_hidden: bool) -> WindowBuilder {
     self.platform_specific.titlebar_hidden = titlebar_hidden;
+
     self
   }
 
   #[inline]
   fn with_titlebar_buttons_hidden(mut self, titlebar_buttons_hidden: bool) -> WindowBuilder {
     self.platform_specific.titlebar_buttons_hidden = titlebar_buttons_hidden;
+
     self
   }
 
   #[inline]
   fn with_title_hidden(mut self, title_hidden: bool) -> WindowBuilder {
     self.platform_specific.title_hidden = title_hidden;
+
     self
   }
 
   #[inline]
   fn with_fullsize_content_view(mut self, fullsize_content_view: bool) -> WindowBuilder {
     self.platform_specific.fullsize_content_view = fullsize_content_view;
+
     self
   }
 
   #[inline]
   fn with_resize_increments(mut self, increments: LogicalSize<f64>) -> WindowBuilder {
     self.platform_specific.resize_increments = Some(increments);
+
     self
   }
 
   #[inline]
   fn with_disallow_hidpi(mut self, disallow_hidpi: bool) -> WindowBuilder {
     self.platform_specific.disallow_hidpi = disallow_hidpi;
+
     self
   }
 
   #[inline]
   fn with_has_shadow(mut self, has_shadow: bool) -> WindowBuilder {
     self.platform_specific.has_shadow = has_shadow;
+
     self
   }
 
   #[inline]
   fn with_traffic_light_inset<P: Into<Position>>(mut self, inset: P) -> WindowBuilder {
     self.platform_specific.traffic_light_inset = Some(inset.into());
+
     self
   }
 
   #[inline]
   fn with_automatic_window_tabbing(mut self, automatic_tabbing: bool) -> WindowBuilder {
     self.platform_specific.automatic_tabbing = automatic_tabbing;
+
     self
   }
 
@@ -321,6 +333,7 @@ impl WindowBuilderExtMacOS for WindowBuilder {
       .platform_specific
       .tabbing_identifier
       .replace(tabbing_identifier.into());
+
     self
   }
 }
@@ -404,26 +417,35 @@ pub trait EventLoopWindowTargetExtMacOS {
 impl<T> EventLoopWindowTargetExtMacOS for EventLoopWindowTarget<T> {
   fn hide_application(&self) {
     let cls = objc::runtime::Class::get("NSApplication").unwrap();
+
     let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
+
     unsafe { msg_send![app, hide: 0] }
   }
 
   fn show_application(&self) {
     let cls = objc::runtime::Class::get("NSApplication").unwrap();
+
     let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
+
     unsafe { msg_send![app, unhide: 0] }
   }
 
   fn hide_other_applications(&self) {
     let cls = objc::runtime::Class::get("NSApplication").unwrap();
+
     let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
+
     unsafe { msg_send![app, hideOtherApplications: 0] }
   }
 
   fn set_activation_policy_at_runtime(&self, activation_policy: ActivationPolicy) {
     let cls = objc::runtime::Class::get("NSApplication").unwrap();
+
     let app: cocoa::base::id = unsafe { msg_send![cls, sharedApplication] };
+
     let ns_activation_policy: NSApplicationActivationPolicy = activation_policy.into();
+
     unsafe { msg_send![app, setActivationPolicy: ns_activation_policy] }
   }
 

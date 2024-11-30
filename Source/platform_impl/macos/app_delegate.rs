@@ -38,31 +38,38 @@ unsafe impl Sync for AppDelegateClass {}
 lazy_static! {
   pub static ref APP_DELEGATE_CLASS: AppDelegateClass = unsafe {
     let superclass = class!(NSResponder);
+
     let mut decl = ClassDecl::new("TaoAppDelegateParent", superclass).unwrap();
 
     decl.add_class_method(sel!(new), new as extern "C" fn(&Class, Sel) -> id);
+
     decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
 
     decl.add_method(
       sel!(applicationDidFinishLaunching:),
       did_finish_launching as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(applicationWillTerminate:),
       application_will_terminate as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(application:openURLs:),
       application_open_urls as extern "C" fn(&Object, Sel, id, id),
     );
+
     decl.add_method(
       sel!(applicationShouldHandleReopen:hasVisibleWindows:),
       application_should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
     );
+
     decl.add_method(
       sel!(applicationSupportsSecureRestorableState:),
       application_supports_secure_restorable_state as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_ivar::<*mut c_void>(AUX_DELEGATE_STATE_NAME);
 
     AppDelegateClass(decl.register())
@@ -79,6 +86,7 @@ pub unsafe fn get_aux_state_mut(this: &Object) -> RefMut<'_, AuxDelegateState> {
 extern "C" fn new(class: &Class, _: Sel) -> id {
   unsafe {
     let this: id = msg_send![class, alloc];
+
     let this: id = msg_send![this, init];
     (*this).set_ivar(
       AUX_DELEGATE_STATE_NAME,
@@ -87,6 +95,7 @@ extern "C" fn new(class: &Class, _: Sel) -> id {
         activate_ignoring_other_apps: true,
       }))) as *mut c_void,
     );
+
     this
   }
 }

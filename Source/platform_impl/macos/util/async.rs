@@ -74,7 +74,9 @@ pub unsafe fn set_style_mask_sync(ns_window: id, ns_view: id, mask: NSWindowStyl
     set_style_mask(ns_window, ns_view, mask);
   } else {
     let ns_window = MainThreadSafe(ns_window);
+
     let ns_view = MainThreadSafe(ns_view);
+
     Queue::main().exec_sync(move || {
       set_style_mask(*ns_window, *ns_view, mask);
     })
@@ -128,6 +130,7 @@ pub unsafe fn toggle_full_screen_async(
         NSWindowStyleMask::NSTitledWindowMask | NSWindowStyleMask::NSResizableWindowMask;
       if !curr_mask.contains(required) {
         set_style_mask(*ns_window, *ns_view, required);
+
         if let Some(shared_state) = shared_state.upgrade() {
           trace!("Locked shared state in `toggle_full_screen_callback`");
           let mut shared_state_lock = shared_state.lock().unwrap();
@@ -140,6 +143,7 @@ pub unsafe fn toggle_full_screen_async(
     // + 1` back to normal in order for `toggleFullScreen` to do
     // anything
     ns_window.setLevel_(0);
+
     ns_window.toggleFullScreen_(nil);
   });
 }
@@ -147,6 +151,7 @@ pub unsafe fn toggle_full_screen_async(
 pub unsafe fn restore_display_mode_async(ns_screen: u32) {
   Queue::main().exec_async(move || {
     ffi::CGRestorePermanentDisplayConfiguration();
+
     assert_eq!(ffi::CGDisplayRelease(ns_screen), ffi::kCGErrorSuccess);
   });
 }
@@ -189,6 +194,7 @@ pub unsafe fn set_maximized_async(
         } else {
           shared_state_lock.saved_standard_frame()
         };
+
         let _: () = msg_send![*ns_window, setFrame:new_rect display:NO animate: YES];
       }
 
@@ -222,6 +228,7 @@ pub unsafe fn set_title_async(ns_window: id, title: String) {
   let ns_window = MainThreadSafe(ns_window);
   Queue::main().exec_async(move || {
     let title = IdRef::new(NSString::alloc(nil).init_str(&title));
+
     ns_window.setTitle_(*title);
   });
 }
@@ -231,7 +238,9 @@ pub unsafe fn set_focus(ns_window: id) {
   let ns_window = MainThreadSafe(ns_window);
   run_on_main(move || {
     ns_window.makeKeyAndOrderFront_(nil);
+
     let app: id = msg_send![class!(NSApplication), sharedApplication];
+
     let () = msg_send![app, activateIgnoringOtherApps: YES];
   });
 }

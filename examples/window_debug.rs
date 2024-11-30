@@ -16,7 +16,9 @@ use tao::{
 #[allow(clippy::collapsible_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
+
 	event_loop.set_device_event_filter(DeviceEventFilter::Never);
 
 	let window = WindowBuilder::new()
@@ -26,25 +28,43 @@ fn main() {
 		.unwrap();
 
 	eprintln!("debugging keys:");
+
 	eprintln!("  (E) Enter exclusive fullscreen");
+
 	eprintln!("  (F) Toggle borderless fullscreen");
+
 	eprintln!("  (P) Toggle borderless fullscreen on system's preferred monitor");
+
 	eprintln!("  (V) Toggle visibility");
+
 	eprintln!("  (T) Toggle always on top");
+
 	eprintln!("  (B) Toggle always on bottom");
+
 	eprintln!("  (C) Toggle content protection");
+
 	eprintln!("  (R) Toggle resizable");
+
 	eprintln!("  (M) Toggle minimized");
+
 	eprintln!("  (X) Toggle maximized");
+
 	eprintln!("  (Q) Quit event loop");
+
 	eprintln!("  (Shift + M) Toggle minimizable");
+
 	eprintln!("  (Shift + X) Toggle maximizable");
+
 	eprintln!("  (Shift + Q) Toggle closable");
 
 	let mut always_on_bottom = false;
+
 	let mut always_on_top = false;
+
 	let mut visible = true;
+
 	let mut content_protection = false;
+
 	let mut resizable = false;
 
 	event_loop.run(move |event, _, control_flow| {
@@ -64,12 +84,14 @@ fn main() {
 					KeyCode::KeyM => {
 						if window.is_minimized() {
 							window.set_minimized(false);
+
 							window.set_focus()
 						}
 					},
 					KeyCode::KeyV => {
 						if !visible {
 							visible = !visible;
+
 							window.set_visible(visible);
 						}
 					},
@@ -110,6 +132,7 @@ fn main() {
             window.set_fullscreen(None);
           } else {
             let monitor = window.current_monitor();
+
             window.set_fullscreen(Some(Fullscreen::Borderless(monitor)));
           }
         }
@@ -162,6 +185,7 @@ fn main() {
           let closable = !window.is_closable();
           window.set_closable(closable);
         }
+
         _ => (),
       },
       Event::WindowEvent {

@@ -6,7 +6,9 @@ pub fn set_badge_label(label: Option<String>) {
       None => nil,
       Some(label) => NSString::alloc(nil).init_str(&label),
     };
+
     let dock_tile: cocoa::base::id = msg_send![NSApp(), dockTile];
+
     let _: cocoa::base::id = msg_send![dock_tile, setBadgeLabel: label];
   }
 }

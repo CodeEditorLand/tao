@@ -148,6 +148,7 @@ pub enum Event<'a, T: 'static> {
 impl<T: Clone> Clone for Event<'static, T> {
   fn clone(&self) -> Self {
     use self::Event::*;
+
     match self {
       WindowEvent { window_id, event } => WindowEvent {
         window_id: *window_id,
@@ -178,6 +179,7 @@ impl<T: Clone> Clone for Event<'static, T> {
 impl<'a, T> Event<'a, T> {
   pub fn map_nonuser_event<U>(self) -> Result<Event<'a, U>, Event<'a, T>> {
     use self::Event::*;
+
     match self {
       UserEvent(_) => Err(self),
       WindowEvent { window_id, event } => Ok(WindowEvent { window_id, event }),
@@ -202,6 +204,7 @@ impl<'a, T> Event<'a, T> {
   /// Otherwise, return `None`.
   pub fn to_static(self) -> Option<Event<'static, T>> {
     use self::Event::*;
+
     match self {
       WindowEvent { window_id, event } => event
         .to_static()
@@ -427,6 +430,7 @@ pub enum WindowEvent<'a> {
 impl Clone for WindowEvent<'static> {
   fn clone(&self) -> Self {
     use self::WindowEvent::*;
+
     return match self {
       Resized(size) => Resized(*size),
       Moved(pos) => Moved(*pos),
@@ -519,6 +523,7 @@ impl Clone for WindowEvent<'static> {
 impl<'a> WindowEvent<'a> {
   pub fn to_static(self) -> Option<WindowEvent<'static>> {
     use self::WindowEvent::*;
+
     match self {
       Resized(size) => Some(Resized(size)),
       Moved(position) => Some(Moved(position)),
@@ -875,6 +880,7 @@ impl Force {
           Some(altitude_angle) => force / altitude_angle.sin(),
           None => *force,
         };
+
         force / max_possible_force
       }
       Force::Normalized(force) => *force,

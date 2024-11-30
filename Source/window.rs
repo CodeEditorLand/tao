@@ -316,6 +316,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_inner_size<S: Into<Size>>(mut self, size: S) -> Self {
     self.window.inner_size = Some(size.into());
+
     self
   }
 
@@ -327,9 +328,13 @@ impl WindowBuilder {
   #[inline]
   pub fn with_min_inner_size<S: Into<Size>>(mut self, min_size: S) -> Self {
     let size: Size = min_size.into();
+
     let (width, height) = crate::extract_width_height(size);
+
     self.window.inner_size_constraints.min_width = Some(width);
+
     self.window.inner_size_constraints.min_height = Some(height);
+
     self
   }
 
@@ -341,9 +346,13 @@ impl WindowBuilder {
   #[inline]
   pub fn with_max_inner_size<S: Into<Size>>(mut self, max_size: S) -> Self {
     let size: Size = max_size.into();
+
     let (width, height) = crate::extract_width_height(size);
+
     self.window.inner_size_constraints.max_width = Some(width);
+
     self.window.inner_size_constraints.max_height = Some(height);
+
     self
   }
 
@@ -355,6 +364,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_inner_size_constraints(mut self, constraints: WindowSizeConstraints) -> Self {
     self.window.inner_size_constraints = constraints;
+
     self
   }
 
@@ -366,6 +376,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_position<P: Into<Position>>(mut self, position: P) -> Self {
     self.window.position = Some(position.into());
+
     self
   }
 
@@ -377,6 +388,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_resizable(mut self, resizable: bool) -> Self {
     self.window.resizable = resizable;
+
     self
   }
 
@@ -388,6 +400,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_minimizable(mut self, minimizable: bool) -> Self {
     self.window.minimizable = minimizable;
+
     self
   }
 
@@ -399,6 +412,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_maximizable(mut self, maximizable: bool) -> Self {
     self.window.maximizable = maximizable;
+
     self
   }
 
@@ -410,6 +424,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_closable(mut self, closable: bool) -> Self {
     self.window.closable = closable;
+
     self
   }
 
@@ -421,6 +436,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_title<T: Into<String>>(mut self, title: T) -> Self {
     self.window.title = title.into();
+
     self
   }
 
@@ -432,6 +448,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_fullscreen(mut self, fullscreen: Option<Fullscreen>) -> Self {
     self.window.fullscreen = fullscreen;
+
     self
   }
 
@@ -443,6 +460,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_maximized(mut self, maximized: bool) -> Self {
     self.window.maximized = maximized;
+
     self
   }
 
@@ -454,6 +472,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_visible(mut self, visible: bool) -> Self {
     self.window.visible = visible;
+
     self
   }
 
@@ -461,6 +480,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_transparent(mut self, transparent: bool) -> Self {
     self.window.transparent = transparent;
+
     self
   }
 
@@ -472,6 +492,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_decorations(mut self, decorations: bool) -> Self {
     self.window.decorations = decorations;
+
     self
   }
 
@@ -483,7 +504,9 @@ impl WindowBuilder {
   #[inline]
   pub fn with_always_on_bottom(mut self, always_on_bottom: bool) -> Self {
     self.window.always_on_top = false;
+
     self.window.always_on_bottom = always_on_bottom;
+
     self
   }
 
@@ -495,7 +518,9 @@ impl WindowBuilder {
   #[inline]
   pub fn with_always_on_top(mut self, always_on_top: bool) -> Self {
     self.window.always_on_bottom = false;
+
     self.window.always_on_top = always_on_top;
+
     self
   }
 
@@ -507,6 +532,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_window_icon(mut self, window_icon: Option<Icon>) -> Self {
     self.window.window_icon = window_icon;
+
     self
   }
 
@@ -525,6 +551,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_theme(mut self, theme: Option<Theme>) -> WindowBuilder {
     self.window.preferred_theme = theme;
+
     self
   }
 
@@ -536,6 +563,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_focused(mut self, focused: bool) -> WindowBuilder {
     self.window.focused = focused;
+
     self
   }
   /// Prevents the window contents from being captured by other apps.
@@ -546,6 +574,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_content_protection(mut self, protected: bool) -> WindowBuilder {
     self.window.content_protection = protected;
+
     self
   }
 
@@ -557,6 +586,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_visible_on_all_workspaces(mut self, visible: bool) -> WindowBuilder {
     self.window.visible_on_all_workspaces = visible;
+
     self
   }
 
@@ -569,6 +599,7 @@ impl WindowBuilder {
   #[inline]
   pub fn with_background_color(mut self, color: RGBA) -> WindowBuilder {
     self.window.background_color = Some(color);
+
     self
   }
 
@@ -583,6 +614,7 @@ impl WindowBuilder {
     platform_impl::Window::new(&window_target.p, self.window, self.platform_specific).map(
       |window| {
         window.request_redraw();
+
         Window { window }
       },
     )
@@ -602,6 +634,7 @@ impl Window {
   #[inline]
   pub fn new<T: 'static>(event_loop: &EventLoopWindowTarget<T>) -> Result<Window, OsError> {
     let builder = WindowBuilder::new();
+
     builder.build(event_loop)
   }
 
@@ -1606,7 +1639,9 @@ impl WindowSizeConstraints {
   /// Clamps the desired size based on the constraints set
   pub fn clamp(&self, desired_size: Size, scale_factor: f64) -> Size {
     let min_size: PhysicalSize<f64> = self.min_size_physical(scale_factor);
+
     let max_size: PhysicalSize<f64> = self.max_size_physical(scale_factor);
+
     Size::clamp(desired_size, min_size.into(), max_size.into(), scale_factor)
   }
 }

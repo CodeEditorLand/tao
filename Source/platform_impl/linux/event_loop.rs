@@ -71,7 +71,9 @@ impl<T> EventLoopWindowTarget<T> {
   #[inline]
   pub fn available_monitors(&self) -> VecDeque<MonitorHandle> {
     let mut handles = VecDeque::new();
+
     let display = &self.display;
+
     let numbers = display.n_monitors();
 
     for i in 0..numbers {
@@ -85,6 +87,7 @@ impl<T> EventLoopWindowTarget<T> {
   #[inline]
   pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
     let monitor = self.display.primary_monitor();
+
     monitor.and_then(|monitor| {
       let handle = MonitorHandle { monitor };
       Some(RootMonitorHandle { inner: handle })
@@ -207,6 +210,7 @@ impl<T: 'static> EventLoop<T> {
     }
 
     let context = MainContext::default();
+
     context
       .with_thread_default(|| {
         EventLoop::new_gtk(attrs.app_id.as_deref()).expect("Failed to initialize gtk backend!")
@@ -216,27 +220,38 @@ impl<T: 'static> EventLoop<T> {
 
   fn new_gtk(app_id: Option<&str>) -> Result<EventLoop<T>, Box<dyn Error>> {
     let context = MainContext::default();
+
     let app = gtk::Application::new(app_id, gio::ApplicationFlags::empty());
+
     let app_ = app.clone();
+
     let cancellable: Option<&Cancellable> = None;
+
     app.register(cancellable)?;
 
     // Send StartCause::Init event
     let (event_tx, event_rx) = crossbeam_channel::unbounded();
+
     let (draw_tx, draw_rx) = crossbeam_channel::unbounded();
+
     let event_tx_ = event_tx.clone();
+
     app.connect_activate(move |_| {
       if let Err(e) = event_tx_.send(Event::NewEvents(StartCause::Init)) {
         log::warn!("Failed to send init event to event channel: {}", e);
       }
     });
+
     let draw_tx_ = draw_tx.clone();
+
     let user_event_tx = event_tx.clone();
 
     // Create event loop window target.
     let (window_requests_tx, window_requests_rx) = glib::MainContext::channel(Priority::default());
+
     let display = gdk::Display::default()
       .expect("GdkDisplay not found. This usually means `gkt_init` hasn't called yet.");
+
     let window_target = EventLoopWindowTarget {
       display,
       app,
@@ -260,6 +275,7 @@ impl<T: 'static> EventLoop<T> {
         }) {
           log::warn!("Fail to send device event to event channel: {}", e);
         }
+
         if run.load(Ordering::Relaxed) {
           glib::ControlFlow::Continue
         } else {
@@ -272,6 +288,7 @@ impl<T: 'static> EventLoop<T> {
     };
 
     let mut taskbar = TaskbarIndicator::new();
+
     let is_wayland = window_target.is_wayland();
 
     // Window Request
@@ -308,6 +325,7 @@ impl<T: 'static> EventLoop<T> {
               let maximize_process = util::WindowMaximizeProcess::new(window.clone(), resizable);
               glib::idle_add_local_full(glib::Priority::DEFAULT_IDLE, move || {
                 let mut maximize_process = maximize_process.borrow_mut();
+
                 maximize_process.next_step()
               });
             } else {
@@ -349,6 +367,7 @@ impl<T: 'static> EventLoop<T> {
                   let monitors = display.n_monitors();
                   for i in 0..monitors {
                     let m = display.monitor(i).unwrap();
+
                     if m == monitor.monitor {
                       let screen = display.default_screen();
                       window.fullscreen_on_monitor(&screen, i);
@@ -359,6 +378,7 @@ impl<T: 'static> EventLoop<T> {
                 }
               }
             }
+
             None => window.unfullscreen(),
           },
           WindowRequest::Decorations(decorations) => window.set_decorated(decorations),
@@ -376,12 +396,14 @@ impl<T: 'static> EventLoop<T> {
           }
           WindowRequest::SetSkipTaskbar(skip) => {
             window.set_skip_taskbar_hint(skip);
+
             window.set_skip_pager_hint(skip)
           }
           WindowRequest::BackgroundColor(css_provider, color) => {
             unsafe { window.set_data("background_color", color) };
 
             let style_context = window.style_context();
+
             style_context.remove_provider(&css_provider);
 
             if let Some(color) = color {
@@ -414,6 +436,7 @@ impl<T: 'static> EventLoop<T> {
                 Some(cr) => {
                   gdk_window.set_cursor(Cursor::from_name(&display, cr.to_str()).as_ref())
                 }
+
                 None => gdk_window
                   .set_cursor(Cursor::for_display(&display, CursorType::BlankCursor).as_ref()),
               }
@@ -460,7 +483,9 @@ impl<T: 'static> EventLoop<T> {
             );
 
             let fullscreen = Rc::new(AtomicBool::new(fullscreen));
+
             let fullscreen_ = fullscreen.clone();
+
             window.connect_window_state_event(move |_window, event| {
               let state = event.changed_mask();
               if state.contains(WindowState::FULLSCREEN) {
@@ -474,6 +499,7 @@ impl<T: 'static> EventLoop<T> {
 
             // Allow resizing unmaximized non-fullscreen undecorated window
             let fullscreen_ = fullscreen.clone();
+
             window.connect_motion_notify_event(move |window, event| {
               if !window.is_decorated() && window.is_resizable() && !window.is_maximized() {
                 if let Some(window) = window.window() {
@@ -499,6 +525,7 @@ impl<T: 'static> EventLoop<T> {
               }
               glib::Propagation::Proceed
             });
+
             window.connect_button_press_event(move |window, event| {
               const LMB: u32 = 1;
               if (is_wayland || !window.is_decorated())
@@ -507,10 +534,15 @@ impl<T: 'static> EventLoop<T> {
                 && event.button() == LMB
               {
                 let (cx, cy) = event.root();
+
                 let (left, top) = window.position();
+
                 let (w, h) = window.size();
+
                 let (right, bottom) = (left + w, top + h);
+
                 let border = window.scale_factor() * 5;
+
                 let edge = crate::window::hit_test(
                   (left, top, right, bottom),
                   cx as _,
@@ -534,6 +566,7 @@ impl<T: 'static> EventLoop<T> {
 
               glib::Propagation::Proceed
             });
+
             window.connect_touch_event(move |window, event| {
               if !window.is_decorated() && window.is_resizable() && !window.is_maximized() {
                 if let Some(window) = window.window() {
@@ -576,6 +609,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_delete_event(move |_, _| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -587,6 +621,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_configure_event(move |window, event| {
               let scale_factor = window.scale_factor();
 
@@ -619,6 +654,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_focus_in_event(move |_, _| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -633,6 +669,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_focus_out_event(move |_, _| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -647,6 +684,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_destroy(move |_| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -660,6 +698,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_enter_notify_event(move |_, _| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -676,6 +715,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_motion_notify_event(move |window, motion| {
               if cursor_moved {
                 if let Some(cursor) = motion.device() {
@@ -698,6 +738,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_leave_notify_event(move |_, _| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -711,6 +752,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_button_press_event(move |_, event| {
               let button = event.button();
               if let Err(e) = tx_clone.send(Event::WindowEvent {
@@ -737,6 +779,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_button_release_event(move |_, event| {
               let button = event.button();
               if let Err(e) = tx_clone.send(Event::WindowEvent {
@@ -763,6 +806,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_scroll_event(move |_, event| {
               let (x, y) = event.delta();
               if let Err(e) = tx_clone.send(Event::WindowEvent {
@@ -783,6 +827,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let tx_clone = event_tx.clone();
+
             let keyboard_handler = Rc::new(move |event_key: EventKey, element_state| {
               // if we have a modifier lets send it
               let mut mods = keyboard::get_modifiers(event_key.clone());
@@ -828,8 +873,11 @@ impl<T: 'static> EventLoop<T> {
             let tx_clone = event_tx.clone();
             // TODO Add actual IME from system
             let ime = gtk::IMContextSimple::default();
+
             ime.set_client_window(window.window().as_ref());
+
             ime.focus_in();
+
             ime.connect_commit(move |_, s| {
               if let Err(e) = tx_clone.send(Event::WindowEvent {
                 window_id: RootWindowId(id),
@@ -843,6 +891,7 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let handler = keyboard_handler.clone();
+
             window.connect_key_press_event(move |_, event_key| {
               handler(event_key.to_owned(), ElementState::Pressed);
               ime.filter_keypress(event_key);
@@ -851,18 +900,21 @@ impl<T: 'static> EventLoop<T> {
             });
 
             let handler = keyboard_handler.clone();
+
             window.connect_key_release_event(move |_, event_key| {
               handler(event_key.to_owned(), ElementState::Released);
               glib::Propagation::Proceed
             });
 
             let tx_clone = event_tx.clone();
+
             window.connect_window_state_event(move |window, event| {
               let state = event.changed_mask();
               if state.contains(WindowState::ICONIFIED) || state.contains(WindowState::MAXIMIZED) {
                 let scale_factor = window.scale_factor();
 
                 let (x, y) = window.position();
+
                 if let Err(e) = tx_clone.send(Event::WindowEvent {
                   window_id: RootWindowId(id),
                   event: WindowEvent::Moved(
@@ -873,6 +925,7 @@ impl<T: 'static> EventLoop<T> {
                 }
 
                 let (w, h) = window.size();
+
                 if let Err(e) = tx_clone.send(Event::WindowEvent {
                   window_id: RootWindowId(id),
                   event: WindowEvent::Resized(
@@ -890,6 +943,7 @@ impl<T: 'static> EventLoop<T> {
 
             // Receive draw events of the window.
             let draw_clone = draw_tx.clone();
+
             window.connect_draw(move |window, cr| {
               if let Err(e) = draw_clone.send(id) {
                 log::warn!("Failed to send redraw event to event channel: {}", e);
@@ -917,9 +971,13 @@ impl<T: 'static> EventLoop<T> {
                   rect.width() as _,
                   rect.height() as _,
                 );
+
                 cr.set_source_rgba(rgba.0, rgba.1, rgba.2, rgba.3);
+
                 cr.set_operator(cairo::Operator::Source);
+
                 let _ = cr.fill();
+
                 cr.set_operator(cairo::Operator::Over);
               }
 
@@ -970,6 +1028,7 @@ impl<T: 'static> EventLoop<T> {
     F: FnMut(Event<'_, T>, &RootELW<T>, &mut ControlFlow) + 'static,
   {
     let exit_code = self.run_return(callback);
+
     process::exit(exit_code)
   }
 
@@ -1013,24 +1072,30 @@ impl<T: 'static> EventLoop<T> {
     }
 
     let context = MainContext::default();
+
     let run_device_thread = self.run_device_thread.clone();
 
     context
       .with_thread_default(|| {
         let mut control_flow = ControlFlow::default();
+
         let window_target = &self.window_target;
+
         let events = &self.events;
+
         let draws = &self.draws;
 
         window_target.p.app.activate();
 
         let mut state = EventState::NewStart;
+
         let exit_code = loop {
           let mut blocking = false;
           match state {
             EventState::NewStart => match control_flow {
               ControlFlow::ExitWithCode(code) => {
                 callback(Event::LoopDestroyed, window_target, &mut control_flow);
+
                 break code;
               }
               ControlFlow::Wait => {
@@ -1050,6 +1115,7 @@ impl<T: 'static> EventLoop<T> {
               }
               ControlFlow::WaitUntil(requested_resume) => {
                 let start = Instant::now();
+
                 if start >= requested_resume {
                   callback(
                     Event::NewEvents(StartCause::ResumeTimeReached {
@@ -1080,12 +1146,14 @@ impl<T: 'static> EventLoop<T> {
                   window_target,
                   &mut control_flow,
                 );
+
                 state = EventState::EventQueue;
               }
             },
             EventState::EventQueue => match control_flow {
               ControlFlow::ExitWithCode(code) => {
                 callback(Event::LoopDestroyed, window_target, &mut control_flow);
+
                 break (code);
               }
               _ => match events.try_recv() {
@@ -1102,6 +1170,7 @@ impl<T: 'static> EventLoop<T> {
             EventState::DrawQueue => match control_flow {
               ControlFlow::ExitWithCode(code) => {
                 callback(Event::LoopDestroyed, window_target, &mut control_flow);
+
                 break code;
               }
               _ => {
@@ -1112,16 +1181,20 @@ impl<T: 'static> EventLoop<T> {
                     &mut control_flow,
                   );
                 }
+
                 callback(Event::RedrawEventsCleared, window_target, &mut control_flow);
+
                 state = EventState::NewStart;
               }
             },
           }
           gtk::main_iteration_do(blocking);
         };
+
         if let Some(run_device_thread) = run_device_thread {
           run_device_thread.store(false, Ordering::Relaxed);
         }
+
         exit_code
       })
       .unwrap_or(1)
@@ -1173,6 +1246,7 @@ impl<T: 'static> EventLoopProxy<T> {
       })?;
 
     let context = MainContext::default();
+
     context.wakeup();
 
     Ok(())

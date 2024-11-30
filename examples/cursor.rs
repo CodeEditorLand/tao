@@ -10,9 +10,11 @@ use tao::{
 
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new().build(&event_loop).unwrap();
+
 	window.set_title("A fantastic window!");
 
 	let mut cursor_idx = 0;
@@ -30,7 +32,9 @@ fn main() {
 				..
 			} => {
 				println!("Setting cursor to \"{:?}\"", CURSORS[cursor_idx]);
+
 				window.set_cursor_icon(CURSORS[cursor_idx]);
+
 				if cursor_idx < CURSORS.len() - 1 {
 					cursor_idx += 1;
 				} else {

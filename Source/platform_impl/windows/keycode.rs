@@ -86,6 +86,7 @@ pub fn keycode_to_scancode(code: KeyCode) -> Option<u32> {
         Some(0x0072)
       }
     }
+
     KeyCode::Lang2 => {
       if is_korean {
         Some(0xE0F1)
@@ -93,6 +94,7 @@ pub fn keycode_to_scancode(code: KeyCode) -> Option<u32> {
         Some(0x0071)
       }
     }
+
     KeyCode::KanaMode => Some(0x0070),
     KeyCode::NonConvert => Some(0x007B),
     KeyCode::Delete => Some(0xE053),

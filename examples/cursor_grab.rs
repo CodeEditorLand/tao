@@ -12,6 +12,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new()
@@ -48,6 +49,7 @@ fn main() {
             _ => (),
           }
         }
+
         WindowEvent::ModifiersChanged(m) => modifiers = m,
         _ => (),
       },

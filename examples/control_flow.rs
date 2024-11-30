@@ -26,25 +26,35 @@ fn main() {
 	env_logger::init();
 
 	println!("Press '1' to switch to Wait mode.");
+
 	println!("Press '2' to switch to WaitUntil mode.");
+
 	println!("Press '3' to switch to Poll mode.");
+
 	println!("Press 'R' to toggle request_redraw() calls.");
+
 	println!("Press 'Esc' to close the window.");
 
 	let event_loop = EventLoop::new();
+
 	let window = WindowBuilder::new()
 		.with_title("Press 1, 2, 3 to change control flow mode. Press R to toggle redraw requests.")
 		.build(&event_loop)
 		.unwrap();
 
 	let mut mode = Mode::Wait;
+
 	let mut request_redraw = false;
+
 	let mut wait_cancelled = false;
+
 	let mut close_requested = false;
 
   event_loop.run(move |event, _, control_flow| {
     use tao::event::StartCause;
+
     println!("{event:?}");
+
     match event {
       Event::NewEvents(start_cause) => {
         wait_cancelled = match start_cause {
@@ -56,6 +66,7 @@ fn main() {
         WindowEvent::CloseRequested => {
           close_requested = true;
         }
+
         WindowEvent::KeyboardInput {
           event:
             KeyEvent {
@@ -69,30 +80,36 @@ fn main() {
           // See the `key_binding` example
           if Key::Character("1") == logical_key {
             mode = Mode::Wait;
+
             println!("\nmode: {mode:?}\n");
           }
           if Key::Character("2") == logical_key {
             mode = Mode::WaitUntil;
+
             println!("\nmode: {mode:?}\n");
           }
           if Key::Character("3") == logical_key {
             mode = Mode::Poll;
+
             println!("\nmode: {mode:?}\n");
           }
           if Key::Character("r") == logical_key {
             request_redraw = !request_redraw;
+
             println!("\nrequest_redraw: {request_redraw}\n");
           }
           if Key::Escape == logical_key {
             close_requested = true;
           }
         }
+
         _ => {}
       },
       Event::MainEventsCleared => {
         if request_redraw && !wait_cancelled && !close_requested {
           window.request_redraw();
         }
+
         if close_requested {
           *control_flow = ControlFlow::Exit;
         }
@@ -110,6 +127,7 @@ fn main() {
           }
           Mode::Poll => {
             thread::sleep(POLL_SLEEP_TIME);
+
             ControlFlow::Poll
           }
         };

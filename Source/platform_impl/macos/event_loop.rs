@@ -57,8 +57,11 @@ impl RefUnwindSafe for PanicInfo {}
 impl PanicInfo {
   pub fn is_panicking(&self) -> bool {
     let inner = self.inner.take();
+
     let result = inner.is_some();
+
     self.inner.set(inner);
+
     result
   }
   /// Overwrites the curret state if the current state is not panicking
@@ -81,6 +84,7 @@ pub struct EventLoopWindowTarget<T: 'static> {
 impl<T> Default for EventLoopWindowTarget<T> {
   fn default() -> Self {
     let (sender, receiver) = channel::unbounded();
+
     EventLoopWindowTarget { sender, receiver }
   }
 }
@@ -99,6 +103,7 @@ impl<T: 'static> EventLoopWindowTarget<T> {
   #[inline]
   pub fn primary_monitor(&self) -> Option<RootMonitorHandle> {
     let monitor = monitor::primary_monitor();
+
     Some(RootMonitorHandle { inner: monitor })
   }
 
@@ -162,6 +167,7 @@ pub(crate) struct PlatformSpecificEventLoopAttributes {}
 impl<T> EventLoop<T> {
   pub(crate) fn new(_: &PlatformSpecificEventLoopAttributes) -> Self {
     let panic_info: Rc<PanicInfo> = Default::default();
+
     setup_control_flow_observers(Rc::downgrade(&panic_info));
 
     let delegate = unsafe {
@@ -202,6 +208,7 @@ impl<T> EventLoop<T> {
     F: 'static + FnMut(Event<'_, T>, &RootWindowTarget<T>, &mut ControlFlow),
   {
     let exit_code = self.run_return(callback);
+
     process::exit(exit_code);
   }
 
@@ -238,10 +245,12 @@ impl<T> EventLoop<T> {
 
       if let Some(panic) = self.panic_info.take() {
         drop(self._callback.take());
+
         resume_unwind(panic);
       }
       AppState::exit()
     };
+
     drop(self._callback.take());
 
     exit_code
@@ -286,11 +295,14 @@ pub fn stop_app_on_panic<F: FnOnce() -> R + UnwindSafe, R>(
       // panicking
       {
         let panic_info = panic_info.upgrade().unwrap();
+
         panic_info.set_panic(e);
       }
       unsafe {
         let app_class = class!(NSApplication);
+
         let app: id = msg_send![app_class, sharedApplication];
+
         let () = msg_send![app, stop: nil];
 
         // Posting a dummy event to get `stop` to take effect immediately.
@@ -348,12 +360,14 @@ impl<T> Proxy<T> {
       .sender
       .send(event)
       .map_err(|channel::SendError(x)| EventLoopClosed(x))?;
+
     unsafe {
       // let the main thread know there's a new event
       CFRunLoopSourceSignal(self.source);
       let rl = CFRunLoopGetMain();
       CFRunLoopWakeUp(rl);
     }
+
     Ok(())
   }
 }

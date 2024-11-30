@@ -28,10 +28,13 @@ struct IdentArgPair(syn::Ident, syn::Type);
 impl ToTokens for IdentArgPair {
 	fn to_tokens(&self, tokens:&mut proc_macro2::TokenStream) {
 		let ident = &self.0;
+
 		let type_ = &self.1;
+
 		let tok = quote! {
 		  #ident: #type_
 		};
+
 		tokens.extend([tok]);
 	}
 }
@@ -39,22 +42,34 @@ impl ToTokens for IdentArgPair {
 impl Parse for AndroidFnInput {
 	fn parse(input:ParseStream) -> syn::Result<Self> {
 		let domain:Ident = input.parse()?;
+
 		let _:Comma = input.parse()?;
+
 		let package:Ident = input.parse()?;
+
 		let _:Comma = input.parse()?;
+
 		let class:Ident = input.parse()?;
+
 		let _:Comma = input.parse()?;
+
 		let function:Ident = input.parse()?;
+
 		let _:Comma = input.parse()?;
 
 		let args;
+
 		let _:syn::token::Bracket = bracketed!(args in input);
+
 		let args = args.parse_terminated(Type::parse, Token![,])?;
+
 		let _:syn::Result<Comma> = input.parse();
 
 		let ret = if input.peek(Ident) {
 			let ret = input.parse::<Type>()?;
+
 			let _:syn::Result<Comma> = input.parse();
+
 			if ret.to_token_stream().to_string() == "__VOID__" { None } else { Some(ret) }
 		} else {
 			None
@@ -62,9 +77,13 @@ impl Parse for AndroidFnInput {
 
 		let non_jni_args = if input.peek(syn::token::Bracket) {
 			let non_jni_args;
+
 			let _:syn::token::Bracket = bracketed!(non_jni_args in input);
+
 			let non_jni_args = non_jni_args.parse_terminated(Type::parse, Token![,])?;
+
 			let _:syn::Result<Comma> = input.parse();
+
 			non_jni_args
 		} else {
 			Punctuated::new()
@@ -72,11 +91,14 @@ impl Parse for AndroidFnInput {
 
 		let function_before = if input.peek(Ident) {
 			let function:Ident = input.parse()?;
+
 			let _:syn::Result<Comma> = input.parse();
+
 			Some(function)
 		} else {
 			None
 		};
+
 		Ok(Self { domain, package, class, function, ret, args, non_jni_args, function_before })
 	}
 }
@@ -193,6 +215,7 @@ impl Parse for AndroidFnInput {
 #[proc_macro]
 pub fn android_fn(tokens:TokenStream) -> TokenStream {
 	let tokens = parse_macro_input!(tokens as AndroidFnInput);
+
 	let AndroidFnInput {
 		domain,
 		package,
@@ -205,13 +228,17 @@ pub fn android_fn(tokens:TokenStream) -> TokenStream {
 	} = tokens;
 
 	let domain = domain.to_string();
+
 	let package = package.to_string().replace('_', "_1");
+
 	let class = class.to_string();
+
 	let args = args
 		.into_iter()
 		.enumerate()
 		.map(|(i, t)| IdentArgPair(format_ident!("a_{}", i), t))
 		.collect::<Vec<_>>();
+
 	let non_jni_args = non_jni_args.into_iter().collect::<Vec<_>>();
 
 	let java_fn_name = format_ident!(
@@ -259,8 +286,11 @@ struct GeneratePackageNameInput {
 impl Parse for GeneratePackageNameInput {
 	fn parse(input:ParseStream) -> syn::Result<Self> {
 		let domain:Ident = input.parse()?;
+
 		let _:Comma = input.parse()?;
+
 		let package:Ident = input.parse()?;
+
 		let _:syn::Result<Comma> = input.parse();
 
 		Ok(Self { domain, package })
@@ -300,6 +330,7 @@ impl Parse for GeneratePackageNameInput {
 #[proc_macro]
 pub fn generate_package_name(tokens:TokenStream) -> TokenStream {
 	let tokens = parse_macro_input!(tokens as GeneratePackageNameInput);
+
 	let GeneratePackageNameInput { domain, package } = tokens;
 
 	// note that this character is invalid in an identifier so it's safe to use as
@@ -311,9 +342,11 @@ pub fn generate_package_name(tokens:TokenStream) -> TokenStream {
 		.replace("_1", TEMP_ESCAPE_UNDERSCORE_REPLACEMENT)
 		.replace('_', "/")
 		.replace(TEMP_ESCAPE_UNDERSCORE_REPLACEMENT, "_");
+
 	let package = package.to_string();
 
 	let path = format!("{}/{}", domain, package);
+
 	let litstr = LitStr::new(&path, proc_macro2::Span::call_site());
 
 	quote! {#litstr}.into()

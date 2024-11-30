@@ -49,12 +49,14 @@ impl MinimalIme {
       }
       win32wm::WM_CHAR | win32wm::WM_SYSCHAR => {
         *result = ProcResult::Value(LRESULT(0));
+
         if self.getting_ime_text {
           self.utf16parts.push(wparam.0 as u16);
 
           let more_char_coming;
           unsafe {
             let mut next_msg = MaybeUninit::uninit();
+
             let has_message = PeekMessageW(
               next_msg.as_mut_ptr(),
               hwnd,
@@ -62,7 +64,9 @@ impl MinimalIme {
               WM_KEYLAST,
               PM_NOREMOVE,
             );
+
             let has_message = has_message.as_bool();
+
             if !has_message {
               more_char_coming = false;
             } else {
@@ -72,8 +76,11 @@ impl MinimalIme {
           }
           if !more_char_coming {
             let result = String::from_utf16(&self.utf16parts).ok();
+
             self.utf16parts.clear();
+
             self.getting_ime_text = false;
+
             return result;
           }
         } else {

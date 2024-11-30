@@ -50,6 +50,7 @@ unsafe impl objc::Encode for NSRange {
       NSUInteger::encode().as_str(),
       NSUInteger::encode().as_str(),
     );
+
     unsafe { objc::Encoding::from_str(&encoding) }
   }
 }
@@ -313,8 +314,10 @@ mod core_video {
       displayID: CGDirectDisplayID,
       displayLinkOut: *mut CVDisplayLinkRef,
     ) -> CVReturn;
+
     pub fn CVDisplayLinkGetNominalOutputVideoRefreshPeriod(displayLink: CVDisplayLinkRef)
       -> CVTime;
+
     pub fn CVDisplayLinkRelease(displayLink: CVDisplayLinkRef);
   }
 }

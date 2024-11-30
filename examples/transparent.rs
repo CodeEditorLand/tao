@@ -14,6 +14,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new()
@@ -25,7 +26,9 @@ fn main() {
 	#[cfg(windows)]
 	let (window, _context, mut surface) = {
 		let window = Rc::new(window);
+
 		let context = softbuffer::Context::new(window.clone()).unwrap();
+
 		let surface = softbuffer::Surface::new(&context, window.clone()).unwrap();
 		(window, context, surface)
 	};
@@ -34,6 +37,7 @@ fn main() {
 
   event_loop.run(move |event, _, control_flow| {
     *control_flow = ControlFlow::Wait;
+
     println!("{event:?}");
 
 		match event {
@@ -47,12 +51,15 @@ fn main() {
 					let size = window.inner_size();
 					(size.width, size.height)
 				};
+
 				surface
 					.resize(NonZeroU32::new(width).unwrap(), NonZeroU32::new(height).unwrap())
 					.unwrap();
 
 				let mut buffer = surface.buffer_mut().unwrap();
+
 				buffer.fill(0);
+
 				buffer.present().unwrap();
 			},
 

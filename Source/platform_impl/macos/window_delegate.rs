@@ -61,6 +61,7 @@ pub struct WindowDelegateState {
 impl WindowDelegateState {
   pub fn new(window: &Arc<UnownedWindow>, initial_fullscreen: bool) -> Self {
     let scale_factor = window.scale_factor();
+
     let mut delegate_state = WindowDelegateState {
       ns_window: window.ns_window.clone(),
       ns_view: window.ns_view.clone(),
@@ -70,6 +71,7 @@ impl WindowDelegateState {
       previous_scale_factor: scale_factor,
       is_checking_zoomed_in: false,
     };
+
     if (scale_factor - 1.0).abs() > f64::EPSILON {
       delegate_state.emit_static_scale_factor_changed_event();
     }
@@ -93,37 +95,49 @@ impl WindowDelegateState {
       window_id: WindowId(get_window_id(*self.ns_window)),
       event,
     };
+
     AppState::queue_event(EventWrapper::StaticEvent(event));
   }
 
   pub fn emit_static_scale_factor_changed_event(&mut self) {
     let scale_factor = self.get_scale_factor();
+
     if (scale_factor - self.previous_scale_factor).abs() < f64::EPSILON {
       return;
     };
 
     self.previous_scale_factor = scale_factor;
+
     let wrapper = EventWrapper::EventProxy(EventProxy::DpiChangedProxy {
       ns_window: IdRef::retain(*self.ns_window),
       suggested_size: self.view_size(),
       scale_factor,
     });
+
     AppState::queue_event(wrapper);
   }
 
   pub fn emit_resize_event(&mut self) {
     let rect = unsafe { NSView::frame(self.ns_view()) };
+
     let scale_factor = self.get_scale_factor();
+
     let logical_size = LogicalSize::new(rect.size.width as f64, rect.size.height as f64);
+
     let size = logical_size.to_physical(scale_factor);
+
     self.emit_event(WindowEvent::Resized(size));
   }
 
   fn emit_move_event(&mut self) {
     let rect = unsafe { NSWindow::frame(*self.ns_window) };
+
     let x = rect.origin.x as f64;
+
     let y = util::bottom_left_to_top_left(rect);
+
     let moved = self.previous_position != Some((x, y));
+
     if moved {
       self.previous_position = Some((x, y));
       let scale_factor = self.get_scale_factor();
@@ -138,6 +152,7 @@ impl WindowDelegateState {
 
   fn view_size(&self) -> LogicalSize<f64> {
     let ns_size = unsafe { NSView::frame(self.ns_view()).size };
+
     LogicalSize::new(ns_size.width as f64, ns_size.height as f64)
   }
 }
@@ -147,7 +162,9 @@ pub fn new_delegate(window: &Arc<UnownedWindow>, initial_fullscreen: bool) -> Id
   unsafe {
     // This is free'd in `dealloc`
     let state_ptr = Box::into_raw(Box::new(state)) as *mut c_void;
+
     let delegate: id = msg_send![WINDOW_DELEGATE_CLASS.0, alloc];
+
     IdRef::new(msg_send![delegate, initWithTao: state_ptr])
   }
 }
@@ -159,17 +176,21 @@ unsafe impl Sync for WindowDelegateClass {}
 lazy_static! {
   static ref WINDOW_DELEGATE_CLASS: WindowDelegateClass = unsafe {
     let superclass = class!(NSResponder);
+
     let mut decl = ClassDecl::new("TaoWindowDelegate", superclass).unwrap();
 
     decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+
     decl.add_method(
       sel!(initWithTao:),
       init_with_tao as extern "C" fn(&Object, Sel, *mut c_void) -> id,
     );
+
     decl.add_method(
       sel!(markIsCheckingZoomedIn),
       mark_is_checking_zoomed_in as extern "C" fn(&Object, Sel),
     );
+
     decl.add_method(
       sel!(clearIsCheckingZoomedIn),
       clear_is_checking_zoomed_in as extern "C" fn(&Object, Sel),
@@ -179,26 +200,32 @@ lazy_static! {
       sel!(windowShouldClose:),
       window_should_close as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_method(
       sel!(windowWillClose:),
       window_will_close as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidResize:),
       window_did_resize as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidMove:),
       window_did_move as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidChangeBackingProperties:),
       window_did_change_backing_properties as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidBecomeKey:),
       window_did_become_key as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidResignKey:),
       window_did_resign_key as extern "C" fn(&Object, Sel, id),
@@ -208,18 +235,22 @@ lazy_static! {
       sel!(draggingEntered:),
       dragging_entered as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_method(
       sel!(prepareForDragOperation:),
       prepare_for_drag_operation as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_method(
       sel!(performDragOperation:),
       perform_drag_operation as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_method(
       sel!(concludeDragOperation:),
       conclude_drag_operation as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(draggingExited:),
       dragging_exited as extern "C" fn(&Object, Sel, id),
@@ -230,36 +261,44 @@ lazy_static! {
       window_will_use_fullscreen_presentation_options
         as extern "C" fn(&Object, Sel, id, NSUInteger) -> NSUInteger,
     );
+
     decl.add_method(
       sel!(windowDidEnterFullScreen:),
       window_did_enter_fullscreen as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowWillEnterFullScreen:),
       window_will_enter_fullscreen as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidExitFullScreen:),
       window_did_exit_fullscreen as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowWillExitFullScreen:),
       window_will_exit_fullscreen as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(windowDidFailToEnterFullScreen:),
       window_did_fail_to_enter_fullscreen as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(effectiveAppearanceDidChange:),
       effective_appearance_did_change as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(effectiveAppearanceDidChangedOnMainThread:),
       effective_appearance_did_changed_on_main_thread as extern "C" fn(&Object, Sel, id),
     );
 
     decl.add_ivar::<*mut c_void>("taoState");
+
     WindowDelegateClass(decl.register())
   };
 }
@@ -283,6 +322,7 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
 extern "C" fn init_with_tao(this: &Object, _sel: Sel, state: *mut c_void) -> id {
   unsafe {
     let this: id = msg_send![this, init];
+
     if this != nil {
       (*this).set_ivar("taoState", state);
       with_state(&*this, |state| {
@@ -292,7 +332,9 @@ extern "C" fn init_with_tao(this: &Object, _sel: Sel, state: *mut c_void) -> id 
 
     let notification_center: &Object =
       msg_send![class!(NSDistributedNotificationCenter), defaultCenter];
+
     let notification_name = NSString::alloc(nil).init_str("AppleInterfaceThemeChangedNotification");
+
     let _: () = msg_send![
         notification_center,
         addObserver: this
@@ -332,7 +374,9 @@ extern "C" fn window_will_close(this: &Object, _: Sel, _: id) {
     // Since El Capitan, we need to be careful that delegate methods can't
     // be called after the window closes.
     let () = msg_send![*state.ns_window, setDelegate: nil];
+
     pool.drain();
+
     state.emit_event(WindowEvent::Destroyed);
   });
   trace!("Completed `windowWillClose:`");
@@ -567,6 +611,7 @@ extern "C" fn window_did_enter_fullscreen(this: &Object, _: Sel, _: id) {
   trace!("Triggered `windowDidEnterFullscreen:`");
   with_state(this, |state| {
     state.initial_fullscreen = false;
+
     state.with_window(|window| {
       trace!("Locked shared state in `window_did_enter_fullscreen`");
       let mut shared_state = window.shared_state.lock().unwrap();
@@ -578,7 +623,9 @@ extern "C" fn window_did_enter_fullscreen(this: &Object, _: Sel, _: id) {
         window.set_fullscreen(target_fullscreen);
       }
     });
+
     state.emit_resize_event();
+
     state.emit_move_event();
   });
   trace!("Completed `windowDidEnterFullscreen:`");
@@ -600,7 +647,9 @@ extern "C" fn window_did_exit_fullscreen(this: &Object, _: Sel, _: id) {
         window.set_fullscreen(target_fullscreen);
       }
     });
+
     state.emit_resize_event();
+
     state.emit_move_event();
   });
   trace!("Completed `windowDidExitFullscreen:`");
@@ -632,6 +681,7 @@ extern "C" fn window_did_fail_to_enter_fullscreen(this: &Object, _: Sel, _: id) 
       shared_state.target_fullscreen = None;
       trace!("Unlocked shared state in `window_did_fail_to_enter_fullscreen`");
     });
+
     if state.initial_fullscreen {
       let _: () = unsafe {
         msg_send![*state.ns_window,
@@ -657,12 +707,14 @@ extern "C" fn effective_appearance_did_change(this: &Object, _: Sel, _: id) {
 extern "C" fn effective_appearance_did_changed_on_main_thread(this: &Object, _: Sel, _: id) {
   with_state(this, |state| {
     let theme = get_ns_theme();
+
     let current_theme = state.window.upgrade().map(|w| {
       let mut state = w.shared_state.lock().unwrap();
       let current_theme = state.current_theme;
       state.current_theme = theme;
       current_theme
     });
+
     if current_theme != Some(theme) {
       state.emit_event(WindowEvent::ThemeChanged(theme));
     }

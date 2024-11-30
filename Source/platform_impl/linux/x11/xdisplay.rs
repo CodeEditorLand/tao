@@ -38,14 +38,21 @@ impl XConnection {
   pub fn new(error_handler: XErrorHandler) -> Result<XConnection, XNotSupported> {
     // opening the libraries
     let xlib = ffi::Xlib::open()?;
+
     let xcursor = ffi::Xcursor::open()?;
+
     let xrandr = ffi::Xrandr_2_2_0::open()?;
+
     let xrandr_1_5 = ffi::Xrandr::open().ok();
+
     let xinput2 = ffi::XInput2::open()?;
+
     let xlib_xcb = ffi::Xlib_xcb::open()?;
+
     let xrender = ffi::Xrender::open()?;
 
     unsafe { (xlib.XInitThreads)() };
+
     unsafe { (xlib.XSetErrorHandler)(error_handler) };
 
     // calling XOpenDisplay
@@ -79,6 +86,7 @@ impl XConnection {
   #[inline]
   pub fn check_errors(&self) -> Result<(), XError> {
     let error = self.latest_error.lock().take();
+
     if let Some(error) = error {
       Err(error)
     } else {

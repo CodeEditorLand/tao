@@ -13,6 +13,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let mut decorations = true;
@@ -43,6 +44,7 @@ fn main() {
           println!("Decorations: {decorations}");
           window.set_decorations(decorations);
         }
+
         _ => (),
       },
       _ => (),

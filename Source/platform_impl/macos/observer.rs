@@ -145,6 +145,7 @@ where
 
   stop_app_on_panic(Weak::clone(&panic_info), move || {
     let _ = &panic_info;
+
     f(panic_info.0)
   });
 }
@@ -164,6 +165,7 @@ extern "C" fn control_flow_begin_handler(
           AppState::wakeup(panic_info);
           //trace!("Completed `CFRunLoopAfterWaiting`");
         }
+
         kCFRunLoopEntry => unimplemented!(), // not expected to ever happen
         _ => unreachable!(),
       }
@@ -187,6 +189,7 @@ extern "C" fn control_flow_end_handler(
           AppState::cleared(panic_info);
           //trace!("Completed `CFRunLoopBeforeWaiting`");
         }
+
         kCFRunLoopExit => (), //unimplemented!(), // not expected to ever happen
         _ => unreachable!(),
       }
@@ -216,6 +219,7 @@ impl RunLoop {
       handler,
       context,
     );
+
     CFRunLoopAddObserver(self.0, observer, kCFRunLoopCommonModes);
   }
 }
@@ -229,13 +233,16 @@ pub fn setup_control_flow_observers(panic_info: Weak<PanicInfo>) {
       release: None,
       copyDescription: None,
     };
+
     let run_loop = RunLoop::get();
+
     run_loop.add_observer(
       kCFRunLoopEntry | kCFRunLoopAfterWaiting,
       CFIndex::min_value(),
       control_flow_begin_handler,
       &mut context as *mut _,
     );
+
     run_loop.add_observer(
       kCFRunLoopExit | kCFRunLoopBeforeWaiting,
       CFIndex::max_value(),
@@ -261,6 +268,7 @@ impl Drop for EventLoopWaker {
 impl Default for EventLoopWaker {
   fn default() -> EventLoopWaker {
     extern "C" fn wakeup_main_loop(_timer: CFRunLoopTimerRef, _info: *mut c_void) {}
+
     unsafe {
       // Create a timer with a 0.1µs interval (1ns does not work) to mimic polling.
       // It is initially setup with a first fire time really far into the
@@ -291,13 +299,17 @@ impl EventLoopWaker {
 
   pub fn start_at(&mut self, instant: Instant) {
     let now = Instant::now();
+
     if now >= instant {
       self.start();
     } else {
       unsafe {
         let current = CFAbsoluteTimeGetCurrent();
+
         let duration = instant - now;
+
         let fsecs = duration.subsec_nanos() as f64 / 1_000_000_000.0 + duration.as_secs() as f64;
+
         CFRunLoopTimerSetNextFireDate(self.timer, current + fsecs)
       }
     }

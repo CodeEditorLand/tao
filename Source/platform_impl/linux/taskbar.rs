@@ -68,6 +68,7 @@ impl TaskbarIndicator {
     if let Some(unity_lib) = &self.unity_lib {
       if let Some(id) = &self.desktop_filename_c_str {
         let handle = unsafe { unity_lib.unity_launcher_entry_get_for_desktop_id(id.as_ptr()) };
+
         if !handle.is_null() {
           self.unity_entry = Some(handle);
         }
@@ -103,6 +104,7 @@ impl TaskbarIndicator {
     if self.unity_entry.is_none() {
       self.ensure_entry_load();
     }
+
     if let Some(unity_lib) = &self.unity_lib {
       if let Some(unity_entry) = &self.unity_entry {
         if let Some(progress) = progress.progress {

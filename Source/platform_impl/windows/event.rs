@@ -48,15 +48,19 @@ bitflags! {
     #[derive(Default)]
     pub struct ModifiersStateSide: u32 {
         const LSHIFT = 0b010 << 0;
+
         const RSHIFT = 0b001 << 0;
 
         const LCTRL = 0b010 << 3;
+
         const RCTRL = 0b001 << 3;
 
         const LALT = 0b010 << 6;
+
         const RALT = 0b001 << 6;
 
         const LLOGO = 0b010 << 9;
+
         const RLOGO = 0b001 << 9;
     }
 }
@@ -73,22 +77,27 @@ impl ModifiersStateSide {
 impl From<ModifiersStateSide> for ModifiersState {
   fn from(side: ModifiersStateSide) -> Self {
     let mut state = ModifiersState::default();
+
     state.set(
       Self::SHIFT,
       side.intersects(ModifiersStateSide::LSHIFT | ModifiersStateSide::RSHIFT),
     );
+
     state.set(
       Self::CTRL,
       side.intersects(ModifiersStateSide::LCTRL | ModifiersStateSide::RCTRL),
     );
+
     state.set(
       Self::ALT,
       side.intersects(ModifiersStateSide::LALT | ModifiersStateSide::RALT),
     );
+
     state.set(
       Self::LOGO,
       side.intersects(ModifiersStateSide::LLOGO | ModifiersStateSide::RLOGO),
     );
+
     state
   }
 }
@@ -135,9 +144,11 @@ unsafe fn get_char(keyboard_state: &[u8; 256], v_key: u32, hkl: HKL) -> Option<c
 fn layout_uses_altgr() -> bool {
   unsafe {
     static ACTIVE_LAYOUT: AtomicPtr<HKL__> = AtomicPtr::new(ptr::null_mut());
+
     static USES_ALTGR: AtomicBool = AtomicBool::new(false);
 
     let hkl = GetKeyboardLayout(0);
+
     let old_hkl = ACTIVE_LAYOUT.swap(hkl, Ordering::SeqCst);
 
     if hkl == old_hkl {
@@ -148,6 +159,7 @@ fn layout_uses_altgr() -> bool {
     // AltGr is an alias for Ctrl+Alt for... some reason. Whatever it is, those are the keypresses
     // we have to emulate to do an AltGr test.
     keyboard_state_altgr[VK_MENU as usize] = 0x80;
+
     keyboard_state_altgr[VK_CONTROL as usize] = 0x80;
 
     let keyboard_state_empty = [0u8; 256];
@@ -164,6 +176,7 @@ fn layout_uses_altgr() -> bool {
     }
 
     USES_ALTGR.store(false, Ordering::SeqCst);
+
     false
   }
 }
@@ -361,6 +374,7 @@ pub fn handle_extended_keys(
         VK_LCONTROL
       }
     }
+
     win32wm::VK_MENU => {
       if extended {
         VK_RMENU
@@ -368,6 +382,7 @@ pub fn handle_extended_keys(
         VK_LMENU
       }
     }
+
     _ => {
       match scancode {
         // When VK_PAUSE is pressed it emits a LeftControl + NumLock scancode event sequence, but reports VK_PAUSE

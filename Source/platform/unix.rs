@@ -51,11 +51,13 @@ impl<T> EventLoopBuilderExtUnix for EventLoopBuilder<T> {
   #[inline]
   fn with_any_thread(&mut self, any_thread: bool) -> &mut Self {
     self.platform_specific.any_thread = any_thread;
+
     self
   }
 
   fn with_app_id<S: Into<String>>(&mut self, id: S) -> &mut Self {
     self.platform_specific.app_id = Some(id.into());
+
     self
   }
 }
@@ -101,6 +103,7 @@ impl WindowExtUnix for Window {
     window: gtk::ApplicationWindow,
   ) -> Result<Window, OsError> {
     let window = UnixWindow::new_from_gtk_window(&event_loop_window_target.p, window)?;
+
     Ok(Window { window: window })
   }
 
@@ -155,42 +158,51 @@ pub trait WindowBuilderExtUnix {
 impl WindowBuilderExtUnix for WindowBuilder {
   fn with_skip_taskbar(mut self, skip: bool) -> WindowBuilder {
     self.platform_specific.skip_taskbar = skip;
+
     self
   }
 
   fn with_transient_for(mut self, parent: &impl gtk::glib::IsA<gtk::Window>) -> WindowBuilder {
     use gtk::glib::Cast;
+
     self.platform_specific.parent = Parent::ChildOf(parent.clone().upcast());
+
     self
   }
 
   fn with_transparent_draw(mut self, draw: bool) -> WindowBuilder {
     self.platform_specific.auto_transparent = draw;
+
     self
   }
 
   fn with_double_buffered(mut self, double_buffered: bool) -> WindowBuilder {
     self.platform_specific.double_buffered = double_buffered;
+
     self
   }
 
   fn with_rgba_visual(mut self, rgba_visual: bool) -> WindowBuilder {
     self.platform_specific.rgba_visual = rgba_visual;
+
     self
   }
 
   fn with_app_paintable(mut self, app_paintable: bool) -> WindowBuilder {
     self.platform_specific.app_paintable = app_paintable;
+
     self
   }
 
   fn with_cursor_moved_event(mut self, cursor_moved: bool) -> WindowBuilder {
     self.platform_specific.cursor_moved = cursor_moved;
+
     self
   }
 
   fn with_default_vbox(mut self, add: bool) -> WindowBuilder {
     self.platform_specific.default_vbox = add;
+
     self
   }
 }

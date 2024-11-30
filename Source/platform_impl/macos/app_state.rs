@@ -173,6 +173,7 @@ impl Handler {
 
   fn get_old_and_new_control_flow(&self) -> (ControlFlow, ControlFlow) {
     let old = *self.control_flow_prev.lock().unwrap();
+
     let new = *self.control_flow.lock().unwrap();
     (old, new)
   }
@@ -207,6 +208,7 @@ impl Handler {
         EventWrapper::StaticEvent(event) => {
           callback.handle_nonuser_event(event, &mut *self.control_flow.lock().unwrap())
         }
+
         EventWrapper::EventProxy(proxy) => self.handle_proxy(proxy, callback),
       }
     }
@@ -226,7 +228,9 @@ impl Handler {
     scale_factor: f64,
   ) {
     let mut size = suggested_size.to_physical(scale_factor);
+
     let old_size = size.clone();
+
     let event = Event::WindowEvent {
       window_id: WindowId(get_window_id(*ns_window)),
       event: WindowEvent::ScaleFactorChanged {
@@ -272,9 +276,13 @@ impl AppState {
 
   pub fn exit() -> i32 {
     HANDLER.set_in_callback(true);
+
     HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::LoopDestroyed));
+
     HANDLER.set_in_callback(false);
+
     HANDLER.callback.lock().unwrap().take();
+
     if let ControlFlow::ExitWithCode(code) = HANDLER.get_old_and_new_control_flow().1 {
       code
     } else {
@@ -284,6 +292,7 @@ impl AppState {
 
   pub fn launched(app_delegate: &Object) {
     apply_activation_policy(app_delegate);
+
     unsafe {
       let ns_app = NSApp();
       window_activation_hack(ns_app);
@@ -294,12 +303,17 @@ impl AppState {
       };
       ns_app.activateIgnoringOtherApps_(ignore);
     };
+
     HANDLER.set_ready();
+
     HANDLER.waker().start();
+
     HANDLER.set_in_callback(true);
+
     HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::NewEvents(
       StartCause::Init,
     )));
+
     HANDLER.set_in_callback(false);
   }
 
@@ -321,7 +335,9 @@ impl AppState {
     if panic_info.is_panicking() || !HANDLER.is_ready() || HANDLER.get_in_callback() {
       return;
     }
+
     let start = HANDLER.get_start_time().unwrap();
+
     let cause = match HANDLER.get_control_flow_and_update_prev() {
       ControlFlow::Poll => StartCause::Poll,
       ControlFlow::Wait => StartCause::WaitCancelled {
@@ -343,17 +359,22 @@ impl AppState {
       }
       ControlFlow::ExitWithCode(_) => StartCause::Poll, //panic!("unexpected `ControlFlow::Exit`"),
     };
+
     HANDLER.set_in_callback(true);
+
     HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::NewEvents(cause)));
+
     HANDLER.set_in_callback(false);
   }
 
   // This is called from multiple threads at present
   pub fn queue_redraw(window_id: WindowId) {
     let mut pending_redraw = HANDLER.redraw();
+
     if !pending_redraw.contains(&window_id) {
       pending_redraw.push(window_id);
     }
+
     unsafe {
       let rl = CFRunLoopGetMain();
       CFRunLoopWakeUp(rl);
@@ -368,6 +389,7 @@ impl AppState {
     if !util::is_main_thread() {
       panic!("Event queued from different thread: {:#?}", wrapper);
     }
+
     HANDLER.events().push_back(wrapper);
   }
 
@@ -375,6 +397,7 @@ impl AppState {
     if !util::is_main_thread() {
       panic!("Events queued from different thread: {:#?}", wrappers);
     }
+
     HANDLER.events().append(&mut wrappers);
   }
 
@@ -386,28 +409,41 @@ impl AppState {
     if panic_info.is_panicking() || !HANDLER.is_ready() || HANDLER.get_in_callback() {
       return;
     }
+
     HANDLER.set_in_callback(true);
+
     HANDLER.handle_user_events();
+
     for event in HANDLER.take_events() {
       HANDLER.handle_nonuser_event(event);
     }
+
     HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::MainEventsCleared));
+
     for window_id in HANDLER.should_redraw() {
       HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::RedrawRequested(window_id)));
     }
+
     HANDLER.handle_nonuser_event(EventWrapper::StaticEvent(Event::RedrawEventsCleared));
+
     HANDLER.set_in_callback(false);
+
     if HANDLER.should_exit() {
       unsafe {
         let app: id = NSApp();
+
         let pool = NSAutoreleasePool::new(nil);
+
         let () = msg_send![app, stop: nil];
         // To stop event loop immediately, we need to post some event here.
         post_dummy_event(app);
+
         pool.drain();
       };
     }
+
     HANDLER.update_start_time();
+
     match HANDLER.get_old_and_new_control_flow() {
       (ControlFlow::ExitWithCode(_), _) | (_, ControlFlow::ExitWithCode(_)) => (),
       (old, new) if old == new => (),
@@ -434,6 +470,7 @@ unsafe fn window_activation_hack(ns_app: id) {
   loop {
     // Enumerate over the windows
     let ns_window: id = msg_send![ns_enumerator, nextObject];
+
     if ns_window == nil {
       break;
     }
@@ -451,11 +488,13 @@ unsafe fn window_activation_hack(ns_app: id) {
 fn apply_activation_policy(app_delegate: &Object) {
   unsafe {
     use cocoa::appkit::NSApplicationActivationPolicy::*;
+
     let ns_app = NSApp();
     // We need to delay setting the activation policy and activating the app
     // until `applicationDidFinishLaunching` has been called. Otherwise the
     // menu bar won't be interactable.
     let act_pol = get_aux_state_mut(app_delegate).activation_policy;
+
     ns_app.setActivationPolicy_(match act_pol {
       ActivationPolicy::Regular => NSApplicationActivationPolicyRegular,
       ActivationPolicy::Accessory => NSApplicationActivationPolicyAccessory,

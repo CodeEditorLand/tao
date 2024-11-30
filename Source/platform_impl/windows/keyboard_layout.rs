@@ -48,22 +48,39 @@ const NUMPAD_VKEYS: [VIRTUAL_KEY; 16] = [
 lazy_static! {
   static ref NUMPAD_KEYCODES: HashSet<KeyCode> = {
     let mut keycodes = HashSet::new();
+
     keycodes.insert(KeyCode::Numpad0);
+
     keycodes.insert(KeyCode::Numpad1);
+
     keycodes.insert(KeyCode::Numpad2);
+
     keycodes.insert(KeyCode::Numpad3);
+
     keycodes.insert(KeyCode::Numpad4);
+
     keycodes.insert(KeyCode::Numpad5);
+
     keycodes.insert(KeyCode::Numpad6);
+
     keycodes.insert(KeyCode::Numpad7);
+
     keycodes.insert(KeyCode::Numpad8);
+
     keycodes.insert(KeyCode::Numpad9);
+
     keycodes.insert(KeyCode::NumpadMultiply);
+
     keycodes.insert(KeyCode::NumpadAdd);
+
     keycodes.insert(KeyCode::NumpadComma);
+
     keycodes.insert(KeyCode::NumpadSubtract);
+
     keycodes.insert(KeyCode::NumpadDecimal);
+
     keycodes.insert(KeyCode::NumpadDivide);
+
     keycodes
   };
 }
@@ -72,9 +89,13 @@ bitflags! {
     #[derive(Clone, Copy, Eq, PartialEq, Hash)]
     pub struct WindowsModifiers : u8 {
         const SHIFT = 1 << 0;
+
         const CONTROL = 1 << 1;
+
         const ALT = 1 << 2;
+
         const CAPS_LOCK = 1 << 3;
+
         const FLAGS_END = 1 << 4;
     }
 }
@@ -82,29 +103,39 @@ bitflags! {
 impl WindowsModifiers {
   pub fn active_modifiers(key_state: &[u8; 256]) -> WindowsModifiers {
     let shift = key_state[usize::from(VK_SHIFT.0)] & 0x80 != 0;
+
     let lshift = key_state[usize::from(VK_LSHIFT.0)] & 0x80 != 0;
+
     let rshift = key_state[usize::from(VK_RSHIFT.0)] & 0x80 != 0;
 
     let control = key_state[usize::from(VK_CONTROL.0)] & 0x80 != 0;
+
     let lcontrol = key_state[usize::from(VK_LCONTROL.0)] & 0x80 != 0;
+
     let rcontrol = key_state[usize::from(VK_RCONTROL.0)] & 0x80 != 0;
 
     let alt = key_state[usize::from(VK_MENU.0)] & 0x80 != 0;
+
     let lalt = key_state[usize::from(VK_LMENU.0)] & 0x80 != 0;
+
     let ralt = key_state[usize::from(VK_RMENU.0)] & 0x80 != 0;
 
     let caps = key_state[usize::from(VK_CAPITAL.0)] & 0x01 != 0;
 
     let mut result = WindowsModifiers::empty();
+
     if shift || lshift || rshift {
       result.insert(WindowsModifiers::SHIFT);
     }
+
     if control || lcontrol || rcontrol {
       result.insert(WindowsModifiers::CONTROL);
     }
+
     if alt || lalt || ralt {
       result.insert(WindowsModifiers::ALT);
     }
+
     if caps {
       result.insert(WindowsModifiers::CAPS_LOCK);
     }
@@ -120,6 +151,7 @@ impl WindowsModifiers {
       key_state[usize::from(VK_LSHIFT.0)] &= !0x80;
       key_state[usize::from(VK_RSHIFT.0)] &= !0x80;
     }
+
     if self.intersects(Self::CONTROL) {
       key_state[usize::from(VK_CONTROL.0)] |= 0x80;
     } else {
@@ -127,6 +159,7 @@ impl WindowsModifiers {
       key_state[usize::from(VK_LCONTROL.0)] &= !0x80;
       key_state[usize::from(VK_RCONTROL.0)] &= !0x80;
     }
+
     if self.intersects(Self::ALT) {
       key_state[usize::from(VK_MENU.0)] |= 0x80;
     } else {
@@ -134,6 +167,7 @@ impl WindowsModifiers {
       key_state[usize::from(VK_LMENU.0)] &= !0x80;
       key_state[usize::from(VK_RMENU.0)] &= !0x80;
     }
+
     if self.intersects(Self::CAPS_LOCK) {
       key_state[usize::from(VK_CAPITAL.0)] |= 0x01;
     } else {
@@ -148,6 +182,7 @@ impl WindowsModifiers {
     if !self.contains(WindowsModifiers::ALT) {
       self.remove(WindowsModifiers::CONTROL);
     }
+
     self
   }
 }
@@ -194,6 +229,7 @@ impl Layout {
     let native_code = NativeKeyCode::Windows(scancode);
 
     let unknown_alt = vkey == VK_MENU;
+
     if !unknown_alt {
       // Here we try using the virtual key directly but if the virtual key doesn't distinguish
       // between left and right alt, we can't report AltGr. Therefore, we only do this if the
@@ -210,6 +246,7 @@ impl Layout {
         return key_from_vkey;
       }
     }
+
     if num_lock_on {
       if let Some(key) = self.numlock_on_keys.get(&vkey.0) {
         return key.clone();
@@ -223,6 +260,7 @@ impl Layout {
         return key.clone();
       }
     }
+
     Key::Unidentified(native_code)
   }
 }
@@ -240,6 +278,7 @@ impl LayoutCache {
   /// The current layout is then returned.
   pub fn get_current_layout<'a>(&'a mut self) -> (HKL, &'a Layout) {
     let locale_id = unsafe { GetKeyboardLayout(0) };
+
     match self.layouts.entry(locale_id.0 as _) {
       Entry::Occupied(entry) => (locale_id, entry.into_mut()),
       Entry::Vacant(entry) => {
@@ -251,21 +290,28 @@ impl LayoutCache {
 
   pub fn get_agnostic_mods(&mut self) -> ModifiersState {
     let (_, layout) = self.get_current_layout();
+
     let filter_out_altgr = layout.has_alt_graph && key_pressed(VK_RMENU);
+
     let mut mods = ModifiersState::empty();
+
     mods.set(ModifiersState::SHIFT, key_pressed(VK_SHIFT));
+
     mods.set(
       ModifiersState::CONTROL,
       key_pressed(VK_CONTROL) && !filter_out_altgr,
     );
+
     mods.set(
       ModifiersState::ALT,
       key_pressed(VK_MENU) && !filter_out_altgr,
     );
+
     mods.set(
       ModifiersState::SUPER,
       key_pressed(VK_LWIN) || key_pressed(VK_RWIN),
     );
+
     mods
   }
 
@@ -296,6 +342,7 @@ impl LayoutCache {
     //    \/                    \/
     // map_value: Key  <-  map_vkey: VK
     layout.numlock_off_keys.reserve(NUMPAD_KEYCODES.len());
+
     for vk in 0_u16..256 {
       let scancode =
         unsafe { MapVirtualKeyExW(u32::from(vk), MAPVK_VK_TO_VSC_EX, locale_id as HKL) };
@@ -306,25 +353,32 @@ impl LayoutCache {
       let keycode = KeyCode::from_scancode(scancode);
       if !is_numpad_specific(vk) && NUMPAD_KEYCODES.contains(&keycode) {
         let native_code = NativeKeyCode::Windows(scancode as u16);
+
         let map_vkey = keycode_to_vkey(keycode, locale_id);
+
         if map_vkey == Default::default() {
           continue;
         }
+
         let map_value = vkey_to_non_char_key(vk, native_code, locale_id, false);
+
         if matches!(map_value, Key::Unidentified(_)) {
           continue;
         }
+
         layout.numlock_off_keys.insert(map_vkey.0, map_value);
       }
     }
 
     layout.numlock_on_keys.reserve(NUMPAD_VKEYS.len());
+
     for vk in NUMPAD_VKEYS.iter() {
       let scancode =
         unsafe { MapVirtualKeyExW(u32::from(vk.0), MAPVK_VK_TO_VSC_EX, locale_id as HKL) };
       let unicode = Self::to_unicode_string(&key_state, *vk, scancode, locale_id);
       if let ToUnicodeResult::Str(s) = unicode {
         let static_str = get_or_insert_str(strings, s);
+
         layout
           .numlock_on_keys
           .insert(vk.0, Key::Character(static_str));
@@ -333,6 +387,7 @@ impl LayoutCache {
 
     // Iterate through every combination of modifiers
     let mods_end = WindowsModifiers::FLAGS_END.bits();
+
     for mod_state in 0..mods_end {
       let mut keys_for_this_mod = HashMap::with_capacity(256);
 
@@ -345,37 +400,47 @@ impl LayoutCache {
       // giving the key state for the virtual key used for indexing.
       for vk in 0_u16..256 {
         let scancode = unsafe { MapVirtualKeyExW(u32::from(vk), MAPVK_VK_TO_VSC_EX, locale_id) };
+
         if scancode == 0 {
           continue;
         }
+
         let vk = VIRTUAL_KEY(vk);
+
         let native_code = NativeKeyCode::Windows(scancode as ExScancode);
+
         let key_code = KeyCode::from_scancode(scancode);
         // Let's try to get the key from just the scancode and vk
         // We don't necessarily know yet if AltGraph is present on this layout so we'll
         // assume it isn't. Then we'll do a second pass where we set the "AltRight" keys to
         // "AltGr" in case we find out that there's an AltGraph.
         let preliminary_key = vkey_to_non_char_key(vk, native_code, locale_id, false);
+
         match preliminary_key {
           Key::Unidentified(_) => (),
           _ => {
             keys_for_this_mod.insert(key_code, preliminary_key);
+
             continue;
           }
         }
 
         let unicode = Self::to_unicode_string(&key_state, vk, scancode, locale_id);
+
         let key = match unicode {
           ToUnicodeResult::Str(str) => {
             let static_str = get_or_insert_str(strings, str);
+
             Key::Character(static_str)
           }
           ToUnicodeResult::Dead(dead_char) => {
             //#[cfg(debug_assertions)] println!("{:?} - {:?} produced dead {:?}", key_code, mod_state, dead_char);
+
             Key::Dead(dead_char)
           }
           ToUnicodeResult::None => {
             let has_alt = mod_state.contains(WindowsModifiers::ALT);
+
             let has_ctrl = mod_state.contains(WindowsModifiers::CONTROL);
             // HACK: `ToUnicodeEx` seems to fail getting the string for the numpad
             // divide key, so we handle that explicitly here
@@ -393,7 +458,9 @@ impl LayoutCache {
         // a different `Character` from when it's pressed with CTRL+ALT then the layout
         // has AltGr.
         let ctrl_alt: WindowsModifiers = WindowsModifiers::CONTROL | WindowsModifiers::ALT;
+
         let is_in_ctrl_alt = mod_state == ctrl_alt;
+
         if !layout.has_alt_graph && is_in_ctrl_alt {
           // Unwrapping here because if we are in the ctrl+alt modifier state
           // then the alt modifier state must have come before.
@@ -414,6 +481,7 @@ impl LayoutCache {
     if layout.has_alt_graph {
       for mod_state in 0..mods_end {
         let mod_state = WindowsModifiers::from_bits_truncate(mod_state);
+
         if let Some(keys) = layout.keys.get_mut(&mod_state) {
           if let Some(key) = keys.get_mut(&KeyCode::AltRight) {
             *key = Key::AltGraph;
@@ -451,6 +519,7 @@ impl LayoutCache {
           0,
           locale_id,
         );
+
         if wide_len > 0 {
           let os_string = OsString::from_wide(&label_wide[0..wide_len as usize]);
           if let Ok(label_str) = os_string.into_string() {
@@ -459,15 +528,18 @@ impl LayoutCache {
             }
           }
         }
+
         return ToUnicodeResult::Dead(None);
       }
       if wide_len > 0 {
         let os_string = OsString::from_wide(&label_wide[0..wide_len as usize]);
+
         if let Ok(label_str) = os_string.into_string() {
           return ToUnicodeResult::Str(label_str);
         }
       }
     }
+
     ToUnicodeResult::None
   }
 }
@@ -479,6 +551,7 @@ where
 {
   {
     let str_ref = string.as_ref();
+
     if let Some(&existing) = strings.get(str_ref) {
       return existing;
     }
@@ -874,6 +947,7 @@ fn vkey_to_non_char_key(
         Key::Alt
       }
     }
+
     win32km::VK_BROWSER_BACK => Key::BrowserBack,
     win32km::VK_BROWSER_FORWARD => Key::BrowserForward,
     win32km::VK_BROWSER_REFRESH => Key::BrowserRefresh,
@@ -964,6 +1038,7 @@ fn vkey_to_non_char_key(
         Key::Unidentified(native_code)
       }
     }
+
     win32km::VK_OEM_COPY => Key::Copy,
     win32km::VK_OEM_AUTO => Key::Hankaku,
     win32km::VK_OEM_ENLW => Key::Zenkaku,

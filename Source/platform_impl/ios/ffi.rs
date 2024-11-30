@@ -229,6 +229,7 @@ impl From<ScreenEdge> for UIRectEdge {
       0,
       "invalid `ScreenEdge`"
     );
+
     UIRectEdge(screen_edge.bits().into())
   }
 }
@@ -236,6 +237,7 @@ impl From<ScreenEdge> for UIRectEdge {
 impl Into<ScreenEdge> for UIRectEdge {
   fn into(self) -> ScreenEdge {
     let bits: u8 = self.0.try_into().expect("invalid `UIRectEdge`");
+
     ScreenEdge::from_bits(bits).expect("invalid `ScreenEdge`")
   }
 }
@@ -387,6 +389,7 @@ impl NSStringRust for id {
 
   unsafe fn init_str(self, string: &str) -> id {
     let cstring = CString::new(string).unwrap();
+
     self.initWithUTF8String_(cstring.as_ptr())
   }
 

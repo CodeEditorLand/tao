@@ -14,11 +14,15 @@ use super::keycode_from_scancode;
 pub fn spawn(device_tx: glib::Sender<DeviceEvent>) {
   std::thread::spawn(move || unsafe {
     let xlib = xlib::Xlib::open().unwrap();
+
     let xinput2 = xinput2::XInput2::open().unwrap();
+
     let display = (xlib.XOpenDisplay)(ptr::null());
+
     let root = (xlib.XDefaultRootWindow)(display);
     // TODO Add more device event mask
     let mask = xinput2::XI_RawKeyPressMask | xinput2::XI_RawKeyReleaseMask;
+
     let mut event_mask = xinput2::XIEventMask {
       deviceid: xinput2::XIAllMasterDevices,
       mask: &mask as *const _ as *mut c_uchar,
@@ -28,6 +32,7 @@ pub fn spawn(device_tx: glib::Sender<DeviceEvent>) {
 
     #[allow(clippy::uninit_assumed_init)]
     let mut event: xlib::XEvent = std::mem::MaybeUninit::uninit().assume_init();
+
     loop {
       (xlib.XNextEvent)(display, &mut event);
 
@@ -52,7 +57,9 @@ pub fn spawn(device_tx: glib::Sender<DeviceEvent>) {
             match xev.evtype {
               xinput2::XI_RawKeyPress | xinput2::XI_RawKeyRelease => {
                 let xev: &xinput2::XIRawEvent = &*(xev.data as *const _);
+
                 let physical_key = keycode_from_scancode(xev.detail as u32);
+
                 let state = match xev.evtype {
                   xinput2::XI_RawKeyPress => ElementState::Pressed,
                   xinput2::XI_RawKeyRelease => ElementState::Released,
@@ -73,6 +80,7 @@ pub fn spawn(device_tx: glib::Sender<DeviceEvent>) {
             }
           }
         }
+
         _ => {}
       }
     }

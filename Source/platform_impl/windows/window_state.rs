@@ -70,7 +70,9 @@ bitflags! {
     #[derive(Clone, Copy)]
     pub struct CursorFlags: u8 {
         const GRABBED   = 1 << 0;
+
         const HIDDEN    = 1 << 1;
+
         const IN_WINDOW = 1 << 2;
     }
 }
@@ -78,18 +80,31 @@ bitflags! {
   #[derive(Clone, Copy, PartialEq)]
     pub struct WindowFlags: u32 {
         const RESIZABLE        = 1 << 0;
+
         const VISIBLE          = 1 << 1;
+
         const ON_TASKBAR       = 1 << 2;
+
         const ALWAYS_ON_TOP    = 1 << 3;
+
         const NO_BACK_BUFFER   = 1 << 4;
+
         const TRANSPARENT      = 1 << 5;
+
         const CHILD            = 1 << 6;
+
         const MAXIMIZED        = 1 << 7;
+
         const POPUP            = 1 << 8;
+
         const ALWAYS_ON_BOTTOM = 1 << 9;
+
         const MINIMIZABLE      = 1 << 10;
+
         const MAXIMIZABLE      = 1 << 11;
+
         const CLOSABLE         = 1 << 12;
+
         const MINIMIZED        = 1 << 13;
 
         const IGNORE_CURSOR_EVENT = 1 << 14;
@@ -97,6 +112,7 @@ bitflags! {
         /// Marker flag for fullscreen. Should always match `WindowState::fullscreen`, but is
         /// included here to make masking easier.
         const MARKER_EXCLUSIVE_FULLSCREEN = 1 << 15;
+
         const MARKER_BORDERLESS_FULLSCREEN = 1 << 16;
 
         /// The `WM_SIZE` event contains some parameters that can effect the state of `WindowFlags`.
@@ -172,10 +188,13 @@ impl WindowState {
     F: FnOnce(&mut WindowFlags),
   {
     let old_flags = this.window_flags;
+
     f(&mut this.window_flags);
+
     let new_flags = this.window_flags;
 
     drop(this);
+
     old_flags.apply_diff(window, new_flags);
   }
 
@@ -193,14 +212,18 @@ impl WindowState {
   // Updates is_active and returns whether active-focus state has changed
   pub fn set_active(&mut self, is_active: bool) -> bool {
     let old = self.has_active_focus();
+
     self.is_active = is_active;
+
     old != self.has_active_focus()
   }
 
   // Updates is_focused and returns whether active-focus state has changed
   pub fn set_focused(&mut self, is_focused: bool) -> bool {
     let old = self.has_active_focus();
+
     self.is_focused = is_focused;
+
     old != self.has_active_focus()
   }
 }
@@ -215,11 +238,14 @@ impl MouseProperties {
     F: FnOnce(&mut CursorFlags),
   {
     let old_flags = self.cursor_flags;
+
     f(&mut self.cursor_flags);
+
     match self.cursor_flags.refresh_os_cursor(window) {
       Ok(()) => (),
       Err(e) => {
         self.cursor_flags = old_flags;
+
         return Err(e);
       }
     }
@@ -239,55 +265,72 @@ impl WindowFlags {
 
   pub fn to_window_styles(self) -> (WINDOW_STYLE, WINDOW_EX_STYLE) {
     let (mut style, mut style_ex) = (Default::default(), Default::default());
+
     style |= WS_CAPTION | WS_CLIPSIBLINGS | WS_SYSMENU;
+
     style_ex |= WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES;
+
     if self.contains(WindowFlags::RESIZABLE) {
       style |= WS_SIZEBOX;
     }
+
     if self.contains(WindowFlags::MAXIMIZABLE) {
       style |= WS_MAXIMIZEBOX;
     }
+
     if self.contains(WindowFlags::MINIMIZABLE) {
       style |= WS_MINIMIZEBOX;
     }
+
     if self.contains(WindowFlags::VISIBLE) {
       style |= WS_VISIBLE;
     }
+
     if self.contains(WindowFlags::ON_TASKBAR) {
       style_ex |= WS_EX_APPWINDOW;
     }
+
     if self.contains(WindowFlags::ALWAYS_ON_TOP) {
       style_ex |= WS_EX_TOPMOST;
     }
+
     if self.contains(WindowFlags::NO_BACK_BUFFER) {
       style_ex |= WS_EX_NOREDIRECTIONBITMAP;
     }
+
     if self.contains(WindowFlags::CHILD) {
       style |= WS_CHILD; // This is incompatible with WS_POPUP if that gets added eventually.
 
       // Remove decorations window styles for child
       if !self.contains(WindowFlags::MARKER_DECORATIONS) {
         style &= !WS_CAPTION;
+
         style_ex &= !WS_EX_WINDOWEDGE;
       }
     }
+
     if self.contains(WindowFlags::POPUP) {
       style |= WS_POPUP;
     }
+
     if self.contains(WindowFlags::MINIMIZED) {
       style |= WS_MINIMIZE;
     }
+
     if self.contains(WindowFlags::MAXIMIZED) {
       style |= WS_MAXIMIZE;
     }
+
     if self.contains(WindowFlags::IGNORE_CURSOR_EVENT) {
       style_ex |= WS_EX_TRANSPARENT | WS_EX_LAYERED;
     }
+
     if self.intersects(
       WindowFlags::MARKER_EXCLUSIVE_FULLSCREEN | WindowFlags::MARKER_BORDERLESS_FULLSCREEN,
     ) {
       style &= !WS_OVERLAPPEDWINDOW;
     }
+
     if self.contains(WindowFlags::RIGHT_TO_LEFT_LAYOUT) {
       style_ex |= WS_EX_LAYOUTRTL | WS_EX_RTLREADING | WS_EX_RIGHT;
     }
@@ -309,6 +352,7 @@ impl WindowFlags {
   /// Adjust the window client rectangle to the return value, if present.
   fn apply_diff(mut self, window: HWND, mut new: WindowFlags) {
     self = self.mask();
+
     new = new.mask();
 
     let mut diff = self ^ new;
@@ -323,6 +367,7 @@ impl WindowFlags {
           window,
           if self.contains(WindowFlags::MARKER_DONT_FOCUS) {
             self.set(WindowFlags::MARKER_DONT_FOCUS, false);
+
             SW_SHOWNOACTIVATE
           } else {
             SW_SHOW
@@ -345,6 +390,7 @@ impl WindowFlags {
           0,
           SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
         );
+
         let _ = InvalidateRgn(window, HRGN::default(), false);
       }
     }
@@ -363,6 +409,7 @@ impl WindowFlags {
           0,
           SWP_ASYNCWINDOWPOS | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
         );
+
         let _ = InvalidateRgn(window, HRGN::default(), false);
       }
     }
@@ -397,6 +444,7 @@ impl WindowFlags {
     if diff.contains(WindowFlags::CLOSABLE) || new.contains(WindowFlags::CLOSABLE) {
       unsafe {
         let system_menu = GetSystemMenu(window, false);
+
         let _ = EnableMenuItem(
           system_menu,
           SC_CLOSE,
@@ -446,6 +494,7 @@ impl WindowFlags {
 
         // Refresh the window frame
         let _ = SetWindowPos(window, HWND::default(), 0, 0, 0, 0, flags);
+
         SendMessageW(
           window,
           *event_loop::SET_RETAIN_STATE_ON_SIZE_MSG_ID,
@@ -485,6 +534,7 @@ impl CursorFlags {
     }
 
     let cursor_in_client = self.contains(CursorFlags::IN_WINDOW);
+
     if cursor_in_client {
       util::set_cursor_hidden(self.contains(CursorFlags::HIDDEN));
     } else {

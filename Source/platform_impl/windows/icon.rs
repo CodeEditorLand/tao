@@ -24,15 +24,21 @@ impl Pixel {
 impl RgbaIcon {
   fn into_windows_icon(self) -> Result<WinIcon, BadIcon> {
     let mut rgba = self.rgba;
+
     let pixel_count = rgba.len() / PIXEL_SIZE;
+
     let mut and_mask = Vec::with_capacity(pixel_count);
+
     let pixels =
       unsafe { std::slice::from_raw_parts_mut(rgba.as_mut_ptr() as *mut Pixel, pixel_count) };
+
     for pixel in pixels {
       and_mask.push(pixel.a.wrapping_sub(std::u8::MAX)); // invert alpha channel
       pixel.to_bgra();
     }
+
     assert_eq!(and_mask.len(), pixel_count);
+
     let handle = unsafe {
       CreateIcon(
         HMODULE::default(),
@@ -44,6 +50,7 @@ impl RgbaIcon {
         rgba.as_ptr(),
       )
     };
+
     Ok(WinIcon::from_handle(
       handle.map_err(|_| BadIcon::OsError(io::Error::last_os_error()))?,
     ))
@@ -99,6 +106,7 @@ impl WinIcon {
       )
     }
     .map(|handle| HICON(handle.0));
+
     Ok(WinIcon::from_handle(
       handle.map_err(|_| BadIcon::OsError(io::Error::last_os_error()))?,
     ))
@@ -107,6 +115,7 @@ impl WinIcon {
   pub fn from_resource(resource_id: u16, size: Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
     // width / height of 0 along with LR_DEFAULTSIZE tells windows to load the default icon size
     let (width, height) = size.map(Into::into).unwrap_or((0, 0));
+
     let handle = unsafe {
       LoadImageW(
         GetModuleHandleW(PCWSTR::null()).unwrap_or_default(),
@@ -118,6 +127,7 @@ impl WinIcon {
       )
     }
     .map(|handle| HICON(handle.0));
+
     Ok(WinIcon::from_handle(
       handle.map_err(|_| BadIcon::OsError(io::Error::last_os_error()))?,
     ))
@@ -125,6 +135,7 @@ impl WinIcon {
 
   pub fn from_rgba(rgba: Vec<u8>, width: u32, height: u32) -> Result<Self, BadIcon> {
     let rgba_icon = RgbaIcon::from_rgba(rgba, width, height)?;
+
     rgba_icon.into_windows_icon()
   }
 

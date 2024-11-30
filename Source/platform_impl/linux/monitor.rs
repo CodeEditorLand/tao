@@ -17,6 +17,7 @@ pub struct MonitorHandle {
 impl MonitorHandle {
   pub fn new(display: &gdk::Display, number: i32) -> Self {
     let monitor = display.monitor(number).unwrap();
+
     Self { monitor }
   }
 
@@ -28,6 +29,7 @@ impl MonitorHandle {
   #[inline]
   pub fn size(&self) -> PhysicalSize<u32> {
     let rect = self.monitor.geometry();
+
     LogicalSize {
       width: rect.width() as u32,
       height: rect.height() as u32,
@@ -38,6 +40,7 @@ impl MonitorHandle {
   #[inline]
   pub fn position(&self) -> PhysicalPosition<i32> {
     let rect = self.monitor.geometry();
+
     LogicalPosition {
       x: rect.x(),
       y: rect.y(),

@@ -55,6 +55,7 @@ macro_rules! android_binding {
   ($domain:ident, $package:ident, $activity:ident, $setup:path, $main:ident, $tao:path) => {{
     // NOTE: be careful when changing how this use statement is written
     use $tao::{platform::android::prelude::android_fn, platform::android::prelude::*};
+
     fn _____tao_store_package_name__() {
       PACKAGE.get_or_init(move || generate_package_name!($domain, $package));
     }
@@ -69,13 +70,21 @@ macro_rules! android_binding {
       [$setup, $main],
       _____tao_store_package_name__,
     );
+
     android_fn!($domain, $package, $activity, start, [JObject]);
+
     android_fn!($domain, $package, $activity, stop, [JObject]);
+
     android_fn!($domain, $package, $activity, resume, [JObject]);
+
     android_fn!($domain, $package, $activity, pause, [JObject]);
+
     android_fn!($domain, $package, $activity, save, [JObject]);
+
     android_fn!($domain, $package, $activity, destroy, [JObject]);
+
     android_fn!($domain, $package, $activity, memory, [JObject]);
+
     android_fn!($domain, $package, $activity, focus, [i32]);
   }};
 }
@@ -144,7 +153,9 @@ pub static PIPE: Lazy<[OwnedFd; 2]> = Lazy::new(|| {
 pub fn poll_events() -> Option<Event> {
   unsafe {
     let size = std::mem::size_of::<Event>();
+
     let mut event = Event::Start;
+
     if libc::read(PIPE[0].as_raw_fd(), &mut event as *mut _ as *mut _, size)
       == size as libc::ssize_t
     {
@@ -226,17 +237,24 @@ pub unsafe fn create(
 
   let logpipe = {
     let mut logpipe: [RawFd; 2] = Default::default();
+
     libc::pipe(logpipe.as_mut_ptr());
+
     libc::dup2(logpipe[1], libc::STDOUT_FILENO);
+
     libc::dup2(logpipe[1], libc::STDERR_FILENO);
 
     logpipe.map(|fd| unsafe { OwnedFd::from_raw_fd(fd) })
   };
   thread::spawn(move || {
     let tag = CStr::from_bytes_with_nul(b"RustStdoutStderr\0").unwrap();
+
     let file = File::from_raw_fd(logpipe[0].as_raw_fd());
+
     let mut reader = BufReader::new(file);
+
     let mut buffer = String::new();
+
     loop {
       buffer.clear();
       if let Ok(len) = reader.read_line(&mut buffer) {
@@ -254,7 +272,9 @@ pub unsafe fn create(
 
   thread::spawn(move || {
     let looper = ThreadLooper::prepare();
+
     let foreign = looper.into_foreign();
+
     foreign
       .add_fd(
         PIPE[0].as_fd(),

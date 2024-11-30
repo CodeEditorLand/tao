@@ -60,10 +60,12 @@ impl FileDropHandler {
     {
       Ok(medium) => {
         let hglobal = medium.u.hGlobal;
+
         let hdrop = HDROP(hglobal.0 as _);
 
         // The second parameter (0xFFFFFFFF) instructs the function to return the item count
         let mut lpsz_file = [];
+
         let item_count = DragQueryFileW(hdrop, 0xFFFFFFFF, Some(&mut lpsz_file));
 
         for i in 0..item_count {
@@ -92,9 +94,11 @@ impl FileDropHandler {
               // In this case it is OK to return without taking further action.
               "Error occured while processing dropped/hovered item: item is not a file."
             }
+
             _ => "Unexpected error occured while processing dropped/hovered item.",
           }
         );
+
         None
       }
     }
@@ -111,6 +115,7 @@ impl IDropTarget_Impl for FileDropHandler_Impl {
     pdwEffect: *mut DROPEFFECT,
   ) -> windows::core::Result<()> {
     use crate::event::WindowEvent::HoveredFile;
+
     unsafe {
       let hdrop = FileDropHandler::iterate_filenames(pDataObj, |filename| {
         (self.send_event)(Event::WindowEvent {
@@ -128,6 +133,7 @@ impl IDropTarget_Impl for FileDropHandler_Impl {
       *self.cursor_effect.get() = cursor_effect;
       *pdwEffect = cursor_effect;
     }
+
     Ok(())
   }
 
@@ -140,17 +146,20 @@ impl IDropTarget_Impl for FileDropHandler_Impl {
     unsafe {
       *pdwEffect = *self.cursor_effect.get();
     }
+
     Ok(())
   }
 
   fn DragLeave(&self) -> windows::core::Result<()> {
     use crate::event::WindowEvent::HoveredFileCancelled;
+
     if unsafe { *self.hovered_is_valid.get() } {
       (self.send_event)(Event::WindowEvent {
         window_id: SuperWindowId(WindowId(self.window.0 as _)),
         event: HoveredFileCancelled,
       });
     }
+
     Ok(())
   }
 
@@ -162,6 +171,7 @@ impl IDropTarget_Impl for FileDropHandler_Impl {
     _pdwEffect: *mut DROPEFFECT,
   ) -> windows::core::Result<()> {
     use crate::event::WindowEvent::DroppedFile;
+
     unsafe {
       let hdrop = FileDropHandler::iterate_filenames(pDataObj, |filename| {
         (self.send_event)(Event::WindowEvent {
@@ -173,6 +183,7 @@ impl IDropTarget_Impl for FileDropHandler_Impl {
         DragFinish(hdrop);
       }
     }
+
     Ok(())
   }
 }

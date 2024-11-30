@@ -72,6 +72,7 @@ pub fn get_client_rect(hwnd: HWND) -> Result<RECT, io::Error> {
 
   unsafe {
     win_to_err(|| ClientToScreen(hwnd, &mut top_left))?;
+
     GetClientRect(hwnd, &mut rect)?;
   }
 
@@ -110,7 +111,9 @@ pub(crate) fn set_inner_size_physical(window: HWND, x: i32, y: i32, is_decorated
     .expect("adjust_window_rect failed");
 
     let outer_x = (rect.right - rect.left).abs();
+
     let outer_y = (rect.top - rect.bottom).abs();
+
     let _ = SetWindowPos(
       window,
       HWND::default(),
@@ -120,6 +123,7 @@ pub(crate) fn set_inner_size_physical(window: HWND, x: i32, y: i32, is_decorated
       outer_y,
       SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_NOREPOSITION | SWP_NOMOVE | SWP_NOACTIVATE,
     );
+
     let _ = InvalidateRgn(window, HRGN::default(), BOOL::default());
   }
 }
@@ -134,7 +138,9 @@ pub fn adjust_window_rect(hwnd: HWND, rect: RECT, is_decorated: bool) -> Option<
       style &= !WS_CAPTION;
       style &= !WS_SIZEBOX;
     }
+
     let style_ex = WINDOW_EX_STYLE(GetWindowLongW(hwnd, GWL_EXSTYLE) as u32);
+
     adjust_window_rect_with_styles(hwnd, style, style_ex, rect)
   }
 }
@@ -151,6 +157,7 @@ pub fn adjust_window_rect_with_styles(
     (*GET_DPI_FOR_WINDOW, *ADJUST_WINDOW_RECT_EX_FOR_DPI)
   {
     let dpi = unsafe { get_dpi_for_window(hwnd) };
+
     if unsafe { adjust_window_rect_ex_for_dpi(&mut rect, style, b_menu, style_ex, dpi) }.as_bool() {
       Some(rect)
     } else {
@@ -174,6 +181,7 @@ pub fn set_cursor_hidden(hidden: bool) {
 pub fn get_cursor_clip() -> windows::core::Result<RECT> {
   unsafe {
     let mut rect = RECT::default();
+
     GetClipCursor(&mut rect).map(|_| rect)
   }
 }
@@ -184,6 +192,7 @@ pub fn get_cursor_clip() -> windows::core::Result<RECT> {
 pub fn set_cursor_clip(rect: Option<RECT>) -> windows::core::Result<()> {
   unsafe {
     let rect_ptr = rect.as_ref().map(|r| r as *const RECT);
+
     ClipCursor(rect_ptr)
   }
 }
@@ -191,7 +200,9 @@ pub fn set_cursor_clip(rect: Option<RECT>) -> windows::core::Result<()> {
 pub fn get_desktop_rect() -> RECT {
   unsafe {
     let left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+
     let top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+
     RECT {
       left,
       top,

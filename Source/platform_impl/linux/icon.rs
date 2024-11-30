@@ -37,6 +37,7 @@ impl PlatformIcon {
   pub fn from_rgba(rgba: Vec<u8>, width: u32, height: u32) -> Result<Self, BadIcon> {
     let row_stride =
       Pixbuf::calculate_rowstride(Colorspace::Rgb, true, 8, width as i32, height as i32);
+
     Ok(Self {
       raw: rgba,
       width: width as i32,

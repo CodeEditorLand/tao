@@ -66,6 +66,7 @@ impl<T: 'static> EventLoopWindowTarget<T> {
   #[inline]
   pub fn monitor_from_point(&self, _x: f64, _y: f64) -> Option<MonitorHandle> {
     warn!("`Window::monitor_from_point` is ignored on iOS");
+
     return None;
   }
 
@@ -92,6 +93,7 @@ impl<T: 'static> EventLoopWindowTarget<T> {
 
   pub fn cursor_position(&self) -> Result<PhysicalPosition<f64>, ExternalError> {
     debug!("`EventLoopWindowTarget::cursor_position` is ignored on iOS");
+
     Ok((0, 0).into())
   }
 
@@ -111,6 +113,7 @@ pub struct EventLoop<T: 'static> {
 impl<T: 'static> EventLoop<T> {
   pub(crate) fn new(_: &PlatformSpecificEventLoopAttributes) -> EventLoop<T> {
     static mut SINGLETON_INIT: bool = false;
+
     unsafe {
       assert_main_thread!("`EventLoop` can only be created on the main thread on iOS");
       assert!(
@@ -231,12 +234,14 @@ impl<T> EventLoopProxy<T> {
       .sender
       .send(event)
       .map_err(|channel::SendError(x)| EventLoopClosed(x))?;
+
     unsafe {
       // let the main thread know there's a new event
       CFRunLoopSourceSignal(self.source);
       let rl = CFRunLoopGetMain();
       CFRunLoopWakeUp(rl);
     }
+
     Ok(())
   }
 }
@@ -311,6 +316,7 @@ fn setup_control_flow_observers() {
       control_flow_begin_handler,
       ptr::null_mut(),
     );
+
     CFRunLoopAddObserver(main_loop, begin_observer, kCFRunLoopDefaultMode);
 
     let main_end_observer = CFRunLoopObserverCreate(
@@ -321,6 +327,7 @@ fn setup_control_flow_observers() {
       control_flow_main_end_handler,
       ptr::null_mut(),
     );
+
     CFRunLoopAddObserver(main_loop, main_end_observer, kCFRunLoopDefaultMode);
 
     let end_observer = CFRunLoopObserverCreate(
@@ -331,6 +338,7 @@ fn setup_control_flow_observers() {
       control_flow_end_handler,
       ptr::null_mut(),
     );
+
     CFRunLoopAddObserver(main_loop, end_observer, kCFRunLoopDefaultMode);
   }
 }

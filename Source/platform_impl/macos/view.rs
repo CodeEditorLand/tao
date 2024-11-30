@@ -97,6 +97,7 @@ pub fn new_view(ns_window: id) -> (IdRef, Weak<Mutex<CursorState>>) {
   unsafe {
     // This is free'd in `dealloc`
     let state_ptr = Box::into_raw(Box::new(state)) as *mut c_void;
+
     let ns_view: id = msg_send![VIEW_CLASS.0, alloc];
     (
       IdRef::new(msg_send![ns_view, initWithTao: state_ptr]),
@@ -140,167 +141,214 @@ unsafe impl Sync for ViewClass {}
 lazy_static! {
   static ref VIEW_CLASS: ViewClass = unsafe {
     let superclass = class!(NSView);
+
     let mut decl = ClassDecl::new("TaoView", superclass).unwrap();
+
     decl.add_method(sel!(dealloc), dealloc as extern "C" fn(&Object, Sel));
+
     decl.add_method(
       sel!(initWithTao:),
       init_with_tao as extern "C" fn(&Object, Sel, *mut c_void) -> id,
     );
+
     decl.add_method(
       sel!(viewDidMoveToWindow),
       view_did_move_to_window as extern "C" fn(&Object, Sel),
     );
+
     decl.add_method(
       sel!(drawRect:),
       draw_rect as extern "C" fn(&Object, Sel, NSRect),
     );
+
     decl.add_method(
       sel!(acceptsFirstResponder),
       accepts_first_responder as extern "C" fn(&Object, Sel) -> BOOL,
     );
+
     decl.add_method(
       sel!(touchBar),
       touch_bar as extern "C" fn(&Object, Sel) -> BOOL,
     );
+
     decl.add_method(
       sel!(resetCursorRects),
       reset_cursor_rects as extern "C" fn(&Object, Sel),
     );
+
     decl.add_method(
       sel!(hasMarkedText),
       has_marked_text as extern "C" fn(&Object, Sel) -> BOOL,
     );
+
     decl.add_method(
       sel!(markedRange),
       marked_range as extern "C" fn(&Object, Sel) -> NSRange,
     );
+
     decl.add_method(
       sel!(selectedRange),
       selected_range as extern "C" fn(&Object, Sel) -> NSRange,
     );
+
     decl.add_method(
       sel!(setMarkedText:selectedRange:replacementRange:),
       set_marked_text as extern "C" fn(&mut Object, Sel, id, NSRange, NSRange),
     );
+
     decl.add_method(
       sel!(unmarkText),
       unmark_text as extern "C" fn(&mut Object, Sel),
     );
+
     decl.add_method(
       sel!(validAttributesForMarkedText),
       valid_attributes_for_marked_text as extern "C" fn(&Object, Sel) -> id,
     );
+
     decl.add_method(
       sel!(attributedSubstringForProposedRange:actualRange:),
       attributed_substring_for_proposed_range
         as extern "C" fn(&Object, Sel, NSRange, *mut c_void) -> id,
     );
+
     decl.add_method(
       sel!(insertText:replacementRange:),
       insert_text as extern "C" fn(&Object, Sel, id, NSRange),
     );
+
     decl.add_method(
       sel!(characterIndexForPoint:),
       character_index_for_point as extern "C" fn(&Object, Sel, NSPoint) -> NSUInteger,
     );
+
     decl.add_method(
       sel!(firstRectForCharacterRange:actualRange:),
       first_rect_for_character_range as extern "C" fn(&Object, Sel, NSRange, *mut c_void) -> NSRect,
     );
+
     decl.add_method(
       sel!(doCommandBySelector:),
       do_command_by_selector as extern "C" fn(&Object, Sel, Sel),
     );
+
     decl.add_method(
       sel!(keyDown:),
       key_down as extern "C" fn(&mut Object, Sel, id),
     );
+
     decl.add_method(sel!(keyUp:), key_up as extern "C" fn(&Object, Sel, id));
+
     decl.add_method(
       sel!(flagsChanged:),
       flags_changed as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(insertTab:),
       insert_tab as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(insertBackTab:),
       insert_back_tab as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(mouseDown:),
       mouse_down as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(sel!(mouseUp:), mouse_up as extern "C" fn(&Object, Sel, id));
+
     decl.add_method(
       sel!(rightMouseDown:),
       right_mouse_down as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(rightMouseUp:),
       right_mouse_up as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(otherMouseDown:),
       other_mouse_down as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(otherMouseUp:),
       other_mouse_up as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(mouseMoved:),
       mouse_moved as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(mouseDragged:),
       mouse_dragged as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(rightMouseDragged:),
       right_mouse_dragged as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(otherMouseDragged:),
       other_mouse_dragged as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(mouseEntered:),
       mouse_entered as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(mouseExited:),
       mouse_exited as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(scrollWheel:),
       scroll_wheel as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(pressureChangeWithEvent:),
       pressure_change_with_event as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(_wantsKeyDownForEvent:),
       wants_key_down_for_event as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_method(
       sel!(cancelOperation:),
       cancel_operation as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(frameDidChange:),
       frame_did_change as extern "C" fn(&Object, Sel, id),
     );
+
     decl.add_method(
       sel!(acceptsFirstMouse:),
       accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
     );
+
     decl.add_ivar::<*mut c_void>("taoState");
+
     decl.add_ivar::<id>("markedText");
+
     let protocol = Protocol::get("NSTextInputClient").unwrap();
+
     decl.add_protocol(protocol);
+
     ViewClass(decl.register())
   };
 }
@@ -308,8 +356,11 @@ lazy_static! {
 extern "C" fn dealloc(this: &Object, _sel: Sel) {
   unsafe {
     let state: *mut c_void = *this.get_ivar("taoState");
+
     let marked_text: id = *this.get_ivar("markedText");
+
     let _: () = msg_send![marked_text, release];
+
     drop(Box::from_raw(state as *mut ViewState));
   }
 }
@@ -317,6 +368,7 @@ extern "C" fn dealloc(this: &Object, _sel: Sel) {
 extern "C" fn init_with_tao(this: &Object, _sel: Sel, state: *mut c_void) -> id {
   unsafe {
     let this: id = msg_send![this, init];
+
     if this != nil {
       (*this).set_ivar("taoState", state);
       let marked_text =
@@ -334,6 +386,7 @@ extern "C" fn init_with_tao(this: &Object, _sel: Sel, state: *mut c_void) -> id 
           object: this
       ];
     }
+
     this
   }
 }
@@ -342,6 +395,7 @@ extern "C" fn view_did_move_to_window(this: &Object, _sel: Sel) {
   trace!("Triggered `viewDidMoveToWindow`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     if let Some(tracking_rect) = state.tracking_rect.take() {
@@ -349,12 +403,14 @@ extern "C" fn view_did_move_to_window(this: &Object, _sel: Sel) {
     }
 
     let rect: NSRect = msg_send![this, visibleRect];
+
     let tracking_rect: NSInteger = msg_send![this,
         addTrackingRect:rect
         owner:this
         userData:ptr::null_mut::<c_void>()
         assumeInside:NO
     ];
+
     state.tracking_rect = Some(tracking_rect);
   }
   trace!("Completed `viewDidMoveToWindow`");
@@ -363,6 +419,7 @@ extern "C" fn view_did_move_to_window(this: &Object, _sel: Sel) {
 extern "C" fn frame_did_change(this: &Object, _sel: Sel, _event: id) {
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     if let Some(tracking_rect) = state.tracking_rect.take() {
@@ -370,6 +427,7 @@ extern "C" fn frame_did_change(this: &Object, _sel: Sel, _event: id) {
     }
 
     let rect: NSRect = msg_send![this, visibleRect];
+
     let tracking_rect: NSInteger = msg_send![this,
         addTrackingRect:rect
         owner:this
@@ -384,6 +442,7 @@ extern "C" fn frame_did_change(this: &Object, _sel: Sel, _event: id) {
 extern "C" fn draw_rect(this: &Object, _sel: Sel, rect: NSRect) {
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     if let Some(position) = state.traffic_light_inset {
@@ -394,6 +453,7 @@ extern "C" fn draw_rect(this: &Object, _sel: Sel, rect: NSRect) {
     AppState::handle_redraw(WindowId(get_window_id(state.ns_window)));
 
     let superclass = util::superclass(this);
+
     let () = msg_send![super(this, superclass), drawRect: rect];
   }
 }
@@ -412,10 +472,13 @@ extern "C" fn touch_bar(_this: &Object, _sel: Sel) -> BOOL {
 extern "C" fn reset_cursor_rects(this: &Object, _sel: Sel) {
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let bounds: NSRect = msg_send![this, bounds];
+
     let cursor_state = state.cursor_state.lock().unwrap();
+
     let cursor = if cursor_state.visible {
       cursor_state.cursor.load()
     } else {
@@ -434,7 +497,9 @@ extern "C" fn reset_cursor_rects(this: &Object, _sel: Sel) {
 extern "C" fn has_marked_text(this: &Object, _sel: Sel) -> BOOL {
   unsafe {
     trace!("Triggered `hasMarkedText`");
+
     let marked_text: id = *this.get_ivar("markedText");
+
     trace!("Completed `hasMarkedText`");
     (marked_text.length() > 0) as BOOL
   }
@@ -443,9 +508,13 @@ extern "C" fn has_marked_text(this: &Object, _sel: Sel) -> BOOL {
 extern "C" fn marked_range(this: &Object, _sel: Sel) -> NSRange {
   unsafe {
     trace!("Triggered `markedRange`");
+
     let marked_text: id = *this.get_ivar("markedText");
+
     let length = marked_text.length();
+
     trace!("Completed `markedRange`");
+
     if length > 0 {
       NSRange::new(0, length - 1)
     } else {
@@ -473,7 +542,9 @@ extern "C" fn set_marked_text(
   trace!("Triggered `setMarkedText`");
   unsafe {
     let marked_text_ref = clear_marked_text(this);
+
     let has_attr: BOOL = msg_send![string, isKindOfClass: class!(NSAttributedString)];
+
     if has_attr != NO {
       marked_text_ref.initWithAttributedString(string);
     } else {
@@ -481,8 +552,11 @@ extern "C" fn set_marked_text(
     };
 
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
+
     state.in_ime_preedit = true;
+
     state.key_triggered_ime = true;
   }
   trace!("Completed `setMarkedText`");
@@ -492,7 +566,9 @@ extern "C" fn unmark_text(this: &mut Object, _sel: Sel) {
   trace!("Triggered `unmarkText`");
   unsafe {
     clear_marked_text(this);
+
     let input_context: id = msg_send![this, inputContext];
+
     let _: () = msg_send![input_context, discardMarkedText];
   }
   trace!("Completed `unmarkText`");
@@ -529,8 +605,11 @@ extern "C" fn first_rect_for_character_range(
 ) -> NSRect {
   unsafe {
     trace!("Triggered `firstRectForCharacterRange`");
+
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
+
     let (x, y) = state.ime_spot.unwrap_or_else(|| {
       let content_rect =
         NSWindow::contentRectForFrameRect_(state.ns_window, NSWindow::frame(state.ns_window));
@@ -538,7 +617,9 @@ extern "C" fn first_rect_for_character_range(
       let y = util::bottom_left_to_top_left(content_rect);
       (x, y)
     });
+
     trace!("Completed `firstRectForCharacterRange`");
+
     NSRect::new(NSPoint::new(x as _, y as _), NSSize::new(0.0, 0.0))
   }
 }
@@ -547,9 +628,11 @@ extern "C" fn insert_text(this: &Object, _sel: Sel, string: id, _replacement_ran
   trace!("Triggered `insertText`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let has_attr: BOOL = msg_send![string, isKindOfClass: class!(NSAttributedString)];
+
     let characters = if has_attr != NO {
       // This is a *mut NSAttributedString
       msg_send![string, string]
@@ -559,10 +642,12 @@ extern "C" fn insert_text(this: &Object, _sel: Sel, string: id, _replacement_ran
     };
 
     let slice = slice::from_raw_parts(characters.UTF8String() as *const c_uchar, characters.len());
+
     let string: String = str::from_utf8_unchecked(slice)
       .chars()
       .filter(|c| !is_corporate_character(*c))
       .collect();
+
     state.is_key_down = true;
 
     // We don't need this now, but it's here if that changes.
@@ -572,6 +657,7 @@ extern "C" fn insert_text(this: &Object, _sel: Sel, string: id, _replacement_ran
       window_id: WindowId(get_window_id(state.ns_window)),
       event: WindowEvent::ReceivedImeText(string),
     }));
+
     if state.in_ime_preedit {
       state.in_ime_preedit = false;
       state.key_triggered_ime = true;
@@ -695,7 +781,9 @@ extern "C" fn key_down(this: &mut Object, _sel: Sel, event: id) {
   trace!("Triggered `keyDown`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
+
     let window_id = WindowId(get_window_id(state.ns_window));
 
     // keyboard refactor: don't seems to be needed anymore
@@ -703,11 +791,13 @@ extern "C" fn key_down(this: &mut Object, _sel: Sel, event: id) {
     //state.raw_characters = Some(characters);
 
     let is_repeat: BOOL = msg_send![event, isARepeat];
+
     let is_repeat = is_repeat == YES;
 
     update_potentially_stale_modifiers(state, event);
 
     let pass_along = !is_repeat || !state.is_key_down;
+
     if pass_along {
       // See below for why we do this.
       clear_marked_text(this);
@@ -722,8 +812,11 @@ extern "C" fn key_down(this: &mut Object, _sel: Sel, event: id) {
     // The `interpretKeyEvents` above, may invoke `set_marked_text` or `insert_text`,
     // if the event corresponds to an IME event.
     let in_ime = state.key_triggered_ime;
+
     let key_event = create_key_event(event, true, is_repeat, in_ime, None);
+
     let is_arrow_key = is_arrow_key(key_event.physical_key);
+
     if pass_along {
       // The `interpretKeyEvents` above, may invoke `set_marked_text` or `insert_text`,
       // if the event corresponds to an IME event.
@@ -735,9 +828,11 @@ extern "C" fn key_down(this: &mut Object, _sel: Sel, event: id) {
       if is_preediting && !state.key_triggered_ime && !is_arrow_key {
         // In this case we should cancel the IME session.
         let () = msg_send![this, unmarkText];
+
         state.in_ime_preedit = false;
       }
     }
+
     let window_event = Event::WindowEvent {
       window_id,
       event: WindowEvent::KeyboardInput {
@@ -746,6 +841,7 @@ extern "C" fn key_down(this: &mut Object, _sel: Sel, event: id) {
         is_synthetic: false,
       },
     };
+
     AppState::queue_event(EventWrapper::StaticEvent(window_event));
   }
   trace!("Completed `keyDown`");
@@ -755,6 +851,7 @@ extern "C" fn key_up(this: &Object, _sel: Sel, event: id) {
   trace!("Triggered `keyUp`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     state.is_key_down = false;
@@ -769,6 +866,7 @@ extern "C" fn key_up(this: &Object, _sel: Sel, event: id) {
         is_synthetic: false,
       },
     };
+
     AppState::queue_event(EventWrapper::StaticEvent(window_event));
   }
   trace!("Completed `keyUp`");
@@ -782,21 +880,28 @@ extern "C" fn flags_changed(this: &Object, _sel: Sel, ns_event: id) {
   trace!("Triggered `flagsChanged`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let scancode = get_scancode(ns_event);
 
     // We'll correct the `is_press` and the `key_override` below.
     let event = create_key_event(ns_event, false, false, false, Some(KeyCode::SuperLeft));
+
     let mut events = VecDeque::with_capacity(4);
 
     macro_rules! process_event {
       ($tao_flag:expr, $ns_flag:expr, $target_key:expr) => {
         let ns_event_contains_keymask = NSEvent::modifierFlags(ns_event).contains($ns_flag);
+
         let mut actual_key = KeyCode::from_scancode(scancode as u32);
+
         let was_pressed = state.phys_modifiers.contains(&actual_key);
+
         let mut is_pressed = ns_event_contains_keymask;
+
         let matching_keys;
+
         if actual_key == KeyCode::KeyA {
           // When switching keyboard layout using Ctrl+Space, the Ctrl release event
           // has `KeyA` as its keycode which would produce an incorrect key event.
@@ -813,26 +918,33 @@ extern "C" fn flags_changed(this: &Object, _sel: Sel, ns_event: id) {
             is_pressed = false;
           }
         }
+
         if matching_keys {
           if is_pressed != was_pressed {
             let mut event = event.clone();
+
             event.state = if is_pressed {
               ElementState::Pressed
             } else {
               ElementState::Released
             };
+
             event.physical_key = actual_key;
+
             event.logical_key = code_to_key(event.physical_key, scancode);
+
             events.push_back(WindowEvent::KeyboardInput {
               device_id: DEVICE_ID,
               event,
               is_synthetic: false,
             });
+
             if is_pressed {
               state.phys_modifiers.insert($target_key);
             } else {
               state.phys_modifiers.remove(&$target_key);
             }
+
             if ns_event_contains_keymask {
               state.modifiers.insert($tao_flag);
             } else {
@@ -842,41 +954,49 @@ extern "C" fn flags_changed(this: &Object, _sel: Sel, ns_event: id) {
         }
       };
     }
+
     process_event!(
       ModifiersState::SHIFT,
       NSEventModifierFlags::NSShiftKeyMask,
       ShiftLeft
     );
+
     process_event!(
       ModifiersState::SHIFT,
       NSEventModifierFlags::NSShiftKeyMask,
       ShiftRight
     );
+
     process_event!(
       ModifiersState::CONTROL,
       NSEventModifierFlags::NSControlKeyMask,
       ControlLeft
     );
+
     process_event!(
       ModifiersState::CONTROL,
       NSEventModifierFlags::NSControlKeyMask,
       ControlRight
     );
+
     process_event!(
       ModifiersState::ALT,
       NSEventModifierFlags::NSAlternateKeyMask,
       AltLeft
     );
+
     process_event!(
       ModifiersState::ALT,
       NSEventModifierFlags::NSAlternateKeyMask,
       AltRight
     );
+
     process_event!(
       ModifiersState::SUPER,
       NSEventModifierFlags::NSCommandKeyMask,
       SuperLeft
     );
+
     process_event!(
       ModifiersState::SUPER,
       NSEventModifierFlags::NSCommandKeyMask,
@@ -903,8 +1023,11 @@ extern "C" fn flags_changed(this: &Object, _sel: Sel, ns_event: id) {
 extern "C" fn insert_tab(this: &Object, _sel: Sel, _sender: id) {
   unsafe {
     let window: id = msg_send![this, window];
+
     let first_responder: id = msg_send![window, firstResponder];
+
     let this_ptr = this as *const _ as *mut _;
+
     if first_responder == this_ptr {
       let (): _ = msg_send![window, selectNextKeyView: this];
     }
@@ -914,8 +1037,11 @@ extern "C" fn insert_tab(this: &Object, _sel: Sel, _sender: id) {
 extern "C" fn insert_back_tab(this: &Object, _sel: Sel, _sender: id) {
   unsafe {
     let window: id = msg_send![this, window];
+
     let first_responder: id = msg_send![window, firstResponder];
+
     let this_ptr = this as *const _ as *mut _;
+
     if first_responder == this_ptr {
       let (): _ = msg_send![window, selectPreviousKeyView: this];
     }
@@ -928,13 +1054,17 @@ extern "C" fn cancel_operation(this: &Object, _sel: Sel, _sender: id) {
   trace!("Triggered `cancelOperation`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let event: id = msg_send![NSApp(), currentEvent];
+
     update_potentially_stale_modifiers(state, event);
 
     let scancode = 0x2f;
+
     let key = KeyCode::from_scancode(scancode);
+
     debug_assert_eq!(key, KeyCode::Period);
 
     let window_event = Event::WindowEvent {
@@ -945,6 +1075,7 @@ extern "C" fn cancel_operation(this: &Object, _sel: Sel, _sender: id) {
         is_synthetic: false,
       },
     };
+
     AppState::queue_event(EventWrapper::StaticEvent(window_event));
   }
   trace!("Completed `cancelOperation`");
@@ -953,6 +1084,7 @@ extern "C" fn cancel_operation(this: &Object, _sel: Sel, _sender: id) {
 fn mouse_click(this: &Object, event: id, button: MouseButton, button_state: ElementState) {
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     update_potentially_stale_modifiers(state, event);
@@ -1004,13 +1136,16 @@ extern "C" fn other_mouse_up(this: &Object, _sel: Sel, event: id) {
 fn mouse_motion(this: &Object, event: id) {
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     // We have to do this to have access to the `NSView` trait...
     let view: id = this as *const _ as *mut _;
 
     let window_point = event.locationInWindow();
+
     let view_point = view.convertPoint_fromView_(window_point, nil);
+
     let view_rect = NSView::frame(view);
 
     if view_point.x.is_sign_negative()
@@ -1026,7 +1161,9 @@ fn mouse_motion(this: &Object, event: id) {
     }
 
     let x = view_point.x as f64;
+
     let y = view_rect.size.height as f64 - view_point.y as f64;
+
     let logical_position = LogicalPosition::new(x, y);
 
     update_potentially_stale_modifiers(state, event);
@@ -1064,6 +1201,7 @@ extern "C" fn mouse_entered(this: &Object, _sel: Sel, _event: id) {
   trace!("Triggered `mouseEntered`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let enter_event = Event::WindowEvent {
@@ -1082,6 +1220,7 @@ extern "C" fn mouse_exited(this: &Object, _sel: Sel, _event: id) {
   trace!("Triggered `mouseExited`");
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let window_event = Event::WindowEvent {
@@ -1103,6 +1242,7 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
 
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let delta = {
@@ -1110,11 +1250,13 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
       let (x, y) = (event.scrollingDeltaX() * -1.0, event.scrollingDeltaY());
       if event.hasPreciseScrollingDeltas() == YES {
         let delta = LogicalPosition::new(x, y).to_physical(state.get_scale_factor());
+
         MouseScrollDelta::PixelDelta(delta)
       } else {
         MouseScrollDelta::LineDelta(x as f32, y as f32)
       }
     };
+
     let phase = match event.phase() {
       NSEventPhase::NSEventPhaseMayBegin | NSEventPhase::NSEventPhaseBegan => TouchPhase::Started,
       NSEventPhase::NSEventPhaseEnded => TouchPhase::Ended,
@@ -1127,6 +1269,7 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
     };
 
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     update_potentially_stale_modifiers(state, event);
@@ -1142,6 +1285,7 @@ extern "C" fn scroll_wheel(this: &Object, _sel: Sel, event: id) {
     };
 
     AppState::queue_event(EventWrapper::StaticEvent(device_event));
+
     AppState::queue_event(EventWrapper::StaticEvent(window_event));
   }
   trace!("Completed `scrollWheel`");
@@ -1154,9 +1298,11 @@ extern "C" fn pressure_change_with_event(this: &Object, _sel: Sel, event: id) {
 
   unsafe {
     let state_ptr: *mut c_void = *this.get_ivar("taoState");
+
     let state = &mut *(state_ptr as *mut ViewState);
 
     let pressure = event.pressure();
+
     let stage = event.stage();
 
     let window_event = Event::WindowEvent {
@@ -1205,7 +1351,9 @@ pub unsafe fn inset_traffic_lights<W: NSWindow + Copy>(window: W, position: Logi
 
   for (i, button) in window_buttons.into_iter().enumerate() {
     let mut rect = NSView::frame(button);
+
     rect.origin.x = x + (i as f64 * space_between);
+
     button.setFrameOrigin(rect.origin);
   }
 }

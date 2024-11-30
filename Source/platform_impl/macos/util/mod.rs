@@ -58,6 +58,7 @@ impl IdRef {
     if inner != nil {
       let _: id = unsafe { msg_send![inner, retain] };
     }
+
     IdRef(inner)
   }
 
@@ -75,7 +76,9 @@ impl Drop for IdRef {
     if self.0 != nil {
       unsafe {
         let pool = NSAutoreleasePool::new(nil);
+
         let () = msg_send![self.0, release];
+
         pool.drain();
       };
     }

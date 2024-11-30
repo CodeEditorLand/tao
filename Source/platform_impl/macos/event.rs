@@ -65,17 +65,21 @@ pub fn get_modifierless_char(scancode: u16) -> Key<'static> {
   let layout;
   unsafe {
     input_source = ffi::TISCopyCurrentKeyboardLayoutInputSource();
+
     if input_source.is_null() {
       log::error!("`TISCopyCurrentKeyboardLayoutInputSource` returned null ptr");
       return Key::Unidentified(NativeKeyCode::MacOS(scancode));
     }
+
     let layout_data =
       ffi::TISGetInputSourceProperty(input_source, ffi::kTISPropertyUnicodeKeyLayoutData);
+
     if layout_data.is_null() {
       CFRelease(input_source as *mut c_void);
       log::error!("`TISGetInputSourceProperty` returned null ptr");
       return Key::Unidentified(NativeKeyCode::MacOS(scancode));
     }
+
     layout = CFDataGetBytePtr(layout_data) as *const ffi::UCKeyboardLayout;
   }
   let keyboard_type = unsafe { ffi::LMGetKbdType() };
@@ -105,10 +109,12 @@ pub fn get_modifierless_char(scancode: u16) -> Key<'static> {
       "`UCKeyTranslate` returned with the non-zero value: {}",
       translate_result
     );
+
     return Key::Unidentified(NativeKeyCode::MacOS(scancode));
   }
   if result_len == 0 {
     log::error!("`UCKeyTranslate` was succesful but gave a string of 0 length.");
+
     return Key::Unidentified(NativeKeyCode::MacOS(scancode));
   }
   let chars = String::from_utf16_lossy(&string[0..result_len as usize]);
@@ -121,6 +127,7 @@ fn get_logical_key_char(ns_event: id, modifierless_chars: &str) -> Key<'static> 
   if string.is_empty() {
     // Probably a dead key
     let first_char = modifierless_chars.chars().next();
+
     return Key::Dead(first_char);
   }
   Key::Character(insert_or_get_key_str(string))
@@ -153,6 +160,7 @@ pub fn create_key_event(
           // The key may be one of the funky function keys
           physical_key = extra_function_key_to_code(scancode, &characters);
         }
+
         Some(insert_or_get_key_str(characters))
       }
     }
@@ -162,14 +170,19 @@ pub fn create_key_event(
   let key_without_modifiers;
   if !matches!(key_from_code, Key::Unidentified(_)) {
     logical_key = key_from_code.clone();
+
     key_without_modifiers = key_from_code;
   } else {
     //#[cfg(debug_assertions)] println!("Couldn't get key from code: {:?}", physical_key);
+
     key_without_modifiers = get_modifierless_char(scancode);
 
     let modifiers = unsafe { NSEvent::modifierFlags(ns_event) };
+
     let has_alt = modifiers.contains(NSEventModifierFlags::NSAlternateKeyMask);
+
     let has_ctrl = modifiers.contains(NSEventModifierFlags::NSControlKeyMask);
+
     if has_alt || has_ctrl || text_with_all_modifiers.is_none() || !is_press {
       let modifierless_chars = match key_without_modifiers.clone() {
         Key::Character(ch) => ch,

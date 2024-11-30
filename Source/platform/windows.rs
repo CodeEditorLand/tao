@@ -106,12 +106,14 @@ impl<T> EventLoopBuilderExtWindows for EventLoopBuilder<T> {
   #[inline]
   fn with_any_thread(&mut self, any_thread: bool) -> &mut Self {
     self.platform_specific.any_thread = any_thread;
+
     self
   }
 
   #[inline]
   fn with_dpi_aware(&mut self, dpi_aware: bool) -> &mut Self {
     self.platform_specific.dpi_aware = dpi_aware;
+
     self
   }
 
@@ -121,6 +123,7 @@ impl<T> EventLoopBuilderExtWindows for EventLoopBuilder<T> {
     F: FnMut(*const std::ffi::c_void) -> bool + 'static,
   {
     self.platform_specific.msg_hook = Some(Box::new(callback));
+
     self
   }
 
@@ -128,6 +131,7 @@ impl<T> EventLoopBuilderExtWindows for EventLoopBuilder<T> {
 
   fn with_theme(&mut self, theme: Option<Theme>) -> &mut Self {
     self.platform_specific.preferred_theme = theme;
+
     self
   }
 }
@@ -314,60 +318,70 @@ impl WindowBuilderExtWindows for WindowBuilder {
   #[inline]
   fn with_parent_window(mut self, parent: HWND) -> WindowBuilder {
     self.platform_specific.parent = Parent::ChildOf(windows::Win32::Foundation::HWND(parent as _));
+
     self
   }
 
   #[inline]
   fn with_owner_window(mut self, parent: HWND) -> WindowBuilder {
     self.platform_specific.parent = Parent::OwnedBy(windows::Win32::Foundation::HWND(parent as _));
+
     self
   }
 
   #[inline]
   fn with_menu(mut self, menu: HMENU) -> WindowBuilder {
     self.platform_specific.menu = Some(windows::Win32::UI::WindowsAndMessaging::HMENU(menu as _));
+
     self
   }
 
   #[inline]
   fn with_taskbar_icon(mut self, taskbar_icon: Option<Icon>) -> WindowBuilder {
     self.platform_specific.taskbar_icon = taskbar_icon;
+
     self
   }
 
   #[inline]
   fn with_no_redirection_bitmap(mut self, flag: bool) -> WindowBuilder {
     self.platform_specific.no_redirection_bitmap = flag;
+
     self
   }
 
   #[inline]
   fn with_drag_and_drop(mut self, flag: bool) -> WindowBuilder {
     self.platform_specific.drag_and_drop = flag;
+
     self
   }
 
   #[inline]
   fn with_skip_taskbar(mut self, skip: bool) -> WindowBuilder {
     self.platform_specific.skip_taskbar = skip;
+
     self
   }
 
   #[inline]
   fn with_window_classname<S: Into<String>>(mut self, classname: S) -> WindowBuilder {
     self.platform_specific.window_classname = classname.into();
+
     self
   }
 
   #[inline]
   fn with_undecorated_shadow(mut self, shadow: bool) -> WindowBuilder {
     self.platform_specific.decoration_shadow = shadow;
+
     self
   }
 
   #[inline]
   fn with_rtl(mut self, rtl: bool) -> WindowBuilder {
     self.platform_specific.rtl = rtl;
+
     self
   }
 }
@@ -432,11 +446,13 @@ pub trait IconExtWindows: Sized {
 impl IconExtWindows for Icon {
   fn from_path<P: AsRef<Path>>(path: P, size: Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
     let win_icon = WinIcon::from_path(path, size)?;
+
     Ok(Icon { inner: win_icon })
   }
 
   fn from_resource(ordinal: u16, size: Option<PhysicalSize<u32>>) -> Result<Self, BadIcon> {
     let win_icon = WinIcon::from_resource(ordinal, size)?;
+
     Ok(Icon { inner: win_icon })
   }
 }

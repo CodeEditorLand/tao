@@ -12,6 +12,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window = WindowBuilder::new()
@@ -31,17 +32,26 @@ fn main() {
         DeviceEvent::MouseWheel { delta, .. } => match delta {
           tao::event::MouseScrollDelta::LineDelta(x, y) => {
             println!("mouse wheel Line Delta: ({x},{y})");
+
             let pixels_per_line = 120.0;
+
             let mut pos = window.outer_position().unwrap();
+
             pos.x -= (x * pixels_per_line) as i32;
+
             pos.y -= (y * pixels_per_line) as i32;
+
             window.set_outer_position(pos)
           }
           tao::event::MouseScrollDelta::PixelDelta(p) => {
             println!("mouse wheel Pixel Delta: ({},{})", p.x, p.y);
+
             let mut pos = window.outer_position().unwrap();
+
             pos.x -= p.x as i32;
+
             pos.y -= p.y as i32;
+
             window.set_outer_position(pos)
           }
           _ => (),

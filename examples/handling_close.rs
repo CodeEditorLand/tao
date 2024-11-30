@@ -12,6 +12,7 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let _window = WindowBuilder::new()
@@ -37,6 +38,7 @@ fn main() {
 						// Creating a proper dialog box for that is far beyond the scope of this
 						// example, so here we'll just respond to the Y and N keys.
 						println!("Are you ready to bid your window farewell? [Y/N]");
+
 						close_requested = true;
 
 						// In applications where you can safely close the window
@@ -74,6 +76,7 @@ fn main() {
 							"n" => {
 								if close_requested {
 									println!("Your window will continue to stay by your side.");
+
 									close_requested = false;
 								}
 							},

@@ -93,16 +93,21 @@ impl<W: GtkWindowExt + WidgetExt> WindowMaximizeProcess<W> {
     match self.step {
       0 => {
         self.window.set_resizable(true);
+
         self.step += 1;
+
         glib::ControlFlow::Continue
       }
       1 => {
         self.window.maximize();
+
         self.step += 1;
+
         glib::ControlFlow::Continue
       }
       2 => {
         self.window.set_resizable(self.resizable);
+
         glib::ControlFlow::Break
       }
       _ => glib::ControlFlow::Break,

@@ -59,6 +59,7 @@ fn main() {
         WindowEvent::ModifiersChanged(new_state) => {
           modifiers = new_state;
         }
+
         WindowEvent::KeyboardInput {
           event:
             KeyEvent {
@@ -121,6 +122,7 @@ fn main() {
             window.set_badge_count(0);
           }
         }
+
         _ => {}
       },
       _ => {}

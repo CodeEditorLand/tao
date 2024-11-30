@@ -12,12 +12,15 @@ use tao::{
 #[allow(clippy::single_match)]
 fn main() {
 	env_logger::init();
+
 	let event_loop = EventLoop::new();
 
 	let window_1 = WindowBuilder::new().build(&event_loop).unwrap();
+
 	let window_2 = WindowBuilder::new().build(&event_loop).unwrap();
 
 	let mut switched = false;
+
 	let mut entered_id = window_2.id();
 
 	event_loop.run(move |event, _, control_flow| {
@@ -45,6 +48,7 @@ fn main() {
 					},
 					WindowEvent::CursorEntered { .. } => {
 						entered_id = window_id;
+
 						name_windows(entered_id, switched, &window_1, &window_2)
 					},
 					WindowEvent::KeyboardInput {
@@ -52,7 +56,9 @@ fn main() {
 						..
 					} if logical_key == Key::Character("x") => {
 						switched = !switched;
+
 						name_windows(entered_id, switched, &window_1, &window_2);
+
 						println!("Switched!")
 					},
 					_ => (),
@@ -70,6 +76,8 @@ fn name_windows(window_id:WindowId, switched:bool, window_1:&Window, window_2:&W
 		} else {
 			(&window_1, &window_2)
 		};
+
 	drag_target.set_title("drag target");
+
 	other.set_title("tao window");
 }

@@ -84,6 +84,7 @@ impl Window {
     pl_attribs: PlatformSpecificWindowBuilderAttributes,
   ) -> Result<Self, RootOsError> {
     let (window, delegate) = UnownedWindow::new(attributes, pl_attribs)?;
+
     Ok(Window { window, delegate })
   }
 }

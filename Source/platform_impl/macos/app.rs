@@ -23,6 +23,7 @@ unsafe impl Sync for AppClass {}
 lazy_static! {
   pub static ref APP_CLASS: AppClass = unsafe {
     let superclass = class!(NSApplication);
+
     let mut decl = ClassDecl::new("TaoApp", superclass).unwrap();
 
     decl.add_method(
@@ -43,7 +44,9 @@ extern "C" fn send_event(this: &Object, _sel: Sel, event: id) {
     // (https://github.com/servo/cocoa-rs/issues/155)
     // but that doesn't really matter here.
     let event_type = event.eventType();
+
     let modifier_flags = event.modifierFlags();
+
     if event_type == appkit::NSKeyUp
       && util::has_flag(
         modifier_flags,
@@ -103,6 +106,7 @@ unsafe fn maybe_dispatch_device_event(event: id) {
 
       AppState::queue_events(events);
     }
+
     appkit::NSLeftMouseDown | appkit::NSRightMouseDown | appkit::NSOtherMouseDown => {
       let mut events = VecDeque::with_capacity(1);
 
@@ -116,6 +120,7 @@ unsafe fn maybe_dispatch_device_event(event: id) {
 
       AppState::queue_events(events);
     }
+
     appkit::NSLeftMouseUp | appkit::NSRightMouseUp | appkit::NSOtherMouseUp => {
       let mut events = VecDeque::with_capacity(1);
 
@@ -129,6 +134,7 @@ unsafe fn maybe_dispatch_device_event(event: id) {
 
       AppState::queue_events(events);
     }
+
     _ => (),
   }
 }
