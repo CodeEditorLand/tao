@@ -37,9 +37,9 @@ rwh_06 = ["dep:rwh_06"]
 members = ["tao-macros"]
 
 [dependencies]
-lazy_static = "1"
-libc = "0.2"
-log = "0.4"
+lazy_static = { version = "1" }
+libc = { version = "0.2" }
+log = { version = "0.4" }
 serde = { version = "1", optional = true, features = ["serde_derive"] }
 rwh_04 = { package = "raw-window-handle", version = "0.4", optional = true }
 rwh_05 = { package = "raw-window-handle", version = "0.5", features = [
@@ -48,20 +48,20 @@ rwh_05 = { package = "raw-window-handle", version = "0.5", features = [
 rwh_06 = { package = "raw-window-handle", version = "0.6", features = [
 	"std",
 ], optional = true }
-bitflags = "2"
+bitflags = { version = "2" }
 crossbeam-channel = "0.5"
-url = "2"
-dpi = "0.1"
+url = { version = "2" }
+dpi = { version = "0.1" }
 
 [dev-dependencies]
-image = "0.25"
-env_logger = "0.11"
+image = { version = "0.25" }
+env_logger = { version = "0.11" }
 
 [target."cfg(target_os = \"windows\")".dev-dependencies]
-softbuffer = "0.4"
+softbuffer = { version = "0.4" }
 
 [target."cfg(target_os = \"windows\")".dependencies]
-parking_lot = "0.12"
+parking_lot = { version = "0.12" }
 unicode-segmentation = "1.11"
 windows-version = "0.1"
 windows-core = "0.58"
@@ -99,29 +99,29 @@ features = [
 ]
 
 [target."cfg(any(target_os = \"android\", target_os = \"windows\"))".dependencies]
-once_cell = "1"
+once_cell = { version = "1" }
 
 [target."cfg(target_os = \"android\")".dependencies]
-jni = "0.21"
-ndk = "0.9"
+jni = { version = "0.21" }
+ndk = { version = "0.9" }
 ndk-sys = "0.6"
 ndk-context = "0.1"
 tao-macros = { version = "0.1.0", path = "./tao-macros" }
 
 [target."cfg(any(target_os = \"ios\", target_os = \"macos\"))".dependencies]
-objc = "0.2"
+objc = { version = "0.2" }
 
 [target."cfg(target_os = \"macos\")".dependencies]
-cocoa = "0.26"
+cocoa = { version = "0.26" }
 core-foundation = "0.10"
 core-graphics = "0.24"
-dispatch = "0.2"
-scopeguard = "1.2"
+dispatch = { version = "0.2" }
+scopeguard = { version = "1.2" }
 
 [target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
-gtk = "0.18"
+gtk = { version = "0.18" }
 gdkx11-sys = "0.18"
 gdkwayland-sys = "0.18.0"
 x11-dl = "2.21"
-parking_lot = "0.12"
-dlopen2 = "0.7.0"
+parking_lot = { version = "0.12" }
+dlopen2 = { version = "0.7.0" }
