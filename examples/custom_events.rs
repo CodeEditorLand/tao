@@ -41,13 +41,12 @@ fn main() {
 	event_loop.run(move |event, _, control_flow| {
 		*control_flow = ControlFlow::Wait;
 
-    match event {
-      Event::UserEvent(event) => println!("user event: {event:?}"),
-      Event::WindowEvent {
-        event: WindowEvent::CloseRequested,
-        ..
-      } => *control_flow = ControlFlow::Exit,
-      _ => (),
-    }
-  });
+		match event {
+			Event::UserEvent(event) => println!("user event: {event:?}"),
+			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
+				*control_flow = ControlFlow::Exit
+			},
+			_ => (),
+		}
+	});
 }

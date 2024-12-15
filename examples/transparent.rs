@@ -35,10 +35,10 @@ fn main() {
 
 	window.set_title("A fantastic window!");
 
-  event_loop.run(move |event, _, control_flow| {
-    *control_flow = ControlFlow::Wait;
+	event_loop.run(move |event, _, control_flow| {
+		*control_flow = ControlFlow::Wait;
 
-    println!("{event:?}");
+		println!("{event:?}");
 
 		match event {
 			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {

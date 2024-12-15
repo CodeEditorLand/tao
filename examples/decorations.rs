@@ -28,26 +28,26 @@ fn main() {
 	event_loop.run(move |event, _, control_flow| {
 		*control_flow = ControlFlow::Wait;
 
-    match event {
-      Event::WindowEvent { event, .. } => match event {
-        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-        WindowEvent::KeyboardInput {
-          event:
-            KeyEvent {
-              physical_key: KeyCode::Space,
-              state: ElementState::Released,
-              ..
-            },
-          ..
-        } => {
-          decorations = !decorations;
-          println!("Decorations: {decorations}");
-          window.set_decorations(decorations);
-        }
+		match event {
+			Event::WindowEvent { event, .. } => {
+				match event {
+					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+					WindowEvent::KeyboardInput {
+						event:
+							KeyEvent {
+								physical_key: KeyCode::Space, state: ElementState::Released, ..
+							},
+						..
+					} => {
+						decorations = !decorations;
+						println!("Decorations: {decorations}");
+						window.set_decorations(decorations);
+					},
 
-        _ => (),
-      },
-      _ => (),
-    };
-  });
+					_ => (),
+				}
+			},
+			_ => (),
+		};
+	});
 }

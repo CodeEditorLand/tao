@@ -1,15 +1,15 @@
 use proc_macro::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
+	Ident,
+	LitStr,
+	Token,
+	Type,
 	bracketed,
 	parse::{Parse, ParseStream},
 	parse_macro_input,
 	punctuated::Punctuated,
 	token::Comma,
-	Ident,
-	LitStr,
-	Token,
-	Type,
 };
 
 struct AndroidFnInput {

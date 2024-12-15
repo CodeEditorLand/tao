@@ -9,11 +9,6 @@ pub mod prelude {
 
 	pub use crate::platform_impl::ndk_glue::*;
 }
-use crate::{
-  event_loop::{EventLoop, EventLoopWindowTarget},
-  platform_impl::ndk_glue::Rect,
-  window::{Window, WindowBuilder},
-};
 use ndk::configuration::Configuration;
 
 use crate::{

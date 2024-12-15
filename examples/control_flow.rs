@@ -50,89 +50,86 @@ fn main() {
 
 	let mut close_requested = false;
 
-  event_loop.run(move |event, _, control_flow| {
-    use tao::event::StartCause;
+	event_loop.run(move |event, _, control_flow| {
+		use tao::event::StartCause;
 
-    println!("{event:?}");
+		println!("{event:?}");
 
-    match event {
-      Event::NewEvents(start_cause) => {
-        wait_cancelled = match start_cause {
-          StartCause::WaitCancelled { .. } => mode == Mode::WaitUntil,
-          _ => false,
-        }
-      }
-      Event::WindowEvent { event, .. } => match event {
-        WindowEvent::CloseRequested => {
-          close_requested = true;
-        }
+		match event {
+			Event::NewEvents(start_cause) => {
+				wait_cancelled = match start_cause {
+					StartCause::WaitCancelled { .. } => mode == Mode::WaitUntil,
+					_ => false,
+				}
+			},
+			Event::WindowEvent { event, .. } => {
+				match event {
+					WindowEvent::CloseRequested => {
+						close_requested = true;
+					},
 
-        WindowEvent::KeyboardInput {
-          event:
-            KeyEvent {
-              logical_key,
-              state: ElementState::Pressed,
-              ..
-            },
-          ..
-        } => {
-          // WARNING: Consider using `key_without_modifers()` if available on your platform.
-          // See the `key_binding` example
-          if Key::Character("1") == logical_key {
-            mode = Mode::Wait;
+					WindowEvent::KeyboardInput {
+						event: KeyEvent { logical_key, state: ElementState::Pressed, .. },
+						..
+					} => {
+						// WARNING: Consider using `key_without_modifers()` if available on your
+						// platform. See the `key_binding` example
+						if Key::Character("1") == logical_key {
+							mode = Mode::Wait;
 
-            println!("\nmode: {mode:?}\n");
-          }
-          if Key::Character("2") == logical_key {
-            mode = Mode::WaitUntil;
+							println!("\nmode: {mode:?}\n");
+						}
+						if Key::Character("2") == logical_key {
+							mode = Mode::WaitUntil;
 
-            println!("\nmode: {mode:?}\n");
-          }
-          if Key::Character("3") == logical_key {
-            mode = Mode::Poll;
+							println!("\nmode: {mode:?}\n");
+						}
+						if Key::Character("3") == logical_key {
+							mode = Mode::Poll;
 
-            println!("\nmode: {mode:?}\n");
-          }
-          if Key::Character("r") == logical_key {
-            request_redraw = !request_redraw;
+							println!("\nmode: {mode:?}\n");
+						}
+						if Key::Character("r") == logical_key {
+							request_redraw = !request_redraw;
 
-            println!("\nrequest_redraw: {request_redraw}\n");
-          }
-          if Key::Escape == logical_key {
-            close_requested = true;
-          }
-        }
+							println!("\nrequest_redraw: {request_redraw}\n");
+						}
+						if Key::Escape == logical_key {
+							close_requested = true;
+						}
+					},
 
-        _ => {}
-      },
-      Event::MainEventsCleared => {
-        if request_redraw && !wait_cancelled && !close_requested {
-          window.request_redraw();
-        }
+					_ => {},
+				}
+			},
+			Event::MainEventsCleared => {
+				if request_redraw && !wait_cancelled && !close_requested {
+					window.request_redraw();
+				}
 
-        if close_requested {
-          *control_flow = ControlFlow::Exit;
-        }
-      }
-      Event::RedrawRequested(_window_id) => {}
-      Event::RedrawEventsCleared => {
-        *control_flow = match mode {
-          Mode::Wait => ControlFlow::Wait,
-          Mode::WaitUntil => {
-            if wait_cancelled {
-              *control_flow
-            } else {
-              ControlFlow::WaitUntil(time::Instant::now() + WAIT_TIME)
-            }
-          }
-          Mode::Poll => {
-            thread::sleep(POLL_SLEEP_TIME);
+				if close_requested {
+					*control_flow = ControlFlow::Exit;
+				}
+			},
+			Event::RedrawRequested(_window_id) => {},
+			Event::RedrawEventsCleared => {
+				*control_flow = match mode {
+					Mode::Wait => ControlFlow::Wait,
+					Mode::WaitUntil => {
+						if wait_cancelled {
+							*control_flow
+						} else {
+							ControlFlow::WaitUntil(time::Instant::now() + WAIT_TIME)
+						}
+					},
+					Mode::Poll => {
+						thread::sleep(POLL_SLEEP_TIME);
 
-            ControlFlow::Poll
-          }
-        };
-      }
-      _ => (),
-    }
-  });
+						ControlFlow::Poll
+					},
+				};
+			},
+			_ => (),
+		}
+	});
 }
