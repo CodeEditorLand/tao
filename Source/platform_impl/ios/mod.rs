@@ -32,7 +32,8 @@
 //! }
 //! ```
 //!
-//! Compile project and then drag resulting .a into Xcode project. Add tao.h to xcode.
+//! Compile project and then drag resulting .a into Xcode project. Add tao.h to
+//! xcode.
 //!
 //! ```ignore
 //! void start_tao_app();
@@ -54,16 +55,17 @@
 //!  - applicationWillResignActive is Suspended
 //!  - applicationWillTerminate is LoopDestroyed
 //!
-//! Keep in mind that after LoopDestroyed event is received every attempt to draw with
-//! opengl will result in segfault.
+//! Keep in mind that after LoopDestroyed event is received every attempt to
+//! draw with opengl will result in segfault.
 //!
-//! Also note that app may not receive the LoopDestroyed event if suspended; it might be SIGKILL'ed.
+//! Also note that app may not receive the LoopDestroyed event if suspended; it
+//! might be SIGKILL'ed.
 
 #![cfg(target_os = "ios")]
 
-// TODO: (mtak-) UIKit requires main thread for virtually all function/method calls. This could be
-// worked around in the future by using GCD (grand central dispatch) and/or caching of values like
-// window size/position.
+// TODO: (mtak-) UIKit requires main thread for virtually all function/method
+// calls. This could be worked around in the future by using GCD (grand central
+// dispatch) and/or caching of values like window size/position.
 macro_rules! assert_main_thread {
     ($($t:tt)*) => {
         let is_main_thread: ::objc::runtime::BOOL = msg_send!(class!(NSThread), isMainThread);
@@ -85,15 +87,16 @@ mod window;
 
 use std::fmt;
 
+pub(crate) use badge::set_badge_count;
+
 pub(crate) use self::event_loop::PlatformSpecificEventLoopAttributes;
 pub use self::{
-  event_loop::{EventLoop, EventLoopProxy, EventLoopWindowTarget},
-  keycode::{keycode_from_scancode, keycode_to_scancode},
-  monitor::{MonitorHandle, VideoMode},
-  window::{PlatformSpecificWindowBuilderAttributes, Window, WindowId},
+	event_loop::{EventLoop, EventLoopProxy, EventLoopWindowTarget},
+	keycode::{keycode_from_scancode, keycode_to_scancode},
+	monitor::{MonitorHandle, VideoMode},
+	window::{PlatformSpecificWindowBuilderAttributes, Window, WindowId},
 };
 pub(crate) use crate::icon::NoIcon as PlatformIcon;
-pub(crate) use badge::set_badge_count;
 
 // todo: implement iOS keyboard event
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -101,15 +104,11 @@ pub struct KeyEventExtra {}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DeviceId {
-  uiscreen: ffi::id,
+	uiscreen:ffi::id,
 }
 
 impl DeviceId {
-  pub unsafe fn dummy() -> Self {
-    DeviceId {
-      uiscreen: std::ptr::null_mut(),
-    }
-  }
+	pub unsafe fn dummy() -> Self { DeviceId { uiscreen:std::ptr::null_mut() } }
 }
 
 unsafe impl Send for DeviceId {}
@@ -120,9 +119,9 @@ unsafe impl Sync for DeviceId {}
 pub enum OsError {}
 
 impl fmt::Display for OsError {
-  fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-    match self {
-      _ => unreachable!(),
-    }
-  }
+	fn fmt(&self, _:&mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			_ => unreachable!(),
+		}
+	}
 }
