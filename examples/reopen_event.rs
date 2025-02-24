@@ -17,24 +17,29 @@ fn main() {
 	event_loop.run(move |event, event_loop, control_flow| {
 		*control_flow = ControlFlow::Wait;
 
-		match event {
-			Event::WindowEvent { event: WindowEvent::CloseRequested, .. } => {
-				// drop the window
-				window = None;
-			},
-			Event::Reopen { has_visible_windows, .. } => {
-				println!("on reopen, has visible windows: {has_visible_windows}");
-
-				if !has_visible_windows {
-					window = Some(Window::new(&event_loop).unwrap())
-				}
-			},
-			Event::MainEventsCleared => {
-				if let Some(w) = &window {
-					w.request_redraw();
-				}
-			},
-			_ => (),
-		}
-	});
+    match event {
+      Event::WindowEvent {
+        event: WindowEvent::CloseRequested,
+        ..
+      } => {
+        // drop the window
+        window = None;
+      }
+      Event::Reopen {
+        has_visible_windows,
+        ..
+      } => {
+        println!("on reopen, has visible windows: {has_visible_windows}");
+        if !has_visible_windows {
+          window = Some(Window::new(event_loop).unwrap())
+        }
+      }
+      Event::MainEventsCleared => {
+        if let Some(w) = &window {
+          w.request_redraw();
+        }
+      }
+      _ => (),
+    }
+  });
 }

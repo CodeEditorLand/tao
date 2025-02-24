@@ -20,11 +20,9 @@ use std::{
   time::{Duration, Instant},
 };
 use windows::{
-  core::{s, PCWSTR},
+  core::{s, BOOL, PCWSTR},
   Win32::{
-    Foundation::{
-      BOOL, HANDLE, HINSTANCE, HWND, LPARAM, LRESULT, POINT, RECT, WAIT_TIMEOUT, WPARAM,
-    },
+    Foundation::{HANDLE, HINSTANCE, HWND, LPARAM, LRESULT, POINT, RECT, WAIT_TIMEOUT, WPARAM},
     Graphics::Gdi::*,
     System::{
       LibraryLoader::GetModuleHandleW,
@@ -469,7 +467,7 @@ fn dur2timeout(dur: Duration) -> u32 {
       })
     })
     .map(|ms| {
-      if ms > u32::max_value() as u64 {
+      if ms > u32::MAX as u64 {
         INFINITE
       } else {
         ms as u32
@@ -1591,7 +1589,10 @@ unsafe fn public_window_callback_inner<T: 'static>(
       let htouch = HTOUCHINPUT(lparam.0 as _);
       if GetTouchInputInfo(
         htouch,
-        mem::transmute(uninit_inputs),
+        mem::transmute::<
+          &mut [std::mem::MaybeUninit<windows::Win32::UI::Input::Touch::TOUCHINPUT>],
+          &mut [windows::Win32::UI::Input::Touch::TOUCHINPUT],
+        >(uninit_inputs),
         mem::size_of::<TOUCHINPUT>() as i32,
       )
       .is_ok()
@@ -2140,6 +2141,8 @@ unsafe fn public_window_callback_inner<T: 'static>(
             if edges & ABE_BOTTOM != 0 {
               rect.bottom -= 1;
             }
+            // FIXME:
+            #[allow(clippy::bad_bit_mask)]
             if edges & ABE_LEFT != 0 {
               rect.left += 1;
             }
@@ -2427,6 +2430,8 @@ unsafe extern "system" fn thread_event_target_callback<T: 'static>(
   if subclass_removed {
     mem::drop(subclass_input);
   } else {
+    // FIXME: this seems to leak intentionally?
+    #[allow(unused_must_use)]
     Box::into_raw(subclass_input);
   }
   result

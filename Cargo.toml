@@ -1,3 +1,41 @@
+[package]
+name = "tao"
+version = "0.32.0"
+description = "Cross-platform window manager library."
+authors = [
+  "Tauri Programme within The Commons Conservancy",
+  "The winit contributors"
+]
+edition = "2021"
+rust-version = "1.74"
+keywords = [ "windowing" ]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/tauri-apps/tao"
+documentation = "https://docs.rs/tao"
+categories = [ "gui" ]
+
+[package.metadata.docs.rs]
+features = [ "rwh_04", "rwh_05", "rwh_06", "serde" ]
+default-target = "x86_64-unknown-linux-gnu"
+targets = [
+  "i686-pc-windows-msvc",
+  "x86_64-pc-windows-msvc",
+  "i686-unknown-linux-gnu",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin"
+]
+
+[features]
+default = [ "rwh_06" ]
+serde = [ "dep:serde", "dpi/serde" ]
+rwh_04 = [ "dep:rwh_04" ]
+rwh_05 = [ "dep:rwh_05" ]
+rwh_06 = [ "dep:rwh_06" ]
+
+[workspace]
+members = [ "tao-macros" ]
+
 [dependencies]
 bitflags = { version = "2" }
 crossbeam-channel = "0.5"
@@ -26,88 +64,15 @@ rwh_05 = ["dep:rwh_05"]
 rwh_06 = ["dep:rwh_06"]
 serde = ["dep:serde", "dpi/serde"]
 
-[package]
-authors = [
-	"Tauri Programme within The Commons Conservancy",
-	"The winit contributors",
-]
-categories = ["gui"]
-description = "Cross-platform window manager library."
-documentation = "https://docs.rs/tao"
-edition = "2024"
-keywords = ["windowing"]
-license-file = "LICENSE"
-name = "tao"
-readme = "README.md"
-repository = "https://github.com/tauri-apps/tao"
-rust-version = "1.85.0"
-version = "0.31.1"
-
-[package.metadata]
-
-[package.metadata.docs]
-
-[package.metadata.docs.rs]
-default-target = "x86_64-unknown-linux-gnu"
-features = ["rwh_04", "rwh_05", "rwh_06", "serde"]
-targets = [
-	"i686-pc-windows-msvc",
-	"x86_64-pc-windows-msvc",
-	"i686-unknown-linux-gnu",
-	"x86_64-unknown-linux-gnu",
-	"x86_64-apple-darwin",
-]
-
-[target]
-
-[target.'cfg(any(target_os = "android", target_os = "windows"))']
-
-[target.'cfg(any(target_os = "android", target_os = "windows"))'.dependencies]
-once_cell = { version = "1" }
-
-[target.'cfg(any(target_os = "ios", target_os = "macos"))']
-
-[target.'cfg(any(target_os = "ios", target_os = "macos"))'.dependencies]
-objc = { version = "0.2" }
-
-[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))']
-
-[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
-dlopen2 = { version = "0.7.0" }
-gdkwayland-sys = "0.18.2"
-gdkx11-sys = "0.18"
-gtk = { version = "0.18" }
-parking_lot = { version = "0.12" }
-x11-dl = "2.21"
-
-[target.'cfg(target_os = "android")']
-
-[target.'cfg(target_os = "android")'.dependencies]
-jni = { version = "0.21" }
-ndk = { version = "0.9" }
-ndk-context = "0.1"
-ndk-sys = "0.6"
-tao-macros = { version = "0.1.0", path = "./tao-macros" }
-
-[target.'cfg(target_os = "macos")']
-
-[target.'cfg(target_os = "macos")'.dependencies]
-cocoa = { version = "0.26" }
-core-foundation = "0.10"
-core-graphics = "0.24"
-dispatch = { version = "0.2" }
-scopeguard = { version = "1.2" }
-
-[target.'cfg(target_os = "windows")']
-
-[target.'cfg(target_os = "windows")'.dependencies]
-parking_lot = { version = "0.12" }
-unicode-segmentation = "1.12"
-windows-core = "0.59"
+[target."cfg(target_os = \"windows\")".dependencies]
+parking_lot = "0.12"
+unicode-segmentation = "1.11"
 windows-version = "0.1"
+windows-core = "0.60"
 
-[target.'cfg(target_os = "windows")'.dependencies.windows]
-features = [
+  [target."cfg(target_os = \"windows\")".dependencies.windows]
+  version = "0.60"
+  features = [
   "Win32_Devices_HumanInterfaceDevice",
   "Win32_Foundation",
   "Win32_Globalization",
@@ -140,5 +105,59 @@ version = "0.59"
 [target.'cfg(target_os = "windows")'.dev-dependencies]
 softbuffer = { version = "0.4" }
 
-[workspace]
-members = ["tao-macros"]
+[target."cfg(target_os = \"android\")".dependencies]
+jni = "0.21"
+ndk = "0.9"
+ndk-sys = "0.6"
+ndk-context = "0.1"
+tao-macros = { version = "0.1.0", path = "./tao-macros" }
+
+[target."cfg(any(target_os = \"ios\", target_os = \"macos\"))".dependencies]
+objc2 = "0.6"
+
+[target."cfg(target_os = \"macos\")".dependencies]
+objc2-foundation = { version = "0.3", default-features = false, features = [
+  "std",
+  "NSArray",
+  "NSAttributedString",
+  "NSAutoreleasePool",
+  "NSDate",
+  "NSDictionary",
+  "NSEnumerator",
+  "NSGeometry",
+  "NSObjCRuntime",
+  "NSRange",
+  "NSString",
+  "NSThread",
+  "NSURL",
+] }
+objc2-app-kit = { version = "0.3", default-features = false, features = [
+  "std",
+  "objc2-core-foundation",
+  "NSApplication",
+  "NSButton",
+  "NSColor",
+  "NSControl",
+  "NSEvent",
+  "NSGraphics",
+  "NSImage",
+  "NSOpenGLView",
+  "NSPasteboard",
+  "NSResponder",
+  "NSRunningApplication",
+  "NSScreen",
+  "NSView",
+  "NSWindow",
+] }
+core-foundation = "0.10"
+core-graphics = "0.24"
+dispatch = "0.2"
+scopeguard = "1.2"
+
+[target."cfg(any(target_os = \"linux\", target_os = \"dragonfly\", target_os = \"freebsd\", target_os = \"openbsd\", target_os = \"netbsd\"))".dependencies]
+gtk = "0.18"
+gdkx11-sys = "0.18"
+gdkwayland-sys = "0.18.0"
+x11-dl = "2.21"
+parking_lot = "0.12"
+dlopen2 = "0.7.0"

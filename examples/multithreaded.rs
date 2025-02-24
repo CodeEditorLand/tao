@@ -21,7 +21,20 @@ fn main() {
 
 	env_logger::init();
 
-	let event_loop = EventLoop::new();
+    let (tx, rx) = mpsc::channel();
+    window_senders.insert(window.id(), tx);
+    let mut modifiers = ModifiersState::default();
+    thread::spawn(move || {
+      while let Ok(event) = rx.recv() {
+        match event {
+          WindowEvent::Moved { .. } => {
+            // We need to update our chosen video mode if the window
+            // was moved to an another monitor, so that the window
+            // appears on this monitor instead when we go fullscreen
+            let previous_video_mode = video_modes.iter().nth(video_mode_id).cloned();
+            video_modes = window.current_monitor().unwrap().video_modes().collect();
+            video_mode_id = video_mode_id.min(video_modes.len());
+            let video_mode = video_modes.iter().nth(video_mode_id);
 
 	let mut window_senders = HashMap::with_capacity(WINDOW_COUNT);
 

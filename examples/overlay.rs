@@ -2,7 +2,24 @@
 // Copyright 2021-2023 Tauri Programme within The Commons Conservancy
 // SPDX-License-Identifier: Apache-2.0
 
-use std::env::current_dir;
+use tao::{
+  event::{ElementState, Event, KeyEvent, WindowEvent},
+  event_loop::{ControlFlow, EventLoop},
+  keyboard::{Key, ModifiersState},
+  window::WindowBuilder,
+};
+
+#[cfg(any(
+  target_os = "linux",
+  target_os = "dragonfly",
+  target_os = "freebsd",
+  target_os = "netbsd",
+  target_os = "openbsd"
+))]
+use tao::platform::unix::WindowExtUnix;
+
+#[cfg(target_os = "macos")]
+use tao::platform::macos::WindowExtMacOS;
 
 #[cfg(target_os = "ios")]
 use tao::platform::ios::WindowExtIOS;
@@ -59,23 +76,12 @@ fn main() {
 						modifiers = new_state;
 					},
 
-					WindowEvent::KeyboardInput {
-						event:
-							KeyEvent {
-								logical_key: Key::Character(key_str),
-								state: ElementState::Released,
-								..
-							},
-						..
-					} => {
-						let _count = match key_str {
-							"1" => 1,
-							"2" => 2,
-							"3" => 3,
-							"4" => 4,
-							"5" => 5,
-							_ => 20,
-						};
+          if modifiers.is_empty() {
+            #[cfg(windows)]
+            {
+              let mut path = std::env::current_dir().unwrap();
+              path.push("./examples/icon.ico");
+              let icon = Icon::from_path(path, Some(PhysicalSize::new(32, 32))).unwrap();
 
 						if modifiers.is_empty() {
 							#[cfg(windows)]

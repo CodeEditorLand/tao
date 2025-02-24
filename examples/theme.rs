@@ -25,32 +25,23 @@ fn main() {
 
 	println!("Press D for Dark Mode");
 
-	println!("Press L for Light Mode");
-
-	println!("Press A for Auto Mode");
-
-	event_loop.run(move |event, _, control_flow| {
-		*control_flow = ControlFlow::Wait;
-
-		match event {
-			Event::WindowEvent { event, .. } => {
-				match event {
-					WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-					WindowEvent::KeyboardInput { event: KeyEvent { physical_key, .. }, .. } => {
-						match physical_key {
-							KeyCode::KeyD => window.set_theme(Some(Theme::Dark)),
-							KeyCode::KeyL => window.set_theme(Some(Theme::Light)),
-							KeyCode::KeyA => window.set_theme(None),
-							_ => {},
-						}
-					},
-					WindowEvent::ThemeChanged(theme) => {
-						println!("Theme is changed: {theme:?}")
-					},
-					_ => (),
-				}
-			},
-			_ => (),
-		}
-	});
+    if let Event::WindowEvent { event, .. } = event {
+      match event {
+        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+        WindowEvent::KeyboardInput {
+          event: KeyEvent { physical_key, .. },
+          ..
+        } => match physical_key {
+          KeyCode::KeyD => window.set_theme(Some(Theme::Dark)),
+          KeyCode::KeyL => window.set_theme(Some(Theme::Light)),
+          KeyCode::KeyA => window.set_theme(None),
+          _ => {}
+        },
+        WindowEvent::ThemeChanged(theme) => {
+          println!("Theme is changed: {theme:?}")
+        }
+        _ => (),
+      }
+    }
+  });
 }
