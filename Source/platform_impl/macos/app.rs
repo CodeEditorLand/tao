@@ -2,18 +2,12 @@
 // Copyright 2021-2023 Tauri Programme within The Commons Conservancy
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::VecDeque;
+use std::{collections::VecDeque, ffi::CStr};
 
-use cocoa::{
-	appkit::{self, NSEvent},
-	base::id,
-};
-use objc::{
-	declare::ClassDecl,
-	runtime::{Class, Object, Sel},
-};
+use objc2::runtime::{AnyClass as Class, AnyObject as Object, ClassBuilder as ClassDecl, Sel};
+use objc2_app_kit::{self as appkit, NSEvent, NSEventType};
 
-use super::{DEVICE_ID, app_state::AppState, event::EventWrapper, util};
+use super::{app_state::AppState, event::EventWrapper, ffi::id, util, DEVICE_ID};
 use crate::event::{DeviceEvent, ElementState, Event};
 
 pub struct AppClass(pub *const Class);
@@ -21,106 +15,109 @@ unsafe impl Send for AppClass {}
 unsafe impl Sync for AppClass {}
 
 lazy_static! {
-	pub static ref APP_CLASS: AppClass = unsafe {
-		let superclass = class!(NSApplication);
+  pub static ref APP_CLASS: AppClass = unsafe {
+    let superclass = class!(NSApplication);
+    let mut decl =
+      ClassDecl::new(CStr::from_bytes_with_nul(b"TaoApp\0").unwrap(), superclass).unwrap();
 
-		let mut decl = ClassDecl::new("TaoApp", superclass).unwrap();
+    decl.add_method(sel!(sendEvent:), send_event as extern "C" fn(_, _, _));
 
-		decl.add_method(sel!(sendEvent:), send_event as extern fn(&Object, Sel, id));
-
-		AppClass(decl.register())
-	};
+    AppClass(decl.register())
+  };
 }
 
 // Normally, holding Cmd + any key never sends us a `keyUp` event for that key.
 // Overriding `sendEvent:` like this fixes that. (https://stackoverflow.com/a/15294196)
 // Fun fact: Firefox still has this bug! (https://bugzilla.mozilla.org/show_bug.cgi?id=1299553)
-extern fn send_event(this:&Object, _sel:Sel, event:id) {
-	unsafe {
-		// For posterity, there are some undocumented event types
-		// (https://github.com/servo/cocoa-rs/issues/155)
-		// but that doesn't really matter here.
-		let event_type = event.eventType();
-
-		let modifier_flags = event.modifierFlags();
-
-		if event_type == appkit::NSKeyUp
-			&& util::has_flag(modifier_flags, appkit::NSEventModifierFlags::NSCommandKeyMask)
-		{
-			let key_window:id = msg_send![this, keyWindow];
-			let _:() = msg_send![key_window, sendEvent: event];
-		} else {
-			maybe_dispatch_device_event(event);
-			let superclass = util::superclass(this);
-			let _:() = msg_send![super(this, superclass), sendEvent: event];
-		}
-	}
+extern "C" fn send_event(this: &Object, _sel: Sel, event: &NSEvent) {
+  unsafe {
+    // For posterity, there are some undocumented event types
+    // (https://github.com/servo/cocoa-rs/issues/155)
+    // but that doesn't really matter here.
+    let event_type = event.r#type();
+    let modifier_flags = event.modifierFlags();
+    if event_type == appkit::NSKeyUp
+      && util::has_flag(modifier_flags, appkit::NSEventModifierFlags::Command)
+    {
+      let key_window: id = msg_send![this, keyWindow];
+      let _: () = msg_send![key_window, sendEvent: event];
+    } else {
+      maybe_dispatch_device_event(event);
+      let superclass = util::superclass(this);
+      let _: () = msg_send![super(this, superclass), sendEvent: event];
+    }
+  }
 }
 
-unsafe fn maybe_dispatch_device_event(event:id) {
-	let event_type = event.eventType();
-	match event_type {
-		appkit::NSMouseMoved
-		| appkit::NSLeftMouseDragged
-		| appkit::NSOtherMouseDragged
-		| appkit::NSRightMouseDragged => {
-			let mut events = VecDeque::with_capacity(3);
+unsafe fn maybe_dispatch_device_event(event: &NSEvent) {
+  let event_type = event.r#type();
+  match event_type {
+    NSEventType::MouseMoved
+    | NSEventType::LeftMouseDragged
+    | NSEventType::OtherMouseDragged
+    | NSEventType::RightMouseDragged => {
+      let mut events = VecDeque::with_capacity(3);
 
-			let delta_x = event.deltaX() as f64;
-			let delta_y = event.deltaY() as f64;
+      let delta_x = event.deltaX() as f64;
+      let delta_y = event.deltaY() as f64;
 
-			if delta_x != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
-					device_id:DEVICE_ID,
-					event:DeviceEvent::Motion { axis:0, value:delta_x },
-				}));
-			}
+      if delta_x != 0.0 {
+        events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+          device_id: DEVICE_ID,
+          event: DeviceEvent::Motion {
+            axis: 0,
+            value: delta_x,
+          },
+        }));
+      }
 
-			if delta_y != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
-					device_id:DEVICE_ID,
-					event:DeviceEvent::Motion { axis:1, value:delta_y },
-				}));
-			}
+      if delta_y != 0.0 {
+        events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+          device_id: DEVICE_ID,
+          event: DeviceEvent::Motion {
+            axis: 1,
+            value: delta_y,
+          },
+        }));
+      }
 
-			if delta_x != 0.0 || delta_y != 0.0 {
-				events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
-					device_id:DEVICE_ID,
-					event:DeviceEvent::MouseMotion { delta:(delta_x, delta_y) },
-				}));
-			}
+      if delta_x != 0.0 || delta_y != 0.0 {
+        events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+          device_id: DEVICE_ID,
+          event: DeviceEvent::MouseMotion {
+            delta: (delta_x, delta_y),
+          },
+        }));
+      }
 
-			AppState::queue_events(events);
-		},
+      AppState::queue_events(events);
+    }
+    NSEventType::LeftMouseDown | NSEventType::RightMouseDown | NSEventType::OtherMouseDown => {
+      let mut events = VecDeque::with_capacity(1);
 
-		appkit::NSLeftMouseDown | appkit::NSRightMouseDown | appkit::NSOtherMouseDown => {
-			let mut events = VecDeque::with_capacity(1);
+      events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+        device_id: DEVICE_ID,
+        event: DeviceEvent::Button {
+          button: event.buttonNumber() as u32,
+          state: ElementState::Pressed,
+        },
+      }));
 
-			events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
-				device_id:DEVICE_ID,
-				event:DeviceEvent::Button {
-					button:event.buttonNumber() as u32,
-					state:ElementState::Pressed,
-				},
-			}));
+      AppState::queue_events(events);
+    }
+    NSEventType::LeftMouseUp | NSEventType::RightMouseUp | NSEventType::OtherMouseUp => {
+      let mut events = VecDeque::with_capacity(1);
 
-			AppState::queue_events(events);
-		},
+      events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
+        device_id: DEVICE_ID,
+        event: DeviceEvent::Button {
+          button: event.buttonNumber() as u32,
+          state: ElementState::Released,
+        },
+      }));
 
-		appkit::NSLeftMouseUp | appkit::NSRightMouseUp | appkit::NSOtherMouseUp => {
-			let mut events = VecDeque::with_capacity(1);
-
-			events.push_back(EventWrapper::StaticEvent(Event::DeviceEvent {
-				device_id:DEVICE_ID,
-				event:DeviceEvent::Button {
-					button:event.buttonNumber() as u32,
-					state:ElementState::Released,
-				},
-			}));
-
-			AppState::queue_events(events);
-		},
-
-		_ => (),
-	}
+      AppState::queue_events(events);
+    }
+    _ => (),
+  }
 }
