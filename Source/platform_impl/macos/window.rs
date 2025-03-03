@@ -54,7 +54,7 @@ use objc2_app_kit::{
   self as appkit, NSApp, NSApplicationPresentationOptions, NSBackingStoreType, NSColor, NSEvent,
   NSEventModifierFlags, NSEventSubtype, NSEventType, NSRequestUserAttentionType, NSScreen, NSView,
   NSWindow, NSWindowButton, NSWindowCollectionBehavior, NSWindowFullScreenButton,
-  NSWindowOrderingMode, NSWindowStyleMask,
+  NSWindowOrderingMode, NSWindowSharingType, NSWindowStyleMask,
 };
 use objc2_foundation::{
   MainThreadMarker, NSArray, NSAutoreleasePool, NSDictionary, NSInteger, NSPoint, NSRect, NSSize,
@@ -262,8 +262,9 @@ fn create_window(
           NSWindowButton::CloseButton,
           NSWindowButton::ZoomButton,
         ] {
-          let button = ns_window.standardWindowButton(*titlebar_button).unwrap();
-          let _: () = msg_send![&button, setHidden: true];
+          if let Some(button) = ns_window.standardWindowButton(*titlebar_button) {
+            button.setHidden(true);
+          }
         }
       }
       if pl_attrs.movable_by_window_background {
@@ -271,28 +272,22 @@ fn create_window(
       }
 
       if attrs.always_on_top {
-        let _: () = msg_send![
-          &ns_window,
-          setLevel: ffi::NSWindowLevel::NSFloatingWindowLevel
-        ];
+        ns_window.setLevel(ffi::NSWindowLevel::NSFloatingWindowLevel as isize);
       }
 
       if attrs.always_on_bottom {
-        let _: () = msg_send![
-          &ns_window,
-          setLevel: ffi::NSWindowLevel::BelowNormalWindowLevel
-        ];
+        ns_window.setLevel(ffi::NSWindowLevel::BelowNormalWindowLevel as isize);
       }
 
-      if attrs.content_protection {
-        let _: () = msg_send![&ns_window, setSharingType: 0];
+      if attrs.content_protection  {
+        ns_window.setSharingType(NSWindowSharingType::None);
       }
 
       if !attrs.maximizable {
-        let button = ns_window
-          .standardWindowButton(NSWindowButton::ZoomButton)
-          .unwrap();
-        let _: () = msg_send![&button, setEnabled: NO];
+        if let Some(button) = ns_window
+          .standardWindowButton(NSWindowButton::ZoomButton) {
+            button.setEnabled(false);
+          }
       }
 
       if let Some(increments) = pl_attrs.resize_increments {
@@ -313,8 +308,7 @@ fn create_window(
       }
 
       if let Some(tabbing_identifier) = &pl_attrs.tabbing_identifier {
-        let _: () =
-          msg_send![&ns_window, setTabbingIdentifier: &*NSString::from_str(tabbing_identifier)];
+        ns_window.setTabbingIdentifier( &NSString::from_str(tabbing_identifier));
       }
 
       if !pl_attrs.has_shadow {
@@ -535,10 +529,7 @@ impl UnownedWindow {
       }
 
       // register for drag and drop operations.
-      let () = msg_send![
-        &ns_window,
-        registerForDraggedTypes: &*NSArray::arrayWithObject(appkit::NSFilenamesPboardType)
-      ];
+      ns_window.registerForDraggedTypes(&NSArray::arrayWithObject(appkit::NSFilenamesPboardType));
     }
 
     // Since `win_attribs` is put into a mutex below, we'll just copy these
@@ -640,9 +631,9 @@ impl UnownedWindow {
   // Shortener for set_visible(true)
   pub fn set_focus(&self) {
     unsafe {
-      let is_minimized: bool = msg_send![&self.ns_window, isMiniaturized];
-      let is_visible: bool = msg_send![&self.ns_window, isVisible];
-      if is_minimized && is_visible {
+      let is_minimized = self.ns_window.isMiniaturized();
+      let is_visible = self.ns_window.isVisible();
+      if !is_minimized && is_visible {
         util::set_focus(&self.ns_window);
       }
     }
@@ -650,10 +641,7 @@ impl UnownedWindow {
 
   #[inline]
   pub fn is_focused(&self) -> bool {
-    unsafe {
-      let is_key_window: bool = msg_send![&self.ns_window, isKeyWindow];
-      is_key_window
-    }
+    unsafe { self.ns_window.isKeyWindow() }
   }
 
   pub fn request_redraw(&self) {
@@ -782,11 +770,12 @@ impl UnownedWindow {
   #[inline]
   pub fn set_maximizable(&self, maximizable: bool) {
     unsafe {
-      let button = self
+      if let Some(button) = self
         .ns_window
         .standardWindowButton(NSWindowButton::ZoomButton)
-        .unwrap();
-      let _: () = msg_send![&button, setEnabled: maximizable];
+      {
+        button.setEnabled(maximizable);
+      }
     }
   }
 
@@ -807,10 +796,7 @@ impl UnownedWindow {
       cursor_access.lock().unwrap().cursor = cursor;
     }
     unsafe {
-      let _: () = msg_send![
-        &self.ns_window,
-        invalidateCursorRectsForView: &*self.ns_view
-      ];
+      self.ns_window.invalidateCursorRectsForView(&self.ns_view);
     }
   }
 
@@ -829,10 +815,7 @@ impl UnownedWindow {
         cursor_state.visible = visible;
         drop(cursor_state);
         unsafe {
-          let _: () = msg_send![
-            &self.ns_window,
-            invalidateCursorRectsForView:&*self.ns_view
-          ];
+          self.ns_window.invalidateCursorRectsForView(&self.ns_view);
         }
       }
     }
@@ -946,7 +929,7 @@ impl UnownedWindow {
       self.set_style_mask_sync(required);
     }
 
-    let is_zoomed: bool = unsafe { msg_send![&self.ns_window, isZoomed] };
+    let is_zoomed: bool = unsafe { self.ns_window.isZoomed() };
 
     // Roll back temp styles
     if needs_temp_mask {
@@ -981,7 +964,7 @@ impl UnownedWindow {
     let mask = self.saved_style(&mut *shared_state_lock);
 
     drop(shared_state_lock);
-    trace!("Unocked shared state in `restore_state_from_fullscreen`");
+    trace!("Unlocked shared state in `restore_state_from_fullscreen`");
 
     self.set_style_mask_async(mask);
     self.set_maximized(maximized);
@@ -989,7 +972,7 @@ impl UnownedWindow {
 
   #[inline]
   pub fn set_minimized(&self, minimized: bool) {
-    let is_minimized: bool = unsafe { msg_send![&self.ns_window, isMiniaturized] };
+    let is_minimized: bool = unsafe { self.ns_window.isMiniaturized() };
     if is_minimized == minimized {
       return;
     }
@@ -1029,7 +1012,7 @@ impl UnownedWindow {
 
   #[inline]
   pub fn is_visible(&self) -> bool {
-    unsafe { msg_send![&self.ns_window, isVisible] }
+    unsafe { self.ns_window.isVisible() }
   }
 
   #[inline]
@@ -1044,7 +1027,7 @@ impl UnownedWindow {
 
   #[inline]
   pub fn is_minimized(&self) -> bool {
-    unsafe { msg_send![&self.ns_window, isMiniaturized] }
+    unsafe { self.ns_window.isMiniaturized() }
   }
 
   #[inline]
@@ -1059,15 +1042,16 @@ impl UnownedWindow {
 
   #[inline]
   pub fn is_maximizable(&self) -> bool {
-    let is_maximizable: bool;
     unsafe {
-      let button = self
+      if let Some(button) = self
         .ns_window
         .standardWindowButton(NSWindowButton::ZoomButton)
-        .unwrap();
-      is_maximizable = msg_send![&button, isEnabled];
+      {
+        button.isEnabled()
+      } else {
+        false
+      }
     }
-    is_maximizable
   }
 
   #[inline]
@@ -1258,7 +1242,9 @@ impl UnownedWindow {
           | NSApplicationPresentationOptions::HideMenuBar;
         app.setPresentationOptions(presentation_options);
 
-        let () = msg_send![&self.ns_window, setLevel: ffi::CGShieldingWindowLevel() + 1];
+        self
+          .ns_window
+          .setLevel(ffi::CGShieldingWindowLevel() as isize + 1);
       },
       (
         &Some(Fullscreen::Exclusive(RootVideoMode { ref video_mode })),
@@ -1475,7 +1461,11 @@ impl UnownedWindow {
 
   pub fn set_content_protection(&self, enabled: bool) {
     unsafe {
-      let _: () = msg_send![&self.ns_window, setSharingType: !enabled as usize];
+      self.ns_window.setSharingType(if enabled {
+        NSWindowSharingType::None
+      } else {
+        NSWindowSharingType::ReadOnly
+      });
     }
   }
 
@@ -1628,10 +1618,7 @@ impl WindowExtMacOS for UnownedWindow {
 
   #[inline]
   fn is_document_edited(&self) -> bool {
-    unsafe {
-      let is_document_edited: bool = msg_send![&self.ns_window, isDocumentEdited];
-      is_document_edited
-    }
+    unsafe { self.ns_window.isDocumentEdited() }
   }
 
   #[inline]
@@ -1649,8 +1636,9 @@ impl WindowExtMacOS for UnownedWindow {
   #[inline]
   fn set_tabbing_identifier(&self, identifier: &str) {
     unsafe {
-      let _: () =
-        msg_send![&self.ns_window, setTabbingIdentifier: &*NSString::from_str(identifier)];
+      self
+        .ns_window
+        .setTabbingIdentifier(&NSString::from_str(identifier));
     }
   }
 
